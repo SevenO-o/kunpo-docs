@@ -27,6 +27,7 @@ create_release_id
 if [ -n "$export_dir" ]; then
   validate_export "$export_dir"
   EXPORT_DIR="$export_dir"
+  archive_export_dir "$EXPORT_DIR"
 else
   build_site
 fi
@@ -49,6 +50,7 @@ case "$release_id" in
   *[!0-9A-Za-zT-Z-]*|'') exit 64 ;;
 esac
 stage_dir="$remote_root/releases/.staging-$release_id"
+stage_zip="$remote_root/releases/.staging-$release_id.zip"
 release_dir="$remote_root/releases/$release_id"
 
 case "$operation" in
@@ -56,11 +58,22 @@ case "$operation" in
     [ -d "$remote_root" ] || exit 65
     mkdir -p "$remote_root/releases"
     [ ! -e "$stage_dir" ] || exit 66
+    [ ! -e "$stage_zip" ] || exit 66
     mkdir "$stage_dir"
     ;;
   discard)
-    [ -d "$stage_dir" ] || exit 0
-    rm -rf "$stage_dir"
+    [ ! -f "$stage_zip" ] || rm -f "$stage_zip"
+    [ ! -d "$stage_dir" ] || rm -rf "$stage_dir"
+    ;;
+  extract)
+    [ -f "$stage_zip" ] || exit 67
+    [ -d "$stage_dir" ] || exit 67
+    unzip -tq "$stage_zip" >/dev/null || exit 67
+    unzip -q "$stage_zip" -d "$stage_dir" || exit 67
+    rm -f "$stage_zip"
+    [ -f "$stage_dir/index.html" ] || exit 67
+    [ -f "$stage_dir/quick-start/index.html" ] || exit 67
+    [ -f "$stage_dir/api-reference/overview/index.html" ] || exit 67
     ;;
   promote)
     [ -f "$stage_dir/index.html" ] || exit 67
@@ -140,10 +153,16 @@ if [ "$dry_run" = 'true' ]; then
 fi
 
 remote_operation prepare
-if ! scp -r "$EXPORT_DIR/." "${SSH_HOST}:${REMOTE_SITE_ROOT}/releases/.staging-${RELEASE_ID}/"; then
+if ! scp "$EXPORT_ARCHIVE" "${SSH_HOST}:${REMOTE_SITE_ROOT}/releases/.staging-${RELEASE_ID}.zip"; then
   remote_operation discard || true
   write_report "$report_path" 'failed' 'not-needed'
   release_fail '上传发布暂存目录失败，未切换线上版本'
+  exit 1
+fi
+if ! remote_operation extract; then
+  remote_operation discard || true
+  write_report "$report_path" 'failed' 'not-needed'
+  release_fail '服务器解压或校验发布暂存包失败，未切换线上版本'
   exit 1
 fi
 previous_release="$(remote_operation promote)"

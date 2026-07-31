@@ -94,7 +94,7 @@ verify_public_pages() {
   checks_file="$(mktemp /tmp/docs-release-checks.XXXXXX)"
   local path status passed='true'
   for path in / /quick-start /api-reference/overview; do
-    status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://${DOMAIN}${path}?release=${RELEASE_ID}" || printf '000')"
+    status="$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 15 "https://${DOMAIN}${path}?release=${RELEASE_ID}" || printf '000')"
     printf '%s\t%s\n' "$path" "$status" >> "$checks_file"
     [ "$status" = '200' ] || passed='false'
   done

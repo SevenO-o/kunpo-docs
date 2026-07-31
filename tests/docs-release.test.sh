@@ -16,6 +16,7 @@ printf '%s\n' "$*" >> "$DOCS_RELEASE_SSH_LOG"
 cat >/dev/null || true
 case " $* " in
   *' promote '*) printf '%s\n' 'releases/previous' ;;
+  *' verify '*) printf '%s\n' 'releases/current' ;;
 esac
 EOF
 cat > "$FAKE_BIN/scp" <<'EOF'
@@ -24,7 +25,10 @@ printf '%s\n' "$*" >> "$DOCS_RELEASE_SCP_LOG"
 EOF
 cat > "$FAKE_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
-printf '%s' "${DOCS_RELEASE_CURL_STATUS:-200}"
+case " $* " in
+  *' -L '*|*' -sSL '*) printf '%s' "${DOCS_RELEASE_CURL_STATUS:-200}" ;;
+  *) printf '%s' '301' ;;
+esac
 EOF
 chmod +x "$FAKE_BIN/ssh" "$FAKE_BIN/scp" "$FAKE_BIN/curl"
 
@@ -182,10 +186,36 @@ test_failed_public_check_requests_rollback() {
   assert_file_contains "$report" '"rollbackStatus": "restored"'
 }
 
+test_verify_reports_current_release_without_remote_write() {
+  local config="$FIXTURE_DIR/verify.conf"
+  local report="$FIXTURE_DIR/verify.json"
+  write_valid_config "$config"
+  : > "$SSH_LOG"
+  : > "$SCP_LOG"
+  run_expect_success env PATH="$FAKE_BIN:$PATH" DOCS_RELEASE_SSH_LOG="$SSH_LOG" DOCS_RELEASE_SCP_LOG="$SCP_LOG" DOCS_RELEASE_CURL_STATUS=200 "$ROOT/scripts/verify-docs-release.sh" --config "$config" --report "$report"
+  assert_file_contains "$SSH_LOG" 'dify sh -s -- verify /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_empty "$SCP_LOG"
+  assert_file_contains "$report" '"status": "verified"'
+  assert_file_contains "$report" '"releaseId": "current"'
+}
+
+test_verify_reports_public_failure_without_remote_write() {
+  local config="$FIXTURE_DIR/verify-failure.conf"
+  local report="$FIXTURE_DIR/verify-failure.json"
+  write_valid_config "$config"
+  : > "$SSH_LOG"
+  : > "$SCP_LOG"
+  run_expect_failure env PATH="$FAKE_BIN:$PATH" DOCS_RELEASE_SSH_LOG="$SSH_LOG" DOCS_RELEASE_SCP_LOG="$SCP_LOG" DOCS_RELEASE_CURL_STATUS=503 "$ROOT/scripts/verify-docs-release.sh" --config "$config" --report "$report"
+  assert_file_empty "$SCP_LOG"
+  assert_file_contains "$report" '"status": "failed"'
+}
+
 test_invalid_remote_root_is_rejected
 test_unknown_config_key_is_rejected
 test_missing_export_page_is_rejected
 test_dry_run_writes_a_sanitized_report
 test_publish_uses_only_the_registered_site_target
 test_failed_public_check_requests_rollback
+test_verify_reports_current_release_without_remote_write
+test_verify_reports_public_failure_without_remote_write
 printf 'PASS: docs release configuration validation\n'

@@ -22,6 +22,7 @@ EOF
 cat > "$FAKE_BIN/scp" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$DOCS_RELEASE_SCP_LOG"
+exit "${DOCS_RELEASE_SCP_STATUS:-0}"
 EOF
 cat > "$FAKE_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
@@ -171,7 +172,20 @@ test_publish_uses_only_the_registered_site_target() {
   assert_file_contains "$SSH_LOG" 'dify sh -s -- prepare /opt/1panel/www/sites/docs.ziy.cc'
   assert_file_contains "$SCP_LOG" 'dify:/opt/1panel/www/sites/docs.ziy.cc/releases/.staging-'
   assert_file_contains "$SSH_LOG" 'dify sh -s -- promote /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_contains "$SSH_LOG" 'dify sh -s -- prune /opt/1panel/www/sites/docs.ziy.cc'
   assert_file_contains "$report" '"status": "published"'
+}
+
+test_failed_upload_discards_only_the_release_staging_directory() {
+  local config="$FIXTURE_DIR/upload-failure.conf"
+  local export_dir="$FIXTURE_DIR/upload-failure-export"
+  local report="$FIXTURE_DIR/upload-failure.json"
+  write_valid_config "$config"
+  make_export "$export_dir" index.html quick-start/index.html api-reference/overview/index.html
+  : > "$SSH_LOG"
+  run_expect_failure env PATH="$FAKE_BIN:$PATH" DOCS_RELEASE_SSH_LOG="$SSH_LOG" DOCS_RELEASE_SCP_LOG="$SCP_LOG" DOCS_RELEASE_SCP_STATUS=1 "$ROOT/scripts/release-docs.sh" --config "$config" --export-dir "$export_dir" --report "$report"
+  assert_file_contains "$SSH_LOG" 'dify sh -s -- discard /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_contains "$report" '"status": "failed"'
 }
 
 test_failed_public_check_requests_rollback() {
@@ -215,6 +229,7 @@ test_unknown_config_key_is_rejected
 test_missing_export_page_is_rejected
 test_dry_run_writes_a_sanitized_report
 test_publish_uses_only_the_registered_site_target
+test_failed_upload_discards_only_the_release_staging_directory
 test_failed_public_check_requests_rollback
 test_verify_reports_current_release_without_remote_write
 test_verify_reports_public_failure_without_remote_write

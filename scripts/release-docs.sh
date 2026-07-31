@@ -58,6 +58,10 @@ case "$operation" in
     [ ! -e "$stage_dir" ] || exit 66
     mkdir "$stage_dir"
     ;;
+  discard)
+    [ -d "$stage_dir" ] || exit 0
+    rm -rf "$stage_dir"
+    ;;
   promote)
     [ -f "$stage_dir/index.html" ] || exit 67
     [ -f "$stage_dir/quick-start/index.html" ] || exit 67
@@ -83,6 +87,23 @@ case "$operation" in
       releases/*) ln -sfn "$previous_release" "$remote_root/index" ;;
       *) exit 71 ;;
     esac
+    ;;
+  prune)
+    current_name="$release_id"
+    previous_name="${previous_release#releases/}"
+    release_count=0
+    find "$remote_root/releases" -mindepth 1 -maxdepth 1 -type d -name '20*' -print | sort -r |
+      while IFS= read -r release_path; do
+        release_name="${release_path##*/}"
+        release_count=$((release_count + 1))
+        [ "$release_count" -gt 5 ] || continue
+        [ "$release_name" = "$current_name" ] && continue
+        [ "$release_name" = "$previous_name" ] && continue
+        case "$release_path" in
+          "$remote_root"/releases/20*) rm -rf "$release_path" ;;
+          *) exit 72 ;;
+        esac
+      done
     ;;
   *) exit 64 ;;
 esac
@@ -119,7 +140,12 @@ if [ "$dry_run" = 'true' ]; then
 fi
 
 remote_operation prepare
-scp -r "$EXPORT_DIR/." "${SSH_HOST}:${REMOTE_SITE_ROOT}/releases/.staging-${RELEASE_ID}/"
+if ! scp -r "$EXPORT_DIR/." "${SSH_HOST}:${REMOTE_SITE_ROOT}/releases/.staging-${RELEASE_ID}/"; then
+  remote_operation discard || true
+  write_report "$report_path" 'failed' 'not-needed'
+  release_fail '上传发布暂存目录失败，未切换线上版本'
+  exit 1
+fi
 previous_release="$(remote_operation promote)"
 if ! verify_public_pages; then
   remote_operation rollback "$previous_release"
@@ -128,5 +154,6 @@ if ! verify_public_pages; then
   exit 1
 fi
 
+remote_operation prune "$previous_release"
 write_report "$report_path" 'published' 'not-needed' "$RELEASE_CHECKS_JSON"
 printf 'published: %s\n' "$RELEASE_ID"

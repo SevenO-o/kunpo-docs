@@ -24,6 +24,8 @@ KUNPO API 提供统一的大模型调用接口，兼容 OpenAI / Anthropic 接�
 
 编辑 `.mdx` 或 `docs.json` 前，请先阅读 **[DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（页面职责、模型名、防重复规范）。AI 助手会自动加载 `.cursor/rules/kunpo-docs.mdc`。
 
+发布或验收 `docs.ziy.cc` 前，请阅读 **[DEPLOYMENT.md](./DEPLOYMENT.md)**。真实发布只在用户明确提出发布指令后执行。
+
 ## 本地开发
 
 ```bash

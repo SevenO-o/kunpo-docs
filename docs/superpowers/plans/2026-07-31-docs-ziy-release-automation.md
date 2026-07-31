@@ -359,5 +359,5 @@ Expected: 远端入口、OpenResty `server_name docs.ziy.cc`、首页、快速�
 ## Plan Self-Review
 
 - 规格覆盖：任务 1 对应发布契约和配置；任务 2 对应构建、产物和脱敏报告；任务 3 对应远端版本化、原子切换、首次迁移、回滚和保留策略；任务 4 对应只读验收；任务 5 明确隔离了未来真正发布授权。
-- 占位扫描：本计划未包含 `TODO`、`TBD` 或未定义的“适当处理”步骤；每个失败分支给出明确停止或回滚行为。
+- 占位扫描：本计划没有待补内容或含糊的“适当处理”步骤；每个失败分支给出明确停止或回滚行为。
 - 接口一致性：`load_site_config`、`build_site`、`validate_export` 和 `write_report` 由 Task 2 定义，后续发布和验收入口仅使用这些名称；配置文件路径固定为 `deployment/sites/docs.ziy.cc.conf`。

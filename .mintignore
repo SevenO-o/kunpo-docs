@@ -6,6 +6,14 @@ kunpo-api-docs-export*/
 # 导出脚本（仅开发用）
 scripts/
 
+# 仓库内部配置与验证文件（不对外发布）
+tests/
+deployment/
+.cursor/
+.gitignore
+.mintignore
+.DS_Store
+
 # 维护文档（非对外站点内容）
 DOCS_MAINTENANCE.md
 PROJECT_CONTEXT.md

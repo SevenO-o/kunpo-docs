@@ -240,6 +240,13 @@ test_remote_prepare_accepts_an_omitted_optional_previous_release() {
   esac
 }
 
+test_mintignore_excludes_repository_only_files() {
+  local ignored_path
+  for ignored_path in tests/ deployment/ .cursor/ .gitignore .mintignore .DS_Store; do
+    grep -Fxq "$ignored_path" "$ROOT/.mintignore" || fail ".mintignore 应排除仓库内部路径：$ignored_path"
+  done
+}
+
 test_invalid_remote_root_is_rejected
 test_unknown_config_key_is_rejected
 test_missing_export_page_is_rejected
@@ -250,4 +257,5 @@ test_failed_public_check_requests_rollback
 test_verify_reports_current_release_without_remote_write
 test_verify_reports_public_failure_without_remote_write
 test_remote_prepare_accepts_an_omitted_optional_previous_release
+test_mintignore_excludes_repository_only_files
 printf 'PASS: docs release configuration validation\n'

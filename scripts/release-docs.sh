@@ -43,7 +43,7 @@ set -eu
 operation="$1"
 remote_root="$2"
 release_id="$3"
-previous_release="$4"
+previous_release="${4:-}"
 [ "$remote_root" = '/opt/1panel/www/sites/docs.ziy.cc' ] || exit 64
 case "$release_id" in
   *[!0-9A-Za-zT-Z-]*|'') exit 64 ;;

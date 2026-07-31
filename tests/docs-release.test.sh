@@ -224,6 +224,22 @@ test_verify_reports_public_failure_without_remote_write() {
   assert_file_contains "$report" '"status": "failed"'
 }
 
+test_remote_prepare_accepts_an_omitted_optional_previous_release() {
+  local remote_script
+  local expected_status=64
+  remote_script="$(sed -n '/^set -eu$/,/^REMOTE$/p' "$ROOT/scripts/release-docs.sh" | sed '$d')"
+
+  set +e
+  COMMAND_OUTPUT="$(printf '%s\n' "$remote_script" | sh -u -s -- prepare /tmp/not-allowed release-id 2>&1)"
+  COMMAND_STATUS=$?
+  set -e
+
+  [ "$COMMAND_STATUS" -eq "$expected_status" ] || fail "远端 prepare 应先完成可选参数解析，再拒绝未登记路径；实际状态：${COMMAND_STATUS}；输出：${COMMAND_OUTPUT}"
+  case "$COMMAND_OUTPUT" in
+    *'parameter not set'*) fail "远端 prepare 不应因缺少可选 previous_release 参数失败" ;;
+  esac
+}
+
 test_invalid_remote_root_is_rejected
 test_unknown_config_key_is_rejected
 test_missing_export_page_is_rejected
@@ -233,4 +249,5 @@ test_failed_upload_discards_only_the_release_staging_directory
 test_failed_public_check_requests_rollback
 test_verify_reports_current_release_without_remote_write
 test_verify_reports_public_failure_without_remote_write
+test_remote_prepare_accepts_an_omitted_optional_previous_release
 printf 'PASS: docs release configuration validation\n'

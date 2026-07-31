@@ -21,3 +21,6 @@ Thumbs.db
 
 # Local Git worktrees
 .worktrees/
+
+# 文档站点发布报告
+artifacts/releases/

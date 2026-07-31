@@ -89,8 +89,22 @@ build_site() {
     cd "$RELEASE_REPO_ROOT"
     npx mintlify export --output "$zip_path"
   ) || return 1
+  unzip -tq "$zip_path" >/dev/null || return 1
   unzip -q "$zip_path" -d "$EXPORT_DIR" || return 1
   validate_export "$EXPORT_DIR"
+  EXPORT_ARCHIVE="$zip_path"
+}
+
+archive_export_dir() {
+  local export_dir="$1"
+  local archive_dir
+  archive_dir="$(mktemp -d /tmp/docs-release-archive.XXXXXX)"
+  EXPORT_ARCHIVE="$archive_dir/docs.zip"
+  (
+    cd "$export_dir"
+    zip -qr "$EXPORT_ARCHIVE" .
+  ) || return 1
+  unzip -tq "$EXPORT_ARCHIVE" >/dev/null || return 1
 }
 
 write_report() {

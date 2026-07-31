@@ -1,0 +1,263 @@
+---
+title: "豆包 Seed Audio 音频生成"
+description: "通过 /v1/audio/speech 生成音频，兼容 OpenAI 请求参数与豆包 Seed Audio 原生参数。"
+---
+
+# 豆包 Seed Audio 音频生成
+
+使用 KUNPO 的音频生成接口创建音效、环境音或语音音频。接口同时兼容 OpenAI Audio Speech 请求参数和豆包 Seed Audio 原生参数。
+
+## 接口地址
+
+```
+POST https://llm.ziy.cc/v1/audio/speech
+```
+
+认证方式：`Authorization: Bearer sk-你的密钥`。请求使用 `application/json`；成功时直接返回音频二进制，而非 JSON。
+
+<Note>
+  最大生成时长为 120 秒。计费为 ¥1/分钟，按上游返回的 `original_duration` 实际时长结算。
+</Note>
+
+## 可用模型
+
+| 模型 | 语言 |
+|------|------|
+| `seed-audio-1.0` | 中文、英文 |
+| `seed-audio-1.0-multilingual` | 中文、英文、日语、韩语、西班牙语、德语、法语、葡萄牙语、泰语、越南语、马来语、菲律宾语、意大利语、俄语、荷兰语、波兰语、土耳其语等 |
+
+## 兼容性与响应
+
+请求可使用两种参数风格：
+
+1. OpenAI 兼容：`input`、`response_format`
+2. 豆包原生：`text_prompt`、`references`、`audio_config`、`watermark`
+
+请求会转换为火山 `/api/v3/tts/create` 格式；响应则转换为 OpenAI `/v1/audio/speech` 习惯的音频二进制：Base64 音频会被解码，临时 URL 音频会被下载后返回。因此上游 JSON 中的 `duration`、`original_duration`、`url`、`subtitle` 不会直接返回给客户端，但 `original_duration` 会在网关内部用于计费。
+
+<Warning>
+  成功响应不能调用 `response.json()`。请读取二进制内容，例如 Python 的 `response.content`。
+</Warning>
+
+## 顶层请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `model` | string | 是 | `seed-audio-1.0` 或 `seed-audio-1.0-multilingual` |
+| `input` | string | 二选一 | OpenAI 兼容提示词，会转换为 `text_prompt` |
+| `text_prompt` | string | 二选一 | 豆包原生提示词，优先级高于 `input`，最多 3000 字符 |
+| `references` | object[] | 否 | 参考音频、音色或图片，详见下文 |
+| `audio_config` | object | 否 | 输出格式、采样率、语速、音量、音调等 |
+| `watermark` | object | 否 | 显式或隐式水印配置 |
+| `response_format` | string | 否 | OpenAI 兼容输出格式；默认 `mp3` |
+| `instructions` | string | 否 | 仅当 `text_prompt` 和 `input` 都为空时作为提示词 |
+| `voice` | string | 否 | Seed Audio 不使用此字段；指定音色请使用 `references[].speaker` |
+| `speed` | number | 否 | Seed Audio 不使用此字段；调速请使用 `audio_config.speech_rate` |
+
+提示词优先级：
+
+```text
+text_prompt > input > instructions
+```
+
+输出格式优先级：
+
+```text
+audio_config.format > response_format > mp3
+```
+
+## `references` 参考资源
+
+每个 `references` 元素只能选择一种资源类型。
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `speaker` | string | 已开通且可用的豆包语音合成 2.0 / 声音复刻音色 ID |
+| `audio_data` | string | 原始音频的 Base64，不要带 `data:audio/...;base64,` 前缀 |
+| `audio_url` | string | 火山服务可以公开访问的音频 URL |
+| `image_data` | string | 原始图片的 Base64，不要带 Data URI 前缀 |
+| `image_url` | string | 火山服务可以公开访问的图片 URL |
+
+限制与互斥关系：
+
+- 最多 3 条参考音频；每条最长 30 秒、最大 10 MB，格式为 `wav`、`mp3`、`pcm`、`ogg_opus`。
+- 最多 1 张参考图片，最大 10 MB，格式为 `jpeg`、`png`、`webp`。
+- 图片参考和音频参考不能混用。
+- `speaker`、`audio_data`、`audio_url` 三者互斥；`image_data`、`image_url` 二者互斥。
+- 使用多条参考音频时，可在提示词中用 `@音频1`、`@音频2`、`@音频3` 按数组顺序引用。
+- `speaker` 必须是当前火山账号实际开通的音色 ID，否则会被上游拒绝。
+
+<Tip>
+  `references[].image_url` 已通过 Pexels 公网图片实测。使用时提供火山服务可访问的公开图片 URL；它不能与任意音频类型的参考资源同时出现。
+</Tip>
+
+## `audio_config` 输出配置
+
+| 参数 | 类型 | 默认值 | 取值 |
+|------|------|--------|------|
+| `format` | string | KUNPO 默认 `mp3` | `wav`、`mp3`、`pcm`、`ogg_opus` |
+| `sample_rate` | int | KUNPO 默认 `48000` | `8000`、`16000`、`24000`、`32000`、`44100`、`48000` |
+| `speech_rate` | int | `0` | `-50`～`100`；`-50`=0.5 倍，`100`=2.0 倍 |
+| `loudness_rate` | int | `0` | `-50`～`100`；`-50`=0.5 倍，`100`=2.0 倍 |
+| `pitch_rate` | int | `0` | `-12`～`12` |
+| `enable_subtitle` | bool | `false` | 是否让火山生成字级时间戳 |
+
+- 火山文档中的 `sample_rate` 默认值 `40000` 不在官方可选值中；KUNPO 明确使用 `48000`。
+- `enable_subtitle` 会传给火山，但 KUNPO 成功响应只返回音频二进制，不返回字幕 JSON。
+- `response_format: "opus"` 会转换为火山的 `ogg_opus`。
+- `aac`、`flac` 不受火山 Seed Audio 支持，当前会降级为 `mp3`；建议只使用上表四种格式。
+
+## `watermark` 水印配置
+
+```json
+{
+  "aigc_watermark": false,
+  "aigc_metadata": {
+    "enable": false,
+    "content_producer": "",
+    "produce_id": "",
+    "content_propagator": "",
+    "propagate_id": ""
+  }
+}
+```
+
+- `aigc_watermark`：是否在音频结尾增加显式节奏标识，默认 `false`。
+- `aigc_metadata.enable`：是否在音频 Header 写入隐式水印元数据，默认 `false`。
+- 其余字段分别为内容生产者、制作编号、传播者和传播编号。
+
+## 最简调用
+
+```bash
+curl https://llm.ziy.cc/v1/audio/speech \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seed-audio-1.0",
+    "input": "生成十秒钟轻柔雨声，无人声",
+    "response_format": "mp3"
+  }' \
+  --output audio.mp3
+```
+
+## 使用原生参数
+
+```bash
+curl https://llm.ziy.cc/v1/audio/speech \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seed-audio-1.0-multilingual",
+    "text_prompt": "生成五秒钟清脆的风铃声，无人声",
+    "audio_config": {
+      "format": "wav",
+      "sample_rate": 24000,
+      "speech_rate": 0,
+      "loudness_rate": 0,
+      "pitch_rate": 0,
+      "enable_subtitle": false
+    },
+    "watermark": {"aigc_watermark": false}
+  }' \
+  --output wind-chime.wav
+```
+
+## 使用参考资源
+
+### 参考音频（Base64）
+
+```python
+import base64
+import requests
+
+with open("reference.wav", "rb") as f:
+    audio_base64 = base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    "https://llm.ziy.cc/v1/audio/speech",
+    headers={"Authorization": "Bearer sk-你的密钥"},
+    json={
+        "model": "seed-audio-1.0",
+        "text_prompt": "参考@音频1的音色，生成五秒钟舒缓环境音乐",
+        "references": [{"audio_data": audio_base64}],
+        "audio_config": {"format": "mp3", "sample_rate": 48000},
+    },
+    timeout=180,
+)
+response.raise_for_status()
+
+with open("result.mp3", "wb") as f:
+    f.write(response.content)
+```
+
+### 参考图片（Pexels 公网图片）
+
+```bash
+curl https://llm.ziy.cc/v1/audio/speech \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seed-audio-1.0-multilingual",
+    "text_prompt": "根据图片场景生成八秒钟环境音，无旁白",
+    "references": [
+      {
+        "image_url": "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1600"
+      }
+    ],
+    "audio_config": {"format": "mp3", "sample_rate": 48000}
+  }' \
+  --output scene.mp3
+```
+
+## 成功与失败响应
+
+成功时直接返回音频：
+
+```http
+HTTP/2 200
+Content-Type: audio/mpeg
+```
+
+| `format` | Content-Type |
+|----------|--------------|
+| `mp3` | `audio/mpeg` |
+| `wav` | `audio/wav` |
+| `pcm` | `audio/pcm` |
+| `ogg_opus` / `opus` | `audio/ogg` |
+
+失败时返回 KUNPO 标准 JSON：
+
+```json
+{
+  "error": {
+    "message": "错误详情",
+    "type": "bad_response_status_code",
+    "param": "",
+    "code": "bad_response_status_code"
+  }
+}
+```
+
+| 状态码 | 含义 |
+|:------:|------|
+| `400` | 参数、参考资源、音色 ID 或上游请求错误 |
+| `401` | API Key 无效 |
+| `403` | 用户分组或模型权限不足 |
+| `429` | 余额、额度或上游限流 |
+| `502` | 上游响应、音频下载或格式异常 |
+
+## 已验证范围
+
+2026-07-31 已在生产环境完成以下端到端验证：
+
+- `input` → `text_prompt` 映射、官方 `text_prompt` 字段
+- `audio_config.format=wav`、`sample_rate=24000`（实际返回 24 kHz WAV）
+- `pitch_rate`、`speech_rate`、`loudness_rate` 与 `watermark.aigc_watermark=false`
+- `references[].audio_data`
+- `references[].image_url`：通过（Pexels 公网图片实测）
+- `seed-audio-1.0` 与 `seed-audio-1.0-multilingual`
+- MP3、WAV 二进制响应，以及按 `original_duration` 计费
+
+以下参数保持原样透传，但尚未完成真实素材端到端验证：`references[].audio_url`、`references[].image_data`、`watermark.aigc_metadata`。
+
+火山官方说明请参阅 [音频生成模型文档](https://docs.volcengine.com/docs/6561/2550782?lang=zh)。

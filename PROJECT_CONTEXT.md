@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-06-11
+> 最后更新：2026-07-31
 
 ---
 
@@ -10,7 +10,7 @@
 
 KUNPO API 是一个统一的大语言模型（LLM）网关服务，用户通过一个 API Key 即可调用 150+ 主流模型（Claude、GPT、Gemini、DeepSeek、Qwen、GLM 等）。API 地址为 `https://llm.ziy.cc`。
 
-本文档项目是该服务的官方 API 文档站点，面向开发者，内容包含接口说明、请求示例、客户端接入指南等。
+本文档项目是该服务的官方 API 文档站点，面向开发者，内容包含文本、图片、音频、视频接口说明、请求示例与客户端接入指南等。
 
 ---
 
@@ -36,6 +36,7 @@ docs/
 │   ├── overview.mdx                           # API 总览索引
 │   ├── text-chat.mdx                          # 文本对话 (Chat Completions)
 │   ├── claude-messages.mdx                    # Claude Messages API (Anthropic 原生)
+│   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
 │   └── image-generation/
 │       ├── overview.mdx                       # 图片生成概览：模型列表、参数映射、计费
@@ -43,6 +44,7 @@ docs/
 │       └── asynchronous.mdx                   # 异步接口 POST /v1/images/tasks
 └── client-integration/
     ├── claude-code.mdx                        # Claude Code 接入
+    ├── cc-switch.mdx                          # CC Switch 接入
     ├── lobechat.mdx                           # LobeChat 接入
     └── openai-compatible.mdx                  # 通用 OpenAI 兼容客户端
 ```
@@ -54,8 +56,8 @@ docs/
 | 分组 | 页面 |
 |------|------|
 | 开始 | index, quick-start |
-| API 接口 | overview, text-chat, claude-messages, image-generation/*, doubao-video |
-| 客户端接入 | claude-code, lobechat, openai-compatible |
+| API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video |
+| 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
 ---
 
@@ -135,6 +137,11 @@ POST https://llm.ziy.cc/v1/chat/completions
 - metadata 参数：quality、output_format、background、input_fidelity 等
 - 完整 Python 异步工作流示例
 
+### seed-audio.mdx（豆包 Seed Audio 音频生成）
+- 接口：`POST https://llm.ziy.cc/v1/audio/speech`，成功时返回音频二进制
+- 支持 OpenAI 兼容参数与豆包原生参数、参考音频/图片、音频输出配置和水印
+- `references[].image_url` 已通过 Pexels 公网图片实测
+
 ### doubao-video.mdx（豆包视频生成）
 - 模型：doubao-seedance-2-0-260128（高品质）/ doubao-seedance-2-0-fast-260128（快速）
 - 异步模式：提交 → 轮询
@@ -145,6 +152,10 @@ POST https://llm.ziy.cc/v1/chat/completions
 - `ANTHROPIC_BASE_URL=https://llm.ziy.cc`（不加 `/v1`）
 - 环境变量 / 配置文件两种方式
 - 常见问题：404、超时、切换模型
+
+### client-integration/cc-switch.mdx
+- 通过 CC Switch 统一管理 Claude Code、Codex、Gemini CLI 等工具的 KUNPO API Provider 配置
+- 包含安装、Claude Code 接入、其他 CLI 配置与常见问题
 
 ### client-integration/lobechat.mdx
 - API Base URL：`https://llm.ziy.cc/v1`
@@ -168,6 +179,7 @@ POST https://llm.ziy.cc/v1/chat/completions
 5. **图片生成**：参数映射/计费只在 overview 维护；sync/async 不重复
 6. **图片 response_format**：传入 `b64_json` 仍返回 CDN URL
 7. **docs.json**：无 navbar/footer GitHub 占位链接
+8. **Seed Audio 响应**：成功时读取音频二进制，不调用 `response.json()`；图片参考使用火山服务可访问的公网 URL
 
 ---
 

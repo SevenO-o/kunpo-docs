@@ -17,8 +17,9 @@ KUNPO API 提供统一的大模型调用接口，兼容 OpenAI / Anthropic 接�
 | 文本对话 | OpenAI 兼容的 Chat Completions 接口，支持流式输出、Gemini 思考模式 |
 | Claude Messages | Anthropic 原生 Messages API，支持 Extended Thinking |
 | 图片生成 | 同步/异步两种模式，支持 Image-GI、Image-GPT2、Image-MI 等模型 |
+| 豆包 Seed Audio | 音频生成接口，兼容 OpenAI 请求参数与豆包原生参数，成功时返回音频二进制 |
 | 豆包视频生成 | 基于 Seedance 2.0 的文生视频、图生视频 API |
-| 客户端接入 | Claude Code、LobeChat 及通用 OpenAI 兼容客户端配置指南 |
+| 客户端接入 | Claude Code、CC Switch、LobeChat 及通用 OpenAI 兼容客户端配置指南 |
 
 ## 维护文档
 
@@ -56,6 +57,7 @@ docs/
 ├── api-reference/                   # API 接口文档
 │   ├── text-chat.mdx                # 文本对话
 │   ├── claude-messages.mdx          # Claude Messages API
+│   ├── seed-audio.mdx                # 豆包 Seed Audio 音频生成
 │   ├── doubao-video.mdx             # 豆包视频生成
 │   └── image-generation/            # 图片生成
 │       ├── overview.mdx             # 概览
@@ -63,6 +65,7 @@ docs/
 │       └── asynchronous.mdx         # 异步接口
 └── client-integration/              # 客户端接入指南
     ├── claude-code.mdx
+    ├── cc-switch.mdx
     ├── lobechat.mdx
     └── openai-compatible.mdx
 ```

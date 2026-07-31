@@ -33,6 +33,7 @@
                   "api-reference/image-generation/asynchronous"
                 ]
               },
+              "api-reference/seed-audio",
               "api-reference/doubao-video"
             ]
           },

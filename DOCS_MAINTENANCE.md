@@ -17,6 +17,7 @@
 | 图片 size/quality 映射规则 | `image-generation/overview.mdx` | sync 页参数表写「详见概览页」 |
 | 同步图片接口参数与示例 | `image-generation/synchronous.mdx` | 不写完整映射规则 |
 | 异步图片接口参数与示例 | `image-generation/asynchronous.mdx` | 不写完整映射规则 |
+| 音频生成参数与示例 | `api-reference/seed-audio.mdx` | 不在其他页面重复参考资源、输出配置或响应约定 |
 | 快速开始（第一次调用） | `quick-start.mdx` | 不展开高级参数 |
 | 首页卡片与一句话介绍 | `index.mdx` | 必须与真实模型/能力一致，细节链到子页 |
 | 客户端接入步骤 | `client-integration/*.mdx` | 不在 API 页重复客户端配置 |
@@ -106,7 +107,7 @@
 
 - 新页面**必须**加入 `docs.json` 对应分组，否则 export 不会包含
 - **不要**添加 GitHub 等占位外链（已移除 navbar/footer socials）
-- API 接口分组顺序：`overview` → `text-chat` → `claude-messages` → 图片生成子组 → `doubao-video`
+- API 接口分组顺序：`overview` → `text-chat` → `claude-messages` → 图片生成子组 → `seed-audio` → `doubao-video`
 - 图片生成子组顺序：`overview` → `synchronous` → `asynchronous`
 
 ---
@@ -187,6 +188,7 @@ docs/
 │   ├── overview.mdx                   # API 总览索引
 │   ├── text-chat.mdx
 │   ├── claude-messages.mdx
+│   ├── seed-audio.mdx
 │   ├── doubao-video.mdx
 │   └── image-generation/
 │       ├── overview.mdx               # 图片：模型/计费/映射（主）
@@ -194,6 +196,7 @@ docs/
 │       └── asynchronous.mdx           # 图片：异步接口
 └── client-integration/
     ├── claude-code.mdx
+    ├── cc-switch.mdx
     ├── lobechat.mdx
     └── openai-compatible.mdx
 ```

@@ -97,13 +97,14 @@ write_report() {
   local report_path="$1"
   local status="$2"
   local rollback_status="$3"
+  local checks_json="${4:-[]}"
   mkdir -p "$(dirname "$report_path")"
-  python3 - "$report_path" "$status" "$RELEASE_ID" "$SOURCE_COMMIT" "$SOURCE_DIRTY" "$DOMAIN" "$ENTRY_PATHS" "$rollback_status" <<'PY'
+  python3 - "$report_path" "$status" "$RELEASE_ID" "$SOURCE_COMMIT" "$SOURCE_DIRTY" "$DOMAIN" "$ENTRY_PATHS" "$rollback_status" "$checks_json" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
 
-path, status, release_id, source_commit, source_dirty, domain, entry_paths, rollback_status = sys.argv[1:]
+path, status, release_id, source_commit, source_dirty, domain, entry_paths, rollback_status, checks_json = sys.argv[1:]
 report = {
     "status": status,
     "releaseId": release_id,
@@ -111,7 +112,7 @@ report = {
     "sourceDirty": source_dirty == "true",
     "domain": domain,
     "entryPaths": entry_paths.split(","),
-    "checks": [],
+    "checks": json.loads(checks_json),
     "rollbackStatus": rollback_status,
     "timestamp": datetime.now(timezone.utc).isoformat(),
 }

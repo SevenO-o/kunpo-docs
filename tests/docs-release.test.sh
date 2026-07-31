@@ -17,6 +17,7 @@ cat >/dev/null || true
 case " $* " in
   *' promote '*) printf '%s\n' 'releases/previous' ;;
   *' verify '*) printf '%s\n' 'releases/current' ;;
+  *' extract '*) exit "${DOCS_RELEASE_EXTRACT_STATUS:-0}" ;;
 esac
 EOF
 cat > "$FAKE_BIN/scp" <<'EOF'
@@ -206,6 +207,21 @@ test_failed_upload_discards_only_the_release_staging_directory() {
   assert_file_contains "$report" '"status": "failed"'
 }
 
+test_failed_remote_extract_discards_staging_without_promotion() {
+  local config="$FIXTURE_DIR/extract-failure.conf"
+  local export_dir="$FIXTURE_DIR/extract-failure-export"
+  local report="$FIXTURE_DIR/extract-failure.json"
+  write_valid_config "$config"
+  make_export "$export_dir" index.html quick-start/index.html api-reference/overview/index.html
+  : > "$SSH_LOG"
+  run_expect_failure env PATH="$FAKE_BIN:$PATH" DOCS_RELEASE_SSH_LOG="$SSH_LOG" DOCS_RELEASE_SCP_LOG="$SCP_LOG" DOCS_RELEASE_CURL_STATUS=200 DOCS_RELEASE_EXTRACT_STATUS=1 "$ROOT/scripts/release-docs.sh" --config "$config" --export-dir "$export_dir" --report "$report"
+  assert_file_contains "$SSH_LOG" 'dify sh -s -- extract /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_contains "$SSH_LOG" 'dify sh -s -- discard /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_not_contains "$SSH_LOG" 'dify sh -s -- promote /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_not_contains "$SSH_LOG" 'dify sh -s -- rollback /opt/1panel/www/sites/docs.ziy.cc'
+  assert_file_contains "$report" '"status": "failed"'
+}
+
 test_failed_public_check_requests_rollback() {
   local config="$FIXTURE_DIR/rollback.conf"
   local export_dir="$FIXTURE_DIR/rollback-export"
@@ -272,6 +288,7 @@ test_dry_run_writes_a_sanitized_report
 test_publish_uses_only_the_registered_site_target
 test_export_directory_is_archived_before_upload
 test_failed_upload_discards_only_the_release_staging_directory
+test_failed_remote_extract_discards_staging_without_promotion
 test_failed_public_check_requests_rollback
 test_verify_reports_current_release_without_remote_write
 test_verify_reports_public_failure_without_remote_write

@@ -17,7 +17,7 @@ scripts/release-docs.sh --config deployment/sites/docs.ziy.cc.conf --dry-run
 scripts/verify-docs-release.sh --config deployment/sites/docs.ziy.cc.conf
 ```
 
-`--dry-run` 会完成本地 Mintlify 构建和产物校验，但不会连接服务器。`verify-docs-release.sh` 只读取服务器入口和 OpenResty 域名配置，再检查首页、快速开始和 API 概览三条公网 URL；它不会上传、切换、reload 或删除文件。首次真实发布前，线上入口会报告为 `legacy-static-directory`；首次发布成功后才会变为可回滚的版本软链接。
+`--dry-run` 会完成本地 Mintlify 构建、zip 完整性和产物校验，但不会连接服务器。真实发布只上传一个本次导出的 zip；服务器仅在对应版本暂存目录解压并校验后才切换入口。`verify-docs-release.sh` 只读取服务器入口和 OpenResty 域名配置，再检查首页、快速开始和 API 概览三条公网 URL；它不会上传、切换、reload 或删除文件。首次真实发布前，线上入口会报告为 `legacy-static-directory`；首次发布成功后才会变为可回滚的版本软链接。
 
 ## 固定边界
 

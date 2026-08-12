@@ -89,7 +89,7 @@ POST https://llm.ziy.cc/v1/chat/completions
 
 ### index.mdx（首页）
 - 热门模型卡片：Gemini 3.1 Flash Lite、Claude Sonnet 4.6、DeepSeek-R1（链到 quick-start 锚点）
-- 图片生成卡片：对外展示 Nano Banana Pro / Nano Banana 2 / GPT Image 2 / Midjourney（API 调用仍用 Image-GI 等代号）
+- 图片生成卡片：对外展示 Nano Banana Pro / Nano Banana 2 / GPT Image 2 / Midjourney / Qwen Image 3.0 Pro（API 调用仍用 Image-GI 等代号）
 - 无 GitHub 等占位外链
 
 ### quick-start.mdx（快速开始）
@@ -118,7 +118,7 @@ POST https://llm.ziy.cc/v1/chat/completions
 - Chat Completions vs Messages 对比表
 
 ### image-generation/overview.mdx（图片生成概览）
-- 支持模型表含「API 模型名 ↔ 对应名称」：Nano Banana Pro / Nano Banana 2 / GPT Image 2 / Midjourney
+- 支持模型表含「API 模型名 ↔ 对应名称」：Nano Banana Pro / Nano Banana 2 / GPT Image 2 / Midjourney / Qwen Image 3.0 Pro
 - 模型选择建议表、按次计费表（唯一维护位置）
 
 ### image-generation/synchronous.mdx（同步接口）

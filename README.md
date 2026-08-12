@@ -16,7 +16,7 @@ KUNPO API 提供统一的大模型调用接口，兼容 OpenAI / Anthropic 接�
 | 快速开始 | 获取 API Key，5 分钟完成第一次调用 |
 | 文本对话 | OpenAI 兼容的 Chat Completions 接口，支持流式输出、Gemini 思考模式 |
 | Claude Messages | Anthropic 原生 Messages API，支持 Extended Thinking |
-| 图片生成 | 同步/异步两种模式，支持 Image-GI、Image-GPT2、Image-MI 等模型 |
+| 图片生成 | 同步/异步两种模式，支持 Image-GI、Image-GI2、Image-GPT2、Image-MI、qwen-image-3.0-pro 等模型 |
 | 豆包 Seed Audio | 音频生成接口，兼容 OpenAI 请求参数与豆包原生参数，成功时返回音频二进制 |
 | 豆包视频生成 | 基于 Seedance 2.0 的文生视频、图生视频 API |
 | 客户端接入 | Claude Code、CC Switch、LobeChat 及通用 OpenAI 兼容客户端配置指南 |

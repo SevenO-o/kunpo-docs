@@ -75,9 +75,10 @@
 | `Image-GI2` | Nano Banana 2 |
 | `Image-GPT2` | GPT Image 2 |
 | `Image-MI` | Midjourney |
+| `qwen-image-3.0-pro` | Qwen Image 3.0 Pro |
 
 - **首页 / 营销文案**：使用上表「对外展示名」，不写 `Image-GI` 等代号
-- **API 文档 / 代码示例**：继续使用 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`
+- **API 文档 / 代码示例**：继续使用 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro`
 
 **禁止**在 API 示例页把 `model` 改成展示名；**禁止**在首页把展示名改成未上表所列的别称（如即梦、DALL-E）。
 
@@ -95,7 +96,7 @@
 |------|----------|
 | 图片 `response_format: b64_json` | 实际仍返回 CDN `url`，`b64_json` 为空；overview + sync 已说明 |
 | 图片存储 | 统一转存 KUNPO CDN：`https://kunpoapiimg.ziy.cc/...` |
-| 图片计费 | 四款模型均为**按次计费**，价格表只在 overview 维护 |
+| 图片计费 | 五款模型均为**按次计费**，价格表只在 overview 维护 |
 | 图生图参考图 | 须公网可访问 URL，**禁止** `https://example.com/...` |
 | Claude Code Base URL | `https://llm.ziy.cc`（不加 `/v1`） |
 | OpenAI 兼容 Base URL | `https://llm.ziy.cc/v1` |
@@ -209,7 +210,7 @@ docs/
 |------|----------|
 | 在 sync 页新增完整计费表 | 只在 overview 维护，sync 加链接 |
 | quick-start 用未验证模型 | 只用第 2 节已验证模型 |
-| 首页写「DALL-E / 即梦」等未接入模型 | 首页图片能力写展示名表四款；API 页用 Image-* 代号 |
+| 首页写「DALL-E / 即梦」等未接入模型 | 首页图片能力写展示名表五款；API 页用 API `model` 名 |
 | Image-GPT2 写成 OpenAI 直连 | API 页用代号 `Image-GPT2`，展示名 GPT Image 2 |
 | 三处都写 DeepSeek 说明 | text-chat 写 OpenAI 格式，claude-messages 写 c/ 前缀，互相链接 |
 | 导出后手动改 HTML | 改 `.mdx` 后重新 export |

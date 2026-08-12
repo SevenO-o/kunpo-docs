@@ -1,11 +1,11 @@
 ---
 title: "图片生成"
-description: "KUNPO 图片生成 API — 支持 Image-GI、Image-GI2、Image-GPT2、Image-MI 四款模型，兼容 OpenAI Images 接口格式。"
+description: "KUNPO 图片生成 API — 支持 Image-GI、Image-GI2、Image-GPT2、Image-MI、qwen-image-3.0-pro 五款模型，兼容 OpenAI Images 接口格式。"
 ---
 
 # 图片生成
 
-KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口格式。当前提供 **Nano Banana Pro**、**Nano Banana 2**、**GPT Image 2**、**Midjourney** 四款模型（API 调用代号分别为 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`），一个 API Key 即可调用，无需关心上游鉴权细节。
+KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口格式。当前提供 **Nano Banana Pro**、**Nano Banana 2**、**GPT Image 2**、**Midjourney**、**Qwen Image 3.0 Pro** 五款模型（API 调用代号分别为 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro`），一个 API Key 即可调用，无需关心上游鉴权细节。
 
 ## 支持模型
 
@@ -17,9 +17,14 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 | `Image-GI2` | Nano Banana 2 | 文生图（升级版，画质更佳） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
 | `Image-GPT2` | GPT Image 2 | 文生图（高质量） | [异步](/api-reference/image-generation/asynchronous)（同步亦可） | 数分钟 |
 | `Image-MI` | Midjourney | 文生图（MJ 风格，一次返回 4 张） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
+| `qwen-image-3.0-pro` | Qwen Image 3.0 Pro | 文生图、复杂版式与文字渲染 | [同步](/api-reference/image-generation/synchronous) | 约 50-60 秒/张 |
 
 <Note>
   API 模型名（如 `Image-GI`）为平台统一代号，请求示例与 SDK 调用须使用上表左侧名称；「对应名称」仅作识别参考。
+</Note>
+
+<Note>
+  `qwen-image-3.0-pro` 单张约需 50–60 秒；上游官方限制为 **1 RPM**，请按每分钟最多 1 次请求安排调用。
 </Note>
 
 ### 选择建议
@@ -27,9 +32,20 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 | 场景 | 推荐模型 | 原因 |
 |------|----------|------|
 | 日常文生图、快速出图 | `Image-GI2` | 速度快、性价比高 |
+| 复杂图文排版、中文小字与界面素材生成 | `qwen-image-3.0-pro` | 擅长高密度信息版式、文字渲染与界面仿真；通过同步接口调用，注意上游 1 RPM 限流 |
 | 图生图 / 风格迁移 | `Image-GI` | 支持传入参考图 URL |
 | 高质量精细出图 | `Image-GPT2` | 画质更好，建议走异步接口 |
 | 一次生成多张候选图 | `Image-MI` | 单次请求固定返回 4 张 |
+
+### Qwen Image 3.0 Pro 能力
+
+`qwen-image-3.0-pro` 面向需要把图像直接用于内容与界面生产的场景：不仅追求画面效果，也强调文字、版式和信息表达的可用性。
+
+| 能力 | 说明 |
+|------|------|
+| 内容丰富 | 支持最大 4.5k token 输入，可生成图中图与高密度信息排版；适合报纸、分镜、菜单、试卷等复杂版面。 |
+| 细节真实 | 支持约 10px 小字精准渲染，并能呈现微表情、毛孔、发丝等细节，获得接近真实摄影的质感。 |
+| 知识厚实 | 支持 12 种语言与多种字体的原生渲染，可用于主流网页、游戏、直播等界面仿真，并可纳入外部知识。 |
 
 <Note>
   `Image-MI` 仅支持文生图（`model` + `prompt`），`size`、`quality`、`images` 等参数对其无效。按次计费，每次请求固定返回 4 张图片。
@@ -43,7 +59,7 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 
 <CardGroup cols={2}>
   <Card title="同步接口" href="/api-reference/image-generation/synchronous">
-    `POST /v1/images/generations` — 提交后等待完成，直接返回图片 URL。适合 GI/GI2/Image-MI。
+    `POST /v1/images/generations` — 提交后等待完成，直接返回图片 URL。适合 GI/GI2/Image-MI/Qwen Image 3.0 Pro。
   </Card>
 
   <Card title="异步接口" href="/api-reference/image-generation/asynchronous">
@@ -67,10 +83,10 @@ Authorization: Bearer sk-你的密钥
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `model` | string | **是** | 模型名称：`Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI` |
+| `model` | string | **是** | 模型名称：`Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro` |
 | `prompt` | string | **是** | 图片描述文本 |
-| `size` | string | 否 | 图片尺寸。仅控制宽高比，**不保证输出像素与传入值一致**，详见下方映射规则 |
-| `quality` | string | 否 | 图片质量。GI 映射为分辨率，GPT 映射为质量等级 |
+| `size` | string | 否 | 图片尺寸。Qwen 模型要求使用 `宽x高` 格式，像素面积为 512×512 至 2048×2048、宽高比为 1:8 至 8:1，不支持 `auto`；其他模型详见下方映射规则 |
+| `quality` | string | 否 | 图片质量。GI 映射为分辨率，GPT 映射为质量等级；Qwen 模型不受此参数影响，未传 `size` 时默认生成 2048×2048 图片 |
 | `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
 | `images` | string[] | 否 | 参考图 URL 数组，用于图生图 |
 | `image` | string | 否 | 单张参考图（URL 或 Base64），系统自动处理上传 |
@@ -86,7 +102,7 @@ Authorization: Bearer sk-你的密钥
 ### `size` 映射规则
 
 <Warning>
-  **关于输出尺寸：** `size` 参数仅用于指定**宽高比**，生成的图片实际像素尺寸**不会严格等于**传入值。模型会根据内部算法自适应输出分辨率，最终尺寸以实际返回的图片为准。
+  **关于输出尺寸：** GI 系列的 `size` 参数仅用于指定**宽高比**，实际像素尺寸不保证等于传入值；最终尺寸始终以实际返回的图片为准。
 </Warning>
 
 | `size` 值 | GI 模型（宽高比） | GPT 模型 |
@@ -97,6 +113,10 @@ Authorization: Bearer sk-你的密钥
 | `auto` | — | auto |
 | 其它 | 回落 1:1 | 回落 1024x1024 |
 
+<Note>
+  **Qwen 模型的 `size` 规则：** `size` 使用 `宽x高` 格式，如 `1024x1024`；总像素面积须介于 **262,144**（512×512）与 **4,194,304**（2048×2048）之间；宽高比须介于 **1:8** 与 **8:1** 之间；不支持 `auto`。
+</Note>
+
 ### `quality` 映射规则
 
 | `quality` 值 | GI 模型（分辨率） | GPT 模型 |
@@ -105,6 +125,10 @@ Authorization: Bearer sk-你的密钥
 | `medium` / `2k` | 2K | — |
 | `low` | 1K | low |
 | 默认 / 空 | 1K | medium |
+
+<Note>
+  **Qwen 模型的 `quality` 规则：** `quality` 不影响生图质量或输出分辨率；未传 `size` 时，`high`、`medium`、`low` 均默认生成 **2048×2048** 图片。
+</Note>
 
 ## 计费说明
 
@@ -116,6 +140,7 @@ Authorization: Bearer sk-你的密钥
 | `Image-GI2` | $0.09 | ≈ ¥0.65 | 固定按次 |
 | `Image-GPT2` | $0.05 | ≈ ¥0.36 | 固定按次 |
 | `Image-MI` | $0.069 | ≈ ¥0.5 | 固定按次（一次 4 张） |
+| `qwen-image-3.0-pro` | $0.50 | ≈ ¥3.4 | 固定按次 |
 
 <Tip>
   以上价格仅供参考，实际计费请以控制台模型市场中的实时价格为准。

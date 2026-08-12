@@ -12,16 +12,16 @@ POST https://llm.ziy.cc/v1/images/generations
 提交图片生成任务并同步等待结果返回。网关提交后每 2 秒轮询，直至完成（最长约 15 分钟）。
 
 <Note>
-  `model` 参数与对应产品名称：`Image-GI`（Nano Banana Pro）、`Image-GI2`（Nano Banana 2）、`Image-GPT2`（GPT Image 2）、`Image-MI`（Midjourney）。详见 [图片生成概览](/api-reference/image-generation/overview#支持模型)。
+  `model` 参数与对应产品名称：`Image-GI`（Nano Banana Pro）、`Image-GI2`（Nano Banana 2）、`Image-GPT2`（GPT Image 2）、`Image-MI`（Midjourney）、`qwen-image-3.0-pro`（Qwen Image 3.0 Pro）。详见 [图片生成概览](/api-reference/image-generation/overview#支持模型)。
 </Note>
 
 ## 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `model` | string | **是** | `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI` |
+| `model` | string | **是** | `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro` |
 | `prompt` | string | **是** | 图片描述文本 |
-| `size` | string | 否 | 图片尺寸，仅控制宽高比，**不保证输出像素与传入值一致**，详见 [概览页参数映射](/api-reference/image-generation/overview) |
+| `size` | string | 否 | 图片尺寸，仅控制宽高比，**不保证输出像素与传入值一致**，详见 [概览页参数映射](/api-reference/image-generation/overview#size-映射规则) |
 | `quality` | string | 否 | 图片质量 |
 | `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
 | `images` | string[] | 否 | 参考图 URL 数组（图生图） |
@@ -175,6 +175,22 @@ POST https://llm.ziy.cc/v1/images/generations
       ]
     }
     ```
+  </Accordion>
+
+  <Accordion title="Qwen Image 3.0 Pro 文生图">
+    ```bash
+    curl -X POST https://llm.ziy.cc/v1/images/generations \
+      -H "Authorization: Bearer sk-你的密钥" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "qwen-image-3.0-pro",
+        "prompt": "一只橘猫坐在窗边，柔和的晨光，写实摄影"
+      }'
+    ```
+
+    <Note>
+      受上游官方 **1 RPM** 限流影响，单张通常约需 50–60 秒；请将请求频率控制在每分钟最多 1 次。
+    </Note>
   </Accordion>
 </AccordionGroup>
 

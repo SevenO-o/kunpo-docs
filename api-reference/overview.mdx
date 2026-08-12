@@ -51,7 +51,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
   </Card>
 
   <Card title="图片生成" icon="image" href="/api-reference/image-generation/overview">
-    支持 Image-GI / Image-GI2 / Image-GPT2 / Image-MI。GI 系列建议同步接口，Image-GPT2 建议异步接口。
+    支持 Image-GI / Image-GI2 / Image-GPT2 / Image-MI / qwen-image-3.0-pro。GI 系列和 Qwen Image 3.0 Pro 建议同步接口，Image-GPT2 建议异步接口。
   </Card>
 
   <Card title="豆包 Seed Audio" icon="volume-high" href="/api-reference/seed-audio">
@@ -86,7 +86,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 
 | 模式 | 特点 | 适用接口 |
 |------|------|----------|
-| **同步** | 请求阻塞至任务完成，直接返回结果 | 文本对话、图片 GI/GI2/MI、豆包 Seed Audio |
+| **同步** | 请求阻塞至任务完成，直接返回结果 | 文本对话、图片 GI/GI2/MI/Qwen Image 3.0 Pro、豆包 Seed Audio |
 | **异步** | 提交后立即返回 `task_id`，客户端轮询结果 | 图片 Image-GPT2、豆包视频 |
 
 异步任务通用流程：

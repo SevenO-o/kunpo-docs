@@ -21,8 +21,8 @@ POST https://llm.ziy.cc/v1/images/generations
 |------|------|:----:|------|
 | `model` | string | **是** | `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro` |
 | `prompt` | string | **是** | 图片描述文本 |
-| `size` | string | 否 | 图片尺寸，仅控制宽高比，**不保证输出像素与传入值一致**，详见 [概览页参数映射](/api-reference/image-generation/overview#size-映射规则) |
-| `quality` | string | 否 | 图片质量 |
+| `size` | string | 否 | 图片尺寸。GI / GI2 使用标准比例映射；GPT 支持标准比例映射和合法自定义 `WxH`；Qwen 传入时仅接受具体 `宽x高`，未传时由模型根据提示词自动推荐分辨率。详见 [概览页参数映射](/api-reference/image-generation/overview#size-使用规则) |
+| `quality` | string | 否 | 图片质量；GI 映射为分辨率，GPT 映射为质量等级；Qwen 不支持此参数，建议不要传入 |
 | `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
 | `images` | string[] | 否 | 参考图 URL 数组（图生图） |
 | `image` | string | 否 | 单张参考图（URL 或 Base64） |

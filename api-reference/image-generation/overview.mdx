@@ -89,6 +89,14 @@ Authorization: Bearer sk-你的密钥
 | `output_format` | string | 输出格式，默认 `png` |
 | `input_fidelity` | string | `high` 或 `low` |
 
+### 参数职责概览
+
+| 模型 | `size` 的作用 | `quality` 的作用 |
+|------|---------------|------------------|
+| Image-GPT2 | 决定输出像素尺寸 | 决定画质档位 |
+| Image-GI / Image-GI2 | 决定输出比例 | 决定分辨率档位 |
+| Qwen Image 3.0 Pro | 传入具体宽高；未传时由模型根据提示词推荐分辨率 | 不支持 |
+
 ### `size` 使用规则
 
 <Warning>
@@ -137,11 +145,11 @@ Image-GPT2 未传 `size` 时默认返回 `1024×1024`；合法自定义 `WxH` �
 
 ### `quality` 映射规则
 
-| `quality` 值 | GI 模型（分辨率） | GPT 模型 | Qwen 模型 |
-|-------------|:-----------------:|:--------:|:--------:|
-| `hd` / `high` | 4K | high | 不支持 |
-| `medium` / `2k` | 2K | — | 不支持 |
+| `quality` 值 | GI / GI2（分辨率） | Image-GPT2（Quality） | Qwen 模型 |
+|-------------|:------------------:|:--------------------:|:--------:|
 | `low` | 1K | low | 不支持 |
+| `medium` | 2K | medium | 不支持 |
+| `high` | 4K | high | 不支持 |
 | 默认 / 空 | 1K | medium | 不适用 |
 
 <Note>

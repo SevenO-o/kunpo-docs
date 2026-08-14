@@ -1,0 +1,49 @@
+---
+title: "Nano Banana 2（Image-GI2）"
+description: "使用 Image-GI2 进行高质量、快速的同步文生图。"
+---
+
+# Nano Banana 2（Image-GI2）
+
+请求时使用 API 模型名 `Image-GI2`；Nano Banana 2 仅为展示名称。
+
+## 适用场景
+
+- 日常文生图
+- 希望兼顾快速出图与更好画质的场景
+
+## 调用方式
+
+使用[同步图片生成接口](/api-reference/image-generation/synchronous)。该页统一说明端点、认证和响应格式。
+
+## 最小同步示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GI2",
+    "prompt": "赛博朋克风格的武汉长江大桥夜景",
+    "size": "1536x1024",
+    "quality": "high"
+  }'
+```
+
+## 尺寸与质量规则
+
+`Image-GI2` 与 `Image-GI` 使用相同的比例和质量映射：`size` 只决定比例，不保证任意 `WxH` 像素直出；`quality` 的 `low`、`medium`、`high` 分别对应 1K、2K、4K；`auto` 不支持。
+
+完整的比例表、未匹配尺寸回退行为和默认质量规则见 [Nano Banana Pro 的尺寸与质量规则](/api-reference/image-generation/models/nano-banana-pro#尺寸与质量规则)。
+
+## 限制与常见误用
+
+- 未传 `size` 或传入未匹配尺寸时按 1:1 处理，通常返回 `1024×1024`。
+- 不要将 `size` 当作任意像素尺寸控制。
+- 最终像素尺寸以实际返回图片为准。
+
+## 相关文档
+
+- [图片生成概览](/api-reference/image-generation/overview)
+- [Nano Banana Pro（Image-GI）](/api-reference/image-generation/models/nano-banana-pro)
+- [同步图片生成](/api-reference/image-generation/synchronous)

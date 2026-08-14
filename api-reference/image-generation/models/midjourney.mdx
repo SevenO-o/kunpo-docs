@@ -1,0 +1,52 @@
+---
+title: "Midjourney（Image-MI）"
+description: "使用 Image-MI 进行 Midjourney 风格的同步文生图，每次请求固定返回 4 张图片。"
+---
+
+# Midjourney（Image-MI）
+
+请求时使用 API 模型名 `Image-MI`；Midjourney 仅为展示名称。
+
+## 适用场景
+
+- 需要 Midjourney 风格的文生图
+- 希望一次获得多张候选图进行筛选
+
+## 调用方式
+
+使用[同步图片生成接口](/api-reference/image-generation/synchronous)。该页统一说明端点、认证和响应格式。
+
+## 最小同步示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-MI",
+    "prompt": "一只可爱的橘猫坐在窗台上，阳光照射，写实风格"
+  }'
+```
+
+响应中的 `data` 数组固定含 4 项：
+
+```json
+{
+  "created": 1715689600,
+  "data": [
+    { "url": "https://kunpoapiimg.ziy.cc/...1" },
+    { "url": "https://kunpoapiimg.ziy.cc/...2" },
+    { "url": "https://kunpoapiimg.ziy.cc/...3" },
+    { "url": "https://kunpoapiimg.ziy.cc/...4" }
+  ]
+}
+```
+
+## 限制与常见误用
+
+`Image-MI` 仅支持文生图（`model` + `prompt`）。`size`、`quality`、`images` 等参数对其无效；每次请求固定返回 4 张图片。
+
+## 相关文档
+
+- [图片生成概览](/api-reference/image-generation/overview)
+- [同步图片生成](/api-reference/image-generation/synchronous)

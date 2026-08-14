@@ -1,0 +1,79 @@
+---
+title: "Nano Banana Pro（Image-GI）"
+description: "使用 Image-GI 进行文生图，以及基于公网参考图的图生图。"
+---
+
+# Nano Banana Pro（Image-GI）
+
+请求时使用 API 模型名 `Image-GI`；Nano Banana Pro 仅为展示名称。
+
+## 适用场景
+
+- 日常文生图和快速出图
+- 基于主体图或风格图进行图生图、风格迁移
+
+## 调用方式
+
+使用[同步图片生成接口](/api-reference/image-generation/synchronous)。该页统一说明端点、认证和响应格式。
+
+## 最小同步示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GI",
+    "prompt": "赛博朋克风格的武汉长江大桥夜景",
+    "size": "1536x864",
+    "quality": "high"
+  }'
+```
+
+## 尺寸与质量规则
+
+`Image-GI` 按比例处理 `size`，不保证按传入的 `WxH` 直出；最终像素尺寸以实际返回图片为准。
+
+| 标准比例 | `size` 映射 |
+|----------|-------------|
+| 1:1 | `1024x1024` |
+| 16:9 | `1792x1024`、`1536x1024`、`1280x720`、`1536x864` |
+| 9:16 | `1024x1792`、`1024x1536`、`720x1280`、`864x1536` |
+| `auto` | 不支持 |
+
+未传 `size` 或传入未匹配尺寸时，按 1:1 处理，通常返回 `1024×1024`。
+
+| `quality` | 分辨率 |
+|-----------|--------|
+| `low` | 1K |
+| `medium` | 2K |
+| `high` | 4K |
+| 默认 / 空 | 1K |
+
+## 图生图
+
+通过 `images` 传入公网可访问的参考图 URL。建议使用 KUNPO CDN 图片地址；图片无法被上游下载时，请求可能失败。
+
+```json
+{
+  "model": "Image-GI",
+  "prompt": "保持构图，改为水彩风格",
+  "images": ["<你的公网可访问参考图 URL>"]
+}
+```
+
+<Note>
+  `<你的公网可访问参考图 URL>` 是填写说明，不是可运行 URL。请替换为你已发布且可直接访问的图片地址；不要使用不可访问的示例站点占位地址。
+</Note>
+
+## 限制与常见误用
+
+- `size` 只用于比例映射，不是任意像素尺寸控制。
+- `auto` 不受支持。
+- 图生图参考图必须是公网可访问 URL。
+
+## 相关文档
+
+- [图片生成概览](/api-reference/image-generation/overview)
+- [Nano Banana 2（Image-GI2）](/api-reference/image-generation/models/nano-banana-2)
+- [同步图片生成](/api-reference/image-generation/synchronous)

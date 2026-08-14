@@ -17,7 +17,7 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 | `Image-GI2` | Nano Banana 2 | 文生图（升级版，画质更佳） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
 | `Image-GPT2` | GPT Image 2 | 文生图（高质量） | [异步](/api-reference/image-generation/asynchronous)（同步亦可） | 数分钟 |
 | `Image-MI` | Midjourney | 文生图（MJ 风格，一次返回 4 张） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
-| `qwen-image-3.0-pro` | Qwen Image 3.0 Pro | 文生图、复杂版式与文字渲染 | [同步](/api-reference/image-generation/synchronous) | 约 50-60 秒/张 |
+| `qwen-image-3.0-pro` | Qwen Image 3.0 Pro | 文生图、多模态文生图与图生图、复杂版式与文字渲染 | [同步](/api-reference/image-generation/synchronous) | 约 50-60 秒/张 |
 
 <Note>
   API 模型名（如 `Image-GI`）为平台统一代号，请求示例与 SDK 调用须使用上表左侧名称；「对应名称」仅作识别参考。
@@ -43,6 +43,10 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 
 <Note>
   图生图时，参考图须为**公网可访问的 URL**（推荐使用 KUNPO CDN 上的图片地址），否则上游可能报图片下载错误。
+</Note>
+
+<Note>
+  `qwen-image-3.0-pro` 也支持通过同步接口的多模态请求进行文生图和图生图：将图片与文本放入 `input.messages[].content[]`。顶层 `image` / `images` 字段对 Qwen 不产生可靠的参考图效果，完整请求形态见[同步接口](/api-reference/image-generation/synchronous#qwen-多模态文生图)；生产选型仍可优先考虑支持公网参考图 URL 的 `Image-GI`。
 </Note>
 
 ## 接入方式
@@ -78,8 +82,10 @@ Authorization: Bearer sk-你的密钥
 | `size` | string | 否 | 图片尺寸。GI / GI2 使用标准比例映射；GPT 支持标准比例映射和合法自定义 `WxH`；Qwen 传入时仅接受具体 `宽x高`，未传时由模型根据提示词自动推荐分辨率。详见下方规则 |
 | `quality` | string | 否 | 图片质量。GI 映射为分辨率，GPT 映射为质量等级；Qwen 模型不支持此参数，建议不要传入 |
 | `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
-| `images` | string[] | 否 | 参考图 URL 数组，用于图生图 |
-| `image` | string | 否 | 单张参考图（URL 或 Base64），系统自动处理上传 |
+| `images` | string[] | 否 | 参考图 URL 数组，用于 `Image-GI` 等模型的图生图；对 Qwen 请使用 `input.messages[].content[].image` |
+| `image` | string | 否 | 单张参考图（URL 或 Base64）；对 Qwen 请使用多模态 `input.messages[].content[]`，不要使用顶层字段 |
+| `input` | object | 多模态时是 | Qwen 多模态请求容器，使用 `input.messages[].content[]` 放置图片和文本 |
+| `parameters` | object | 多模态时否 | Qwen 多模态形态的参数容器；已验证字段和示例见同步接口 |
 
 ### GPT 专属参数
 
@@ -95,7 +101,7 @@ Authorization: Bearer sk-你的密钥
 |------|---------------|------------------|
 | Image-GPT2 | 决定输出像素尺寸 | 决定画质档位 |
 | Image-GI / Image-GI2 | 决定输出比例 | 决定分辨率档位 |
-| Qwen Image 3.0 Pro | 传入具体宽高；未传时由模型根据提示词推荐分辨率 | 不支持 |
+| Qwen Image 3.0 Pro | 普通请求传入具体宽高；未传时由模型根据提示词推荐分辨率；多模态请求使用 `input.messages[].content[]` | 不支持 |
 
 ### `size` 使用规则
 
@@ -142,6 +148,10 @@ Image-GPT2 未传 `size` 时默认返回 `1024×1024`；合法自定义 `WxH` �
 | 未传 `size` | 由模型根据提示词自动推荐分辨率，实际尺寸以返回图片为准 |
 | 像素面积 | `262,144`（512×512）至 `4,194,304`（2048×2048） |
 | 宽高比 | `1:8` 至 `8:1` |
+
+<Note>
+  多模态 Qwen 请求仍需保留顶层 `prompt`；图片与多模态文本放在 `input.messages[].content[]`。当前 Gateway 示例中的 `parameters.size` 使用 `1024*1024` 形式，普通顶层 `size` 仍使用 `宽x高`，详见同步接口示例。
+</Note>
 
 ### `quality` 映射规则
 

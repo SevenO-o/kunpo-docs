@@ -24,8 +24,10 @@ POST https://llm.ziy.cc/v1/images/generations
 | `size` | string | 否 | 图片尺寸。GI / GI2 使用标准比例映射；GPT 支持标准比例映射和合法自定义 `WxH`；Qwen 传入时仅接受具体 `宽x高`，未传时由模型根据提示词自动推荐分辨率。详见 [概览页参数映射](/api-reference/image-generation/overview#size-使用规则) |
 | `quality` | string | 否 | 图片质量；GI 映射为分辨率，GPT 映射为质量等级；Qwen 不支持此参数，建议不要传入 |
 | `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
-| `images` | string[] | 否 | 参考图 URL 数组（图生图） |
-| `image` | string | 否 | 单张参考图（URL 或 Base64） |
+| `images` | string[] | 否 | 参考图 URL 数组（图生图）；对 `qwen-image-3.0-pro` 不产生可靠参考图效果，请使用下方多模态 `input.messages[].content[]` |
+| `image` | string | 否 | 单张参考图（URL 或 Base64）；对 `qwen-image-3.0-pro` 不要使用顶层字段 |
+| `input` | object | 多模态时是 | Qwen 多模态容器：图片与文本放在 `input.messages[].content[]` |
+| `parameters` | object | 多模态时否 | Qwen 多模态参数容器；已验证字段见下方示例 |
 | `background` | string | 否 | 背景描述（GPT 专属） |
 | `output_format` | string | 否 | 输出格式，默认 `png`（GPT 专属） |
 | `input_fidelity` | string | 否 | `high` 或 `low`（GPT 专属） |
@@ -190,6 +192,72 @@ POST https://llm.ziy.cc/v1/images/generations
 
     <Note>
       受上游官方 **1 RPM** 限流影响，单张通常约需 50–60 秒；请将请求频率控制在每分钟最多 1 次。
+    </Note>
+  </Accordion>
+
+  <Accordion title="Qwen Image 3.0 Pro 多模态文生图">
+    同一个 `/v1/images/generations` 同步接口支持多模态请求。文生图时，`content` 只放文本；顶层 `prompt` 仍需保留。
+
+    ```bash
+    curl -X POST https://llm.ziy.cc/v1/images/generations \
+      -H "Authorization: Bearer sk-你的密钥" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "qwen-image-3.0-pro",
+        "prompt": "使用多模态文本生成一张水墨风格的山水画，不添加文字。",
+        "input": {
+          "messages": [{
+            "role": "user",
+            "content": [
+              { "text": "生成一张水墨风格的山水画，不添加文字。" }
+            ]
+          }]
+        },
+        "parameters": {
+          "prompt_extend": false,
+          "n": 1,
+          "watermark": false,
+          "size": "1024*1024"
+        }
+      }'
+    ```
+
+    <Note>
+      这是当前 KUNPO Gateway 的多模态请求形态。`parameters.size` 使用 `*` 连接；普通顶层 `size` 仍使用 `宽x高`。
+    </Note>
+  </Accordion>
+
+  <Accordion title="Qwen Image 3.0 Pro 多模态图生图">
+    将主体图、风格图和编辑指令依次放入 `input.messages[0].content`。图片对象放在文本对象前面，并在文本中说明图 1、图 2 的职责。不要使用顶层 `image` / `images` 字段替代此结构。
+
+    ```bash
+    curl -X POST https://llm.ziy.cc/v1/images/generations \
+      -H "Authorization: Bearer sk-你的密钥" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "qwen-image-3.0-pro",
+        "prompt": "使用多模态内容中的图1主体和图2风格，仅进行风格转换，不添加文字。",
+        "input": {
+          "messages": [{
+            "role": "user",
+            "content": [
+              { "image": "data:image/jpeg;base64,<主体图>" },
+              { "image": "data:image/png;base64,<风格图>" },
+              { "text": "图1为主体参考，图2为风格参考。仅进行风格转换，保留图1的主体与构图，不添加文字。" }
+            ]
+          }]
+        },
+        "parameters": {
+          "prompt_extend": false,
+          "n": 1,
+          "watermark": false,
+          "size": "1024*1024"
+        }
+      }'
+    ```
+
+    <Note>
+      图片可以使用公网 URL 或 Base64 / data URL。当前实测该形态返回标准 `data[].url`；实际输出尺寸以返回图片为准。
     </Note>
   </Accordion>
 </AccordionGroup>

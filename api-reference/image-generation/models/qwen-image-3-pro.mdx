@@ -28,6 +28,27 @@ curl -X POST https://llm.ziy.cc/v1/images/generations \
   }'
 ```
 
+## 多模态请求结构
+
+多模态请求使用 `input.messages`。当前仅支持单轮对话，因此 `messages` 必须是只含一个对象的数组；该对象必须包含 `role` 和 `content`。
+
+| 属性 | 类型 | 必填 | 规则 |
+|------|------|:----:|------|
+| `input.messages` | array | 是 | 仅含一个消息对象 |
+| `messages[0].role` | string | 是 | 必须为 `user` |
+| `messages[0].content` | array | 是 | 消息内容数组，按文生图或图生图场景组合 |
+
+### `content` 组合方式
+
+| 场景 | `content` 内容 |
+|------|-----------------|
+| 文生图（T2I） | 仅包含一个 `{ "text": "..." }` 对象 |
+| 图生图（I2I） | 包含 1–3 个 `{ "image": "..." }` 对象和 1 个 `{ "text": "..." }` 对象；数组顺序定义多图的图像顺序 |
+
+`image` 可以是 HTTP/HTTPS 公网 URL，或 `data:{MIME_type};base64,{base64_data}` 格式的 Base64 数据。图生图支持 JPG、JPEG、PNG、BMP、TIFF、WEBP 和 GIF；建议图片宽高均在 384–2048 像素之间，单张不超过 10 MB。需要将本地图片转换为可访问地址时，可[获取临时公网 URL](https://help.aliyun.com/zh/model-studio/get-temporary-file-url)。
+
+`text` 是描述期望内容、风格和构图的正向提示词，支持中英文，建议不超过 4500 Token。每个 `content` 数组只允许一个 `text` 对象；缺少或传入多个都会报错。
+
 ## 多模态文生图
 
 多模态请求仍需保留顶层 `prompt`。文生图时，`content` 只放文本。

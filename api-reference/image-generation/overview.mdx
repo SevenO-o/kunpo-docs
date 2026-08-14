@@ -1,59 +1,43 @@
 ---
 title: "图片生成"
-description: "KUNPO 图片生成 API — 支持 Image-GI、Image-GI2、Image-GPT2、Image-MI、qwen-image-3.0-pro 五款模型，兼容 OpenAI Images 接口格式。"
+description: "KUNPO 图片生成 API — 按模型选择 Nano Banana、GPT Image 2、Midjourney 或 Qwen Image 3.0 Pro。"
 ---
 
 # 图片生成
 
-KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口格式。当前提供 **Nano Banana Pro**、**Nano Banana 2**、**GPT Image 2**、**Midjourney**、**Qwen Image 3.0 Pro** 五款模型（API 调用代号分别为 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro`），一个 API Key 即可调用，无需关心上游鉴权细节。
+KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口格式。一个 API Key 即可调用，无需关心上游鉴权细节。请先选择模型，再查看对应的能力、参数规则和示例。
 
-## 支持模型
+## 选择模型
 
-调用时在 `model` 参数中传入 API 模型名；下表「对应名称」为产品常用称呼，便于识别。
+调用时在 `model` 参数中传入 API 模型名；产品展示名仅用于识别。
 
-| API 模型名 | 对应名称 | 能力 | 推荐接口 | 典型耗时 |
-|------------|----------|------|----------|----------|
-| `Image-GI` | Nano Banana Pro | 文生图、图生图（参考图 URL） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
-| `Image-GI2` | Nano Banana 2 | 文生图（升级版，画质更佳） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
-| `Image-GPT2` | GPT Image 2 | 文生图（高质量） | [异步](/api-reference/image-generation/asynchronous)（同步亦可） | 数分钟 |
-| `Image-MI` | Midjourney | 文生图（MJ 风格，一次返回 4 张） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
-| `qwen-image-3.0-pro` | Qwen Image 3.0 Pro | 文生图、多模态文生图与图生图、复杂版式与文字渲染 | [同步](/api-reference/image-generation/synchronous) | 约 50-60 秒/张 |
-
-<Note>
-  API 模型名（如 `Image-GI`）为平台统一代号，请求示例与 SDK 调用须使用上表左侧名称；「对应名称」仅作识别参考。
-</Note>
+| API 模型名 | 对应名称 | 能力 | 典型耗时 | 指南 |
+|------------|----------|------|----------|------|
+| `Image-GI` | Nano Banana Pro | 文生图、图生图（参考图 URL） | 30-60 秒 | [查看指南](/api-reference/image-generation/models/nano-banana-pro) |
+| `Image-GI2` | Nano Banana 2 | 文生图（升级版，画质更佳） | 30-60 秒 | [查看指南](/api-reference/image-generation/models/nano-banana-2) |
+| `Image-GPT2` | GPT Image 2 | 高质量文生图、合法自定义像素尺寸 | 数分钟 | [查看指南](/api-reference/image-generation/models/gpt-image-2) |
+| `Image-MI` | Midjourney | Midjourney 风格文生图，一次返回 4 张 | 30-60 秒 | [查看指南](/api-reference/image-generation/models/midjourney) |
+| `qwen-image-3.0-pro` | Qwen Image 3.0 Pro | 文生图、多模态文生图与图生图、复杂版式与文字渲染 | 约 50-60 秒/张 | [查看指南](/api-reference/image-generation/models/qwen-image-3-pro) |
 
 <Note>
-  `qwen-image-3.0-pro` 单张约需 50–60 秒；上游官方限制为 **1 RPM**，请按每分钟最多 1 次请求安排调用。
+  请求示例与 SDK 调用必须使用 API 模型名（如 `Image-GI`）；不要将展示名写入 `model` 参数。
 </Note>
 
 ### 选择建议
 
 | 场景 | 推荐模型 | 原因 |
 |------|----------|------|
-| 日常文生图、快速出图 | `Image-GI2` | 速度快、性价比高 |
-| 复杂图文排版、中文小字与界面素材生成 | `qwen-image-3.0-pro` | 擅长高密度信息版式、文字渲染与界面仿真；通过同步接口调用，注意上游 1 RPM 限流 |
-| 图生图 / 风格迁移 | `Image-GI` | 支持传入参考图 URL |
-| 高质量精细出图 | `Image-GPT2` | 画质更好，建议走异步接口 |
-| 一次生成多张候选图 | `Image-MI` | 单次请求固定返回 4 张 |
+| 日常文生图、快速出图 | [Nano Banana 2（`Image-GI2`）](/api-reference/image-generation/models/nano-banana-2) | 速度快、性价比高 |
+| 复杂图文排版、中文小字与界面素材生成 | [Qwen Image 3.0 Pro（`qwen-image-3.0-pro`）](/api-reference/image-generation/models/qwen-image-3-pro) | 擅长高密度信息版式、文字渲染与界面仿真；注意 1 RPM 限流 |
+| 图生图 / 风格迁移 | [Nano Banana Pro（`Image-GI`）](/api-reference/image-generation/models/nano-banana-pro) | 支持传入参考图 URL |
+| 高质量精细出图 | [GPT Image 2（`Image-GPT2`）](/api-reference/image-generation/models/gpt-image-2) | 画质更好，长耗时任务建议走异步接口 |
+| 一次生成多张候选图 | [Midjourney（`Image-MI`）](/api-reference/image-generation/models/midjourney) | 单次请求固定返回 4 张 |
 
-<Note>
-  `Image-MI` 仅支持文生图（`model` + `prompt`），`size`、`quality`、`images` 等参数对其无效。按次计费，每次请求固定返回 4 张图片。
-</Note>
-
-<Note>
-  图生图时，参考图须为**公网可访问的 URL**（推荐使用 KUNPO CDN 上的图片地址），否则上游可能报图片下载错误。
-</Note>
-
-<Note>
-  `qwen-image-3.0-pro` 也支持通过同步接口的多模态请求进行文生图和图生图：将图片与文本放入 `input.messages[].content[]`。顶层 `image` / `images` 字段对 Qwen 不产生可靠的参考图效果，完整请求形态见[同步接口](/api-reference/image-generation/synchronous#qwen-多模态文生图)；生产选型仍可优先考虑支持公网参考图 URL 的 `Image-GI`。
-</Note>
-
-## 接入方式
+## 调用方式
 
 <CardGroup cols={2}>
   <Card title="同步接口" href="/api-reference/image-generation/synchronous">
-    `POST /v1/images/generations` — 提交后等待完成，直接返回图片 URL。适合 GI/GI2/Image-MI/Qwen Image 3.0 Pro。
+    `POST /v1/images/generations` — 提交后等待完成，直接返回图片 URL。
   </Card>
 
   <Card title="异步接口" href="/api-reference/image-generation/asynchronous">
@@ -61,110 +45,29 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
   </Card>
 </CardGroup>
 
-## 认证
+模型支持的调用方式、最小请求和模型专属字段见各模型指南；同步与异步页面只说明公共协议。
+
+## 共享平台约定
+
+### 认证
 
 ```
 Authorization: Bearer sk-你的密钥
 ```
 
-## 图片存储
+### 图片存储
 
 生成的图片自动转存至 KUNPO 图床（COS），返回永久 CDN 链接（`https://kunpoapiimg.ziy.cc/...`），不受上游临时 URL 过期限制。
 
-## 请求参数
-
-### 通用参数
+### 公共参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `model` | string | **是** | 模型名称：`Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro` |
+| `model` | string | **是** | API 模型名；从上方模型表选择 |
 | `prompt` | string | **是** | 图片描述文本 |
-| `size` | string | 否 | 图片尺寸。GI / GI2 使用标准比例映射；GPT 支持标准比例映射和合法自定义 `WxH`；Qwen 传入时仅接受具体 `宽x高`，未传时由模型根据提示词自动推荐分辨率。详见下方规则 |
-| `quality` | string | 否 | 图片质量。GI 映射为分辨率，GPT 映射为质量等级；Qwen 模型不支持此参数，建议不要传入 |
-| `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
-| `images` | string[] | 否 | 参考图 URL 数组，用于 `Image-GI` 等模型的图生图；对 Qwen 请使用 `input.messages[].content[].image` |
-| `image` | string | 否 | 单张参考图（URL 或 Base64）；对 Qwen 请使用多模态 `input.messages[].content[]`，不要使用顶层字段 |
-| `input` | object | 多模态时是 | Qwen 多模态请求容器，使用 `input.messages[].content[]` 放置图片和文本 |
-| `parameters` | object | 多模态时否 | Qwen 多模态形态的参数容器；已验证字段和示例见同步接口 |
+| `response_format` | string | 否 | 目前仅支持 `url`（默认）；传入 `b64_json` 仍返回 URL |
 
-### GPT 专属参数
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `background` | string | 背景描述 |
-| `output_format` | string | 输出格式，默认 `png` |
-| `input_fidelity` | string | `high` 或 `low` |
-
-### 参数职责概览
-
-| 模型 | `size` 的作用 | `quality` 的作用 |
-|------|---------------|------------------|
-| Image-GPT2 | 决定输出像素尺寸 | 决定画质档位 |
-| Image-GI / Image-GI2 | 决定输出比例 | 决定分辨率档位 |
-| Qwen Image 3.0 Pro | 普通请求传入具体宽高；未传时由模型根据提示词推荐分辨率；多模态请求使用 `input.messages[].content[]` | 不支持 |
-
-### `size` 使用规则
-
-<Warning>
-  **最终尺寸以实际返回图片为准。** GI / GI2 只按比例映射，不保证按传入的 `WxH` 像素尺寸返回；Qwen 未传 `size` 时由模型根据提示词自动推荐分辨率。
-</Warning>
-
-#### 比例映射：Image-GI / Image-GI2
-
-| 标准比例 | `size` 映射 |
-|----------|-------------|
-| 1:1 | `1024x1024` |
-| 16:9 | `1792x1024`、`1536x1024`、`1280x720`、`1536x864` |
-| 9:16 | `1024x1792`、`1024x1536`、`720x1280`、`864x1536` |
-| `auto` | 不支持 |
-
-Image-GI / Image-GI2 仅按比例处理，不按传入的 `WxH` 直出。未传 `size` 或传入未匹配尺寸时，按 1:1 处理，通常返回 `1024×1024`。
-
-#### 比例映射：Image-GPT2
-
-| 标准比例 | `size` 映射 |
-|----------|-------------|
-| 1:1 | `1024x1024` |
-| 16:9 | `1536x864` |
-| 9:16 | `864x1536` |
-| 4:3 | `1024x768` |
-| 3:4 | `768x1024` |
-| 3:2 | `1536x1024` |
-| 2:3 | `1024x1536` |
-| `auto` | 支持 |
-
-Image-GPT2 未传 `size` 时默认返回 `1024×1024`；合法自定义 `WxH` 按请求尺寸返回，规则见下方。
-
-<Note>
-  **GPT Image 2 自定义尺寸：** KUNPO 网关支持自定义 `WxH`。宽、高必须为正整数且均为 16 的倍数；单边不超过 3840；宽高比 `W/H` 在 `1/3` 至 `3` 之间；总像素数 `W×H` 在 `655,360` 至 `8,294,400` 之间（均含边界）。满足条件时按请求尺寸处理，否则回退为 `1024×1024`。
-</Note>
-
-#### Qwen Image 3.0 Pro：具体尺寸规则
-
-| 项目 | 规则 |
-|------|------|
-| 格式 | 仅接受 `宽x高`，例如 `1234x789` |
-| 不支持的格式 | 不支持 `1:1`、`16:9` 等比例格式；传入会返回 HTTP `400`，提示 `Expected format: '<width>*<height>'` |
-| 未传 `size` | 由模型根据提示词自动推荐分辨率，实际尺寸以返回图片为准 |
-| 像素面积 | `262,144`（512×512）至 `4,194,304`（2048×2048） |
-| 宽高比 | `1:8` 至 `8:1` |
-
-<Note>
-  多模态 Qwen 请求仍需保留顶层 `prompt`；图片与多模态文本放在 `input.messages[].content[]`。当前 Gateway 示例中的 `parameters.size` 使用 `1024*1024` 形式，普通顶层 `size` 仍使用 `宽x高`，详见同步接口示例。
-</Note>
-
-### `quality` 映射规则
-
-| `quality` 值 | GI / GI2（分辨率） | Image-GPT2（Quality） | Qwen 模型 |
-|-------------|:------------------:|:--------------------:|:--------:|
-| `low` | 1K | low | 不支持 |
-| `medium` | 2K | medium | 不支持 |
-| `high` | 4K | high | 不支持 |
-| 默认 / 空 | 1K | medium | 不适用 |
-
-<Note>
-  **Qwen 模型不支持 `quality` 参数：** 该参数不会映射到上游请求，也不会影响生图质量或输出分辨率，建议不要传入。
-</Note>
+`size`、`quality`、参考图和其他扩展字段的支持情况因模型而异。请从模型指南进入，不要将某一模型的参数规则套用于其他模型。
 
 ## 计费说明
 

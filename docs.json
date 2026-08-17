@@ -29,16 +29,6 @@
                 "group": "图片生成",
                 "pages": [
                   "api-reference/image-generation/overview",
-                  {
-                    "group": "模型指南",
-                    "pages": [
-                      "api-reference/image-generation/models/nano-banana-pro",
-                      "api-reference/image-generation/models/nano-banana-2",
-                      "api-reference/image-generation/models/gpt-image-2",
-                      "api-reference/image-generation/models/qwen-image-3-pro",
-                      "api-reference/image-generation/models/midjourney"
-                    ]
-                  },
                   "api-reference/image-generation/synchronous",
                   "api-reference/image-generation/asynchronous"
                 ]

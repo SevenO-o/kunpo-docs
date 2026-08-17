@@ -97,7 +97,7 @@
 | 图片 `response_format: b64_json` | 实际仍返回 CDN `url`，`b64_json` 为空；overview + sync 已说明 |
 | 图片存储 | 统一转存 KUNPO CDN：`https://kunpoapiimg.ziy.cc/...` |
 | 图片计费 | 五款模型均为**按次计费**，价格表只在 overview 维护 |
-| 图生图参考图 | 须公网可访问 URL，**禁止** `https://example.com/...` |
+| 图生图参考图 | `Image-GI`、`Image-GI2`、`Image-GPT2` 的 `images[]` 支持公网 URL、Base64 或 data URL；Qwen 多模态 `content[].image` 支持公网 URL 或 data URL，不支持裸 Base64 |
 | Claude Code Base URL | `https://llm.ziy.cc`（不加 `/v1`） |
 | OpenAI 兼容 Base URL | `https://llm.ziy.cc/v1` |
 | API Key 占位符 | 统一 `sk-你的密钥` |

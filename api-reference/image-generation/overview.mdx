@@ -13,9 +13,9 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 
 | API 模型名 | 对应名称 | 能力 | 推荐接口 | 典型耗时 |
 |------------|----------|------|----------|----------|
-| `Image-GI` | Nano Banana Pro | 文生图、图生图（参考图 URL） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
-| `Image-GI2` | Nano Banana 2 | 文生图（升级版，画质更佳） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
-| `Image-GPT2` | GPT Image 2 | 文生图（高质量） | [异步](/api-reference/image-generation/asynchronous)（同步亦可） | 数分钟 |
+| `Image-GI` | Nano Banana Pro | 文生图、图生图（参考图 URL、Base64、data URL） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
+| `Image-GI2` | Nano Banana 2 | 文生图、图生图（参考图 URL、Base64、data URL） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
+| `Image-GPT2` | GPT Image 2 | 文生图、图生图（参考图 URL、Base64、data URL） | [异步](/api-reference/image-generation/asynchronous)（同步亦可） | 数分钟 |
 | `Image-MI` | Midjourney | 文生图（MJ 风格，一次返回 4 张） | [同步](/api-reference/image-generation/synchronous) | 30-60 秒 |
 | `qwen-image-3.0-pro` | Qwen Image 3.0 Pro | 文生图、多模态文生图与图生图、复杂版式与文字渲染 | [同步](/api-reference/image-generation/synchronous) | 约 50-60 秒/张 |
 
@@ -33,7 +33,7 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 |------|----------|------|
 | 日常文生图、快速出图 | `Image-GI2` | 速度快、性价比高 |
 | 复杂图文排版、中文小字与界面素材生成 | `qwen-image-3.0-pro` | 擅长高密度信息版式、文字渲染与界面仿真；通过同步接口调用，注意上游 1 RPM 限流 |
-| 图生图 / 风格迁移 | `Image-GI` | 支持传入参考图 URL |
+| 图生图 / 风格迁移 | `Image-GI`、`Image-GI2`、`Image-GPT2` | 支持传入公网 URL、Base64 或 data URL |
 | 高质量精细出图 | `Image-GPT2` | 画质更好，建议走异步接口 |
 | 一次生成多张候选图 | `Image-MI` | 单次请求固定返回 4 张 |
 
@@ -42,11 +42,11 @@ KUNPO 网关统一封装多款图片生成能力，兼容 OpenAI `images` 接口
 </Note>
 
 <Note>
-  图生图时，参考图须为**公网可访问的 URL**（推荐使用 KUNPO CDN 上的图片地址），否则上游可能报图片下载错误。
+  `Image-GI`、`Image-GI2`、`Image-GPT2` 的图生图参考图通过 `images` 数组传入，支持公网 URL、Base64 或 data URL。若传入公网 URL，请确保该地址可从公网访问，否则上游可能报图片下载错误。
 </Note>
 
 <Note>
-  `qwen-image-3.0-pro` 也支持通过同步接口的多模态请求进行文生图和图生图：将图片与文本放入 `input.messages[].content[]`。顶层 `image` / `images` 字段对 Qwen 不产生可靠的参考图效果，完整请求形态见[同步接口](/api-reference/image-generation/synchronous#qwen-多模态文生图)；生产选型仍可优先考虑支持公网参考图 URL 的 `Image-GI`。
+  `qwen-image-3.0-pro` 也支持通过同步接口的多模态请求进行文生图和图生图：将图片与文本放入 `input.messages[].content[]`，图片使用公网 URL 或 data URL，不支持裸 Base64。顶层 `image` / `images` 字段对 Qwen 不产生可靠的参考图效果，完整请求形态见[同步接口](/api-reference/image-generation/synchronous#qwen-多模态文生图)。
 </Note>
 
 ## 接入方式
@@ -82,7 +82,7 @@ Authorization: Bearer sk-你的密钥
 | `size` | string | 否 | 图片尺寸。GI / GI2 使用标准比例映射；GPT 支持标准比例映射和合法自定义 `WxH`；Qwen 传入时仅接受具体 `宽x高`，未传时由模型根据提示词自动推荐分辨率。详见下方规则 |
 | `quality` | string | 否 | 图片质量。GI 映射为分辨率，GPT 映射为质量等级；Qwen 模型不支持此参数，建议不要传入 |
 | `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
-| `images` | string[] | 否 | 参考图 URL 数组，用于 `Image-GI` 等模型的图生图；对 Qwen 请使用 `input.messages[].content[].image` |
+| `images` | string[] | 否 | 参考图数组，支持公网 URL、Base64 或 data URL，用于 `Image-GI`、`Image-GI2`、`Image-GPT2` 等模型的图生图；对 Qwen 请使用 `input.messages[].content[].image` |
 | `image` | string | 否 | 单张参考图（URL 或 Base64）；对 Qwen 请使用多模态 `input.messages[].content[]`，不要使用顶层字段 |
 | `input` | object | 多模态时是 | Qwen 多模态请求容器，使用 `input.messages[].content[]` 放置图片和文本 |
 | `parameters` | object | 多模态时否 | Qwen 多模态形态的参数容器；已验证字段和示例见同步接口 |

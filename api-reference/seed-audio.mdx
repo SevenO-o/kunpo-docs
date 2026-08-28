@@ -15,8 +15,12 @@ POST https://llm.ziy.cc/v1/audio/speech
 
 认证方式：`Authorization: Bearer sk-你的密钥`。请求使用 `application/json`；成功时直接返回音频二进制，而非 JSON。
 
+<Warning>
+  音频生成必须调用 `/v1/audio/speech`，不要使用 `/v1/chat/completions`。
+</Warning>
+
 <Note>
-  最大生成时长为 120 秒。计费为 ¥1/分钟，按上游返回的 `original_duration` 实际时长结算。
+  最大生成时长为 120 秒。计费为 ¥1/分钟：请求时按最长 120 秒预扣，完成后按上游返回的 `original_duration` 实际时长结算并退回差额。
 </Note>
 
 ## 可用模型
@@ -88,7 +92,7 @@ audio_config.format > response_format > mp3
 - `speaker` 必须是当前火山账号实际开通的音色 ID，否则会被上游拒绝。
 
 <Tip>
-  `references[].image_url` 已通过 Pexels 公网图片实测。使用时提供火山服务可访问的公开图片 URL；它不能与任意音频类型的参考资源同时出现。
+  `references[].image_url` 已通过 Pexels 公网图片实测。使用时提供火山服务可访问的公开图片 URL；它不能与任意音频类型的参考资源同时出现。如果图片站点阻止上游抓取，请改用 `image_data` 传递不带 Data URI 前缀的 Base64。
 </Tip>
 
 ## `audio_config` 输出配置
@@ -128,17 +132,55 @@ audio_config.format > response_format > mp3
 
 ## 最简调用
 
-```bash
-curl https://llm.ziy.cc/v1/audio/speech \
-  -H "Authorization: Bearer sk-你的密钥" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "seed-audio-1.0",
-    "input": "生成十秒钟轻柔雨声，无人声",
-    "response_format": "mp3"
-  }' \
-  --output audio.mp3
-```
+<CodeGroup>
+  ```bash cURL
+  curl https://llm.ziy.cc/v1/audio/speech \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "seed-audio-1.0-multilingual",
+      "input": "生成十秒钟轻柔雨声，无人声",
+      "response_format": "mp3"
+    }' \
+    --output rain.mp3
+  ```
+
+  ```python Python
+  from pathlib import Path
+
+  import requests
+
+  response = requests.post(
+      "https://llm.ziy.cc/v1/audio/speech",
+      headers={"Authorization": "Bearer sk-你的密钥"},
+      json={
+          "model": "seed-audio-1.0-multilingual",
+          "input": "生成十秒钟轻柔雨声，无人声",
+          "response_format": "mp3",
+      },
+      timeout=180,
+  )
+  response.raise_for_status()
+  Path("rain.mp3").write_bytes(response.content)
+  ```
+
+  ```python OpenAI SDK
+  from openai import OpenAI
+
+  client = OpenAI(
+      base_url="https://llm.ziy.cc/v1",
+      api_key="sk-你的密钥",
+  )
+
+  audio = client.audio.speech.create(
+      model="seed-audio-1.0-multilingual",
+      voice="alloy",  # OpenAI SDK 要求传入；Seed Audio 会忽略
+      input="生成十秒钟轻柔雨声，无人声",
+      response_format="mp3",
+  )
+  audio.write_to_file("rain.mp3")
+  ```
+</CodeGroup>
 
 ## 使用原生参数
 

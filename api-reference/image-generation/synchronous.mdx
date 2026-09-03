@@ -28,8 +28,8 @@ POST https://llm.ziy.cc/v1/images/generations
 | `image` | string | 否 | 单张参考图（URL 或 Base64）；对 `qwen-image-3.0-pro` 不要使用顶层字段 |
 | `input` | object | 多模态时是 | Qwen 多模态容器：图片与文本放在 `input.messages[].content[]` |
 | `parameters` | object | 多模态时否 | Qwen 多模态参数容器；已验证字段见下方示例 |
-| `background` | string | 否 | 背景描述（GPT 专属） |
-| `output_format` | string | 否 | 输出格式，默认 `png`（GPT 专属） |
+| `background` | string | 否 | 背景模式（GPT 专属），取值与用法见 [透明背景](/api-reference/image-generation/overview#image-gpt2-透明背景) |
+| `output_format` | string | 否 | 图片文件格式，默认 `png`（GPT 专属）；透明背景的格式要求见 [概览](/api-reference/image-generation/overview#image-gpt2-透明背景) |
 | `input_fidelity` | string | 否 | `high` 或 `low`（GPT 专属） |
 
 ## 响应格式
@@ -138,6 +138,23 @@ POST https://llm.ziy.cc/v1/images/generations
     <Note>
       即使传入 `"response_format": "b64_json"`，Image-GPT2 实际返回的仍然是图片 URL，而非 Base64 数据。
     </Note>
+  </Accordion>
+
+  <Accordion title="Image-GPT2 透明背景">
+    ```bash
+    curl -X POST https://llm.ziy.cc/v1/images/generations \
+      -H "Authorization: Bearer sk-你的密钥" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "Image-GPT2",
+        "prompt": "A single 3D game asset of a small house, isolated object, no environment, no ground plane, no sky, centered, studio lighting.",
+        "size": "1024x1024",
+        "output_format": "png",
+        "background": "transparent"
+      }'
+    ```
+
+    从响应的 `data[0].url` 获取图片，按 [透明效果验收](/api-reference/image-generation/overview#透明效果验收) 检查 Alpha 通道与背景。
   </Accordion>
 
   <Accordion title="图生图（参考图）">

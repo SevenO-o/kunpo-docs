@@ -29,7 +29,10 @@ POST https://llm.ziy.cc/v1/images/tasks
 | `prompt` | string | **是** | 图片描述文本 |
 | `size` | string | 否 | 图片尺寸 |
 | `images` | string[] | 否 | 参考图 URL 数组（图生图） |
-| `metadata` | object | 否 | 附加参数：`quality`、`output_format`、`background`、`input_fidelity` 等 |
+| `quality` | string | 否 | Image-GPT2 画质档位，也可通过 `metadata.quality` 传入；取值见 [概览页](/api-reference/image-generation/overview#quality-映射规则) |
+| `background` | string | 否 | Image-GPT2 背景模式，可放在请求顶层或 `metadata.background`；取值见 [透明背景](/api-reference/image-generation/overview#image-gpt2-透明背景) |
+| `output_format` | string | 否 | Image-GPT2 图片文件格式，可放在请求顶层或 `metadata.output_format`；透明背景的格式要求见 [概览](/api-reference/image-generation/overview#image-gpt2-透明背景) |
+| `metadata` | object | 否 | 附加参数容器，可传入 `quality`、`output_format`、`background`、`input_fidelity` 等 |
 
 ### 提交响应
 
@@ -101,6 +104,26 @@ POST https://llm.ziy.cc/v1/images/tasks
   console.log(`任务已提交: ${task_id}`);
   ```
 </CodeGroup>
+
+### 透明背景示例
+
+将 `background` 显式放在请求**顶层**（或 `metadata.background`），不要只写在提示词里。下面示例使用顶层参数：
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/tasks \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GPT2",
+    "prompt": "A single 3D game asset of a small house, isolated object, no environment, no ground plane, no sky, centered, studio lighting.",
+    "size": "1024x1024",
+    "quality": "low",
+    "output_format": "png",
+    "background": "transparent"
+  }'
+```
+
+提交后使用返回的 `task_id`，通过 `GET /v1/images/tasks/{task_id}` 轮询；当 `data.status` 为 `SUCCESS` 时，从 `data.result_url` 获取图片。查询方式见 [查询任务](/api-reference/image-generation/asynchronous#查询任务)，下载后按 [透明效果验收](/api-reference/image-generation/overview#透明效果验收) 检查。
 
 ---
 

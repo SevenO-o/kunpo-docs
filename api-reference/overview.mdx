@@ -3,7 +3,7 @@ title: "API 总览"
 description: "KUNPO API 接口索引 — 文本对话、Claude Messages、图片、音频、视频生成等全部端点一览。"
 ---
 
-# API 总览
+<span id="api-总览" />
 
 KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 主流接口格式。一个 API Key 即可访问文本、图片、音频、视频等多模态能力。
 
@@ -30,9 +30,9 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 |------|------|------|------|
 | 文本对话 | `POST` | `/v1/chat/completions` | OpenAI 兼容，支持流式、多模态 |
 | Claude 原生 | `POST` | `/v1/messages` | Anthropic Messages API |
-| 图片生成（同步） | `POST` | `/v1/images/generations` | 提交后等待完成，直接返回 URL |
-| 图片生成（异步提交） | `POST` | `/v1/images/tasks` | 返回 `task_id`，适合长耗时模型 |
-| 图片生成（异步查询） | `GET` | `/v1/images/tasks/:task_id` | 查询任务状态与结果 URL |
+| 图像生成（同步） | `POST` | `/v1/images/generations` | 提交后等待完成，直接返回 URL |
+| 图像生成（异步提交） | `POST` | `/v1/images/tasks` | 返回 `task_id`，适合长耗时模型 |
+| 图像生成（异步查询） | `GET` | `/v1/images/tasks/:task_id` | 查询任务状态与结果 URL |
 | 豆包 Seed Audio | `POST` | `/v1/audio/speech` | 生成音频，直接返回音频二进制 |
 | 视频生成（提交） | `POST` | `/v1/video/generations` | 返回 `task_id` |
 | 视频生成（查询） | `GET` | `/v1/video/generations/:task_id` | 查询任务状态与视频 URL |
@@ -50,7 +50,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
     适用于 Claude Code、Anthropic SDK 及 Extended Thinking 等 Claude 专属能力。
   </Card>
 
-  <Card title="图片生成" icon="image" href="/api-reference/image-generation/overview">
+  <Card title="图像生成" icon="image" href="/api-reference/image-generation/overview">
     支持 Image-GI / Image-GI2 / Image-GPT2 / Image-MI / qwen-image-3.0-pro。GI 系列和 Qwen Image 3.0 Pro 建议同步接口，Image-GPT2 建议异步接口。
   </Card>
 
@@ -70,7 +70,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 对比项 | Chat Completions | Messages API |
 |--------|-----------------|--------------|
 | 路径 | `/v1/chat/completions` | `/v1/messages` |
-| 海外模型命名 | `anthropic/claude-sonnet-4.6` | `Claude-Sonnet-4.6` |
+| 模型 ID 示例 | `anthropic/claude-sonnet-4.6` | `Claude-Sonnet-4.6` |
 | 生态兼容 | OpenAI SDK 及兼容客户端 | Anthropic SDK / Claude Code |
 | 适用场景 | 多模型切换、通用集成 | Claude 专属功能 |
 
@@ -99,16 +99,19 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 
 ---
 
-## 模型命名速查
+<span id="模型命名速查" />
 
-| 类型 | 格式 | 示例 |
-|------|------|------|
-| 海外模型 | `供应商/模型名` | `google/gemini-3.1-flash-lite`、`openai/gpt-5.4` |
-| 国内模型 | 直接使用名称 | `DeepSeek-R1-0528`、`Qwen3`、`GLM-4` |
-| Claude Messages | 无前缀 `anthropic/` | `Claude-Sonnet-4.6` |
-| DeepSeek Claude 兼容 | `c/` 前缀 | `c/deepseek-v4-pro` |
+## 模型 ID 填写
 
-完整模型列表请访问 [KUNPO API 模型广场](https://llm.ziy.cc)。
+模型 ID 由 KUNPO 中台定义。请从 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 复制完整 ID，保留其前缀、大小写和版本号；不要按供应商或国内／海外分类推断前缀。
+
+以下为模型 ID 示例，具体调用方式请查看对应接口文档：
+
+| 接口 | 模型 ID 示例 |
+|------|--------------|
+| [Chat Completions](/api-reference/text-chat) | `google/gemini-3.1-flash-lite`、`openai/gpt-5.4`、`DeepSeek-R1-0528`、`Qwen3`、`GLM-4` |
+| [Claude Messages](/api-reference/claude-messages) | `Claude-Sonnet-4.6` |
+| [DeepSeek Claude 兼容](/api-reference/claude-messages#deepseek-compatible-models) | `c/deepseek-v4-pro` |
 
 ---
 

@@ -1,36 +1,48 @@
 ---
-title: "同步接口"
+title: "同步调用"
 description: "POST /v1/images/generations 同步生成图片，兼容 OpenAI Images API 格式。"
 ---
 
-# 同步图片生成
+<span id="同步调用" />
+<span id="同步图片生成" />
 
 ```
 POST https://llm.ziy.cc/v1/images/generations
 ```
 
-提交图片生成任务并同步等待结果返回。网关提交后每 2 秒轮询，直至完成（最长约 15 分钟）。
+提交图像生成任务并同步等待结果返回。网关提交后每 2 秒轮询，直至完成（最长约 15 分钟）。
 
-<Note>
-  `model` 参数与对应产品名称：`Image-GI`（Nano Banana Pro）、`Image-GI2`（Nano Banana 2）、`Image-GPT2`（GPT Image 2）、`Image-MI`（Midjourney）、`qwen-image-3.0-pro`（Qwen Image 3.0 Pro）。详见 [图片生成概览](/api-reference/image-generation/overview#支持模型)。
-</Note>
+适用于[模型选择表](/api-reference/image-generation/overview#支持模型)中所有支持同步的模型。模型的专属参数和示例请直接进入对应模型页。
+
+<Warning>
+  同步接口最长等待约 15 分钟，客户端或中间代理可能更早超时。GPT Image 2 等长耗时模型建议使用[异步任务](/api-reference/image-generation/asynchronous)。
+</Warning>
+
+认证方式见[图像生成认证](/api-reference/image-generation/overview#认证)。
 
 ## 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `model` | string | **是** | `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro` |
-| `prompt` | string | **是** | 图片描述文本 |
-| `size` | string | 否 | 图片尺寸。GI / GI2 使用标准比例映射；GPT 支持标准比例映射和合法自定义 `WxH`；Qwen 传入时仅接受具体 `宽x高`，未传时由模型根据提示词自动推荐分辨率。详见 [概览页参数映射](/api-reference/image-generation/overview#size-使用规则) |
-| `quality` | string | 否 | 图片质量；GI 映射为分辨率，GPT 映射为质量等级；Qwen 不支持此参数，建议不要传入 |
-| `response_format` | string | 否 | 目前仅支持 `url`（默认），传入 `b64_json` 仍返回 URL |
-| `images` | string[] | 否 | 参考图数组，支持公网 URL、Base64 或 data URL（图生图）；对 `qwen-image-3.0-pro` 不产生可靠参考图效果，请使用下方多模态 `input.messages[].content[]` |
-| `image` | string | 否 | 单张参考图（URL 或 Base64）；对 `qwen-image-3.0-pro` 不要使用顶层字段 |
-| `input` | object | 多模态时是 | Qwen 多模态容器：图片与文本放在 `input.messages[].content[]` |
-| `parameters` | object | 多模态时否 | Qwen 多模态参数容器；已验证字段见下方示例 |
-| `background` | string | 否 | 背景模式（GPT 专属），取值与用法见 [透明背景](/api-reference/image-generation/overview#image-gpt2-透明背景) |
-| `output_format` | string | 否 | 图片文件格式，默认 `png`（GPT 专属）；透明背景的格式要求见 [概览](/api-reference/image-generation/overview#image-gpt2-透明背景) |
-| `input_fidelity` | string | 否 | `high` 或 `low`（GPT 专属） |
+| `model` | string | **是** | [模型选择表](/api-reference/image-generation/overview#支持模型)中的 API 调用名 |
+| `prompt` | string | **是** | 图片描述文本；Qwen 多模态请求也需保留 |
+| `size` | string | 否 | 输出尺寸或比例，含义与限制见各模型页 |
+| `quality` | string | 否 | 质量或分辨率档位，适用范围与取值见各模型页 |
+| `response_format` | string | 否 | 默认 `url`；传入 `b64_json` 仍返回 URL，`b64_json` 为空 |
+| `images` | string[] | 否 | 参考图数组，输入规则见各模型的图生图章节 |
+| `image` | string | 否 | 单张参考图（URL 或 Base64）；Qwen 请使用多模态结构 |
+
+### 模型扩展字段
+
+| 参数 | 类型 | 适用模型与说明 |
+|------|------|----------------|
+| `input` | object | Qwen 多模态请求必填；结构见 [Qwen 图生图](/api-reference/image-generation/models/qwen-image-3-pro#图生图) |
+| `parameters` | object | Qwen 多模态参数容器；见 [Qwen 示例](/api-reference/image-generation/models/qwen-image-3-pro#多模态文生图) |
+| `background` | string | GPT Image 2 背景模式，见[透明背景](/api-reference/image-generation/models/gpt-image-2#透明背景) |
+| `output_format` | string | GPT Image 2 图片文件格式，见[专属参数](/api-reference/image-generation/models/gpt-image-2#画质与专属参数) |
+| `input_fidelity` | string | GPT Image 2 参考图参数，见[专属参数](/api-reference/image-generation/models/gpt-image-2#画质与专属参数) |
+
+不要把参数表中的所有字段一起传给每个模型。请先使用模型页的最小示例，再按需要增加参数。
 
 ## 响应格式
 
@@ -77,6 +89,7 @@ POST https://llm.ziy.cc/v1/images/generations
       }
   )
 
+  resp.raise_for_status()
   url = resp.json()["data"][0]["url"]
   print(f"图片地址: {url}")
   ```
@@ -96,6 +109,7 @@ POST https://llm.ziy.cc/v1/images/generations
     }),
   });
 
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const { data } = await resp.json();
   console.log(`图片地址: ${data[0].url}`);
   ```
@@ -119,181 +133,28 @@ POST https://llm.ziy.cc/v1/images/generations
   ```
 </CodeGroup>
 
-<AccordionGroup>
-  <Accordion title="Image-GPT2 文生图">
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "Image-GPT2",
-        "prompt": "扁平插画，一杯咖啡",
-        "size": "1024x1536",
-        "quality": "medium",
-        "response_format": "b64_json",
-        "output_format": "png"
-      }'
-    ```
 
-    <Note>
-      即使传入 `"response_format": "b64_json"`，Image-GPT2 实际返回的仍然是图片 URL，而非 Base64 数据。
-    </Note>
-  </Accordion>
+## 模型用法
 
-  <Accordion title="Image-GPT2 透明背景">
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "Image-GPT2",
-        "prompt": "A single 3D game asset of a small house, isolated object, no environment, no ground plane, no sky, centered, studio lighting.",
-        "size": "1024x1024",
-        "output_format": "png",
-        "background": "transparent"
-      }'
-    ```
+- [Nano Banana Pro：文生图与参考图](/api-reference/image-generation/models/nano-banana-pro)
+- [Nano Banana 2：文生图与参考图](/api-reference/image-generation/models/nano-banana-2)
+- [GPT Image 2：自定义尺寸与透明背景](/api-reference/image-generation/models/gpt-image-2)
+- [Qwen Image 3.0 Pro：多模态输入](/api-reference/image-generation/models/qwen-image-3-pro)
+- [Midjourney：一次返回四张图片](/api-reference/image-generation/models/midjourney)
 
-    从响应的 `data[0].url` 获取图片，按 [透明效果验收](/api-reference/image-generation/overview#透明效果验收) 检查 Alpha 通道与背景。
-  </Accordion>
+<span id="image-gpt2-文生图" />
+<span id="image-gpt2-透明背景" />
+<span id="图生图（参考图）" />
+<span id="图生图-参考图" />
+<span id="image-mi-文生图（一次返回-4-张）" />
+<span id="qwen-image-3-0-pro-文生图" />
+<span id="qwen-多模态文生图" />
+<span id="qwen-image-3-0-pro-多模态文生图" />
+<span id="qwen-image-3-0-pro-多模态图生图" />
+<span id="image-输入要求" />
 
-  <Accordion title="图生图（参考图）">
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "Image-GI",
-        "prompt": "保持构图，改为水彩风格",
-        "images": ["https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1600"]
-      }'
-    ```
-  </Accordion>
+参考图输入规则见 [Nano Banana Pro](/api-reference/image-generation/models/nano-banana-pro#图生图)、[GPT Image 2](/api-reference/image-generation/models/gpt-image-2#图生图)和 [Qwen](/api-reference/image-generation/models/qwen-image-3-pro#图生图)。
 
-  <Accordion title="Image-MI 文生图（一次返回 4 张）">
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "Image-MI",
-        "prompt": "一只可爱的橘猫坐在窗台上，阳光照射，写实风格"
-      }'
-    ```
+## 等待与错误处理
 
-    响应（`data` 数组含 4 项）：
-
-    ```json
-    {
-      "created": 1715689600,
-      "data": [
-        { "url": "https://kunpoapiimg.ziy.cc/...1" },
-        { "url": "https://kunpoapiimg.ziy.cc/...2" },
-        { "url": "https://kunpoapiimg.ziy.cc/...3" },
-        { "url": "https://kunpoapiimg.ziy.cc/...4" }
-      ]
-    }
-    ```
-  </Accordion>
-
-  <Accordion title="Qwen Image 3.0 Pro 文生图">
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "qwen-image-3.0-pro",
-        "prompt": "一只橘猫坐在窗边，柔和的晨光，写实摄影"
-      }'
-    ```
-
-    <Note>
-      受上游官方 **1 RPM** 限流影响，单张通常约需 50–60 秒；请将请求频率控制在每分钟最多 1 次。
-    </Note>
-  </Accordion>
-
-  <Accordion title="Qwen Image 3.0 Pro 多模态文生图">
-    同一个 `/v1/images/generations` 同步接口支持多模态请求。文生图时，`content` 只放文本；顶层 `prompt` 仍需保留。
-
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "qwen-image-3.0-pro",
-        "prompt": "使用多模态文本生成一张水墨风格的山水画，不添加文字。",
-        "input": {
-          "messages": [{
-            "role": "user",
-            "content": [
-              { "text": "生成一张水墨风格的山水画，不添加文字。" }
-            ]
-          }]
-        },
-        "parameters": {
-          "prompt_extend": false,
-          "n": 1,
-          "watermark": false,
-          "size": "1024*1024"
-        }
-      }'
-    ```
-
-    <Note>
-      这是当前 KUNPO Gateway 的多模态请求形态。`parameters.size` 使用 `*` 连接；普通顶层 `size` 仍使用 `宽x高`。
-    </Note>
-  </Accordion>
-
-  <Accordion title="Qwen Image 3.0 Pro 多模态图生图">
-    将主体图、风格图和编辑指令依次放入 `input.messages[0].content`。图片对象放在文本对象前面，并在文本中说明图 1、图 2 的职责。不要使用顶层 `image` / `images` 字段替代此结构。
-
-    ### `image` 输入要求
-
-    每个图片对象使用 `image` 字段，值为图像的公网 URL 或 data URL。图生图支持传入 **1–3 张**图像；多图时，`content` 数组中的先后顺序就是图像顺序，请在随后的文本指令中明确各图的作用。
-
-    | 项目 | 要求 |
-    |------|------|
-    | 支持格式 | JPG、JPEG、PNG、BMP、TIFF、WEBP、GIF |
-    | 建议分辨率 | 宽和高均为 384–2048 像素 |
-    | 单张大小 | 不超过 10 MB |
-
-    支持以下两种输入形式：
-
-    - **公网 URL**：支持 HTTP 和 HTTPS。
-    - **data URL**：格式为 `data:{MIME_type};base64,{base64_data}`，不支持不带 `data:` 前缀的裸 Base64。
-
-    ```bash
-    curl -X POST https://llm.ziy.cc/v1/images/generations \
-      -H "Authorization: Bearer sk-你的密钥" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "model": "qwen-image-3.0-pro",
-        "prompt": "使用多模态内容中的图1主体和图2风格，仅进行风格转换，不添加文字。",
-        "input": {
-          "messages": [{
-            "role": "user",
-            "content": [
-              { "image": "data:image/jpeg;base64,<主体图>" },
-              { "image": "data:image/png;base64,<风格图>" },
-              { "text": "图1为主体参考，图2为风格参考。仅进行风格转换，保留图1的主体与构图，不添加文字。" }
-            ]
-          }]
-        },
-        "parameters": {
-          "prompt_extend": false,
-          "n": 1,
-          "watermark": false,
-          "size": "1024*1024"
-        }
-      }'
-    ```
-
-    <Note>
-      图片可以使用公网 URL 或 data URL；实际输出尺寸以返回图片为准。
-    </Note>
-  </Accordion>
-</AccordionGroup>
-
-<Warning>
-  同步接口最长等待约 15 分钟。Image-GPT2 等模型可能耗时数分钟，长耗时模型建议使用 [异步接口](/api-reference/image-generation/asynchronous)。
-</Warning>
+通用错误含义见 [HTTP 状态码](/api-reference/overview#常见-http-状态码)。遇到超时，先检查客户端与代理的等待时间；长耗时模型优先采用异步方式。不要把一次超时直接当成任务已失败并自动重复提交。

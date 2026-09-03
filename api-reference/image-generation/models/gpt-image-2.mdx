@@ -1,0 +1,138 @@
+---
+title: "GPT Image 2"
+description: "使用 Image-GPT2 生成图片：异步示例、参考图、自定义尺寸和透明背景。"
+---
+
+import ReferenceInputs from "/snippets/image-generation/reference-inputs.mdx";
+
+<span id="gpt-image-2" />
+
+适合高质量精细出图，支持文生图、图生图和透明背景。请求中的 API 模型名为 **`Image-GPT2`**。
+
+**调用方式**：支持[同步调用](/api-reference/image-generation/synchronous)和[异步任务](/api-reference/image-generation/asynchronous)。生成可能耗时数分钟，推荐异步提交后查询结果。
+
+## 最小示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/tasks \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GPT2",
+    "prompt": "扁平插画，一杯咖啡",
+    "size": "1024x1536",
+    "quality": "medium"
+  }'
+```
+
+保存响应中的 `task_id`，然后查询：
+
+```bash
+curl https://llm.ziy.cc/v1/images/tasks/task_xxxxxxxxxxxx \
+  -H "Authorization: Bearer sk-你的密钥"
+```
+
+把 `task_xxxxxxxxxxxx` 替换为提交响应中的任务 ID。`data.status` 为 `SUCCESS` 时，从 `data.result_url` 获取图片。完整状态说明与 Python 轮询示例见[异步任务与结果查询](/api-reference/image-generation/asynchronous#查询任务)。
+
+需要同步返回时，使用 `POST /v1/images/generations` 提交同样的顶层参数，并从 `data[0].url` 读取结果。参见[同步调用](/api-reference/image-generation/synchronous)。
+
+## 图生图
+
+<ReferenceInputs />
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/tasks \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GPT2",
+    "prompt": "保持构图，改为水彩风格",
+    "images": [
+      "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1600"
+    ]
+  }'
+```
+
+提交后按上面的方式查询任务结果。
+
+## 尺寸与质量
+
+`size` 决定输出像素尺寸，`quality` 决定画质档位。
+
+### 尺寸规则
+
+| 标准比例 | `size` 映射 |
+|----------|-------------|
+| 1:1 | `1024x1024` |
+| 16:9 | `1536x864` |
+| 9:16 | `864x1536` |
+| 4:3 | `1024x768` |
+| 3:4 | `768x1024` |
+| 3:2 | `1536x1024` |
+| 2:3 | `1024x1536` |
+| `auto` | 支持 |
+
+Image-GPT2 未传 `size` 时默认返回 `1024×1024`；合法自定义 `WxH` 按请求尺寸返回，规则见下方。
+
+<Note>
+  **GPT Image 2 自定义尺寸：** KUNPO 网关支持自定义 `WxH`。宽、高必须为正整数且均为 16 的倍数；单边不超过 3840；宽高比 `W/H` 在 `1/3` 至 `3` 之间；总像素数 `W×H` 在 `655,360` 至 `8,294,400` 之间（均含边界）。满足条件时按请求尺寸处理，否则回退为 `1024×1024`。
+</Note>
+
+### 画质与专属参数
+
+| 参数 | 取值与说明 |
+|------|------------|
+| `quality` | `low`、`medium`、`high`；默认 `medium` |
+| `background` | `transparent`（透明）、`opaque`（不透明）、`auto`（默认） |
+| `output_format` | 图片文件格式，默认 `png`；透明背景使用 `png` 或 `webp` |
+| `input_fidelity` | `high` 或 `low` |
+
+同步请求将以上参数放在顶层。异步请求的 `quality`、`background`、`output_format` 可放在顶层或 `metadata` 中；`input_fidelity` 放在 `metadata` 中。每个参数选一处填写。
+
+## 透明背景
+
+`Image-GPT2` 的同步 `POST /v1/images/generations` 与异步 `POST /v1/images/tasks` 都支持透明背景。设置 `background: "transparent"`，并使用 `output_format: "png"`（或 `"webp"`）输出带 Alpha 通道的图片。
+
+<Warning>
+  `output_format` 控制图片文件格式；`response_format` 只表示返回 `url` 还是 `b64_json`，不能设为 `png`。当前网关即使收到 `b64_json` 也仍返回图片 URL。
+</Warning>
+
+透明背景必须通过参数指定，不能只在提示词里写“透明”或 `transparent`。提示词可专注描述孤立主体，例如居中的单个游戏资产，不包含地面、天空或场景，以便获得干净的主体轮廓。
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/tasks \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GPT2",
+    "prompt": "A single 3D game asset of a small house, isolated object, no environment, no ground plane, no sky, centered, studio lighting.",
+    "size": "1024x1024",
+    "quality": "low",
+    "output_format": "png",
+    "background": "transparent"
+  }'
+```
+
+### 透明效果验收
+
+使用示例中的 PNG 输出时，下载返回 URL 对应的原始图片并检查：
+
+- 文件为 PNG，带 Alpha 通道（RGBA）。
+- 主体外的背景像素 Alpha 为 0，四角应为全透明。
+- 叠加到红、绿、黑色底图上，不应出现白底，也不应把棋盘格画进图片。
+
+<Tip>
+  聊天或预览工具可能用黑色衬底显示透明 PNG。请使用支持透明棋盘格的图片查看器确认镂空效果，避免仅凭预览底色判断。
+</Tip>
+
+## 常见问题
+
+**预览里是黑底，是否代表没有透明背景？** 预览工具可能使用黑色衬底，请下载原图并按上面的 Alpha 通道检查步骤确认。
+
+**生成尚未完成怎么办？** 保留 `task_id` 并继续查询。任务状态、查询间隔及查询失败后的处理见[异步任务与结果查询](/api-reference/image-generation/asynchronous#任务状态)。
+
+## 相关文档
+
+- [模型选择与计费](/api-reference/image-generation/overview)
+- [同步请求参数与响应](/api-reference/image-generation/synchronous)
+- [异步提交与结果查询](/api-reference/image-generation/asynchronous)

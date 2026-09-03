@@ -3,7 +3,9 @@ title: "快速开始"
 description: "5 分钟完成你的第一次 API 调用"
 ---
 
-# 快速开始
+<span id="快速开始" />
+
+本页从一次文本对话请求开始。你也可以直接查看[图像生成](/api-reference/image-generation/overview)或[通用客户端接入](/client-integration/openai-compatible)。
 
 ## 1. 获取 API Key
 
@@ -15,35 +17,24 @@ description: "5 分钟完成你的第一次 API 调用"
 
 ## 2. 发送第一个请求
 
+选择下方一种调用方式，将 `sk-你的密钥` 替换为自己的 API Key。三种示例使用同一个平台模型调用名和相同的消息内容。
+
 ### Gemini 3.1 Flash Lite {#gemini-3-1-flash-lite}
 
-```bash
-curl -X POST https://llm.ziy.cc/v1/chat/completions \
-  -H "Authorization: Bearer sk-你的密钥" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "google/gemini-3.1-flash-lite",
-    "messages": [
-      {"role": "user", "content": "你好，请介绍一下你自己"}
-    ]
-  }'
-```
-
-### DeepSeek-R1-0528 {#deepseek-r1-0528}
-
-```bash
-curl -X POST https://llm.ziy.cc/v1/chat/completions \
-  -H "Authorization: Bearer sk-你的密钥" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "DeepSeek-R1-0528",
-    "messages": [
-      {"role": "user", "content": "你好，请介绍一下你自己"}
-    ]
-  }'
-```
-
 <CodeGroup>
+  ```bash cURL
+  curl -X POST https://llm.ziy.cc/v1/chat/completions \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "google/gemini-3.1-flash-lite",
+      "messages": [
+        {"role": "user", "content": "你好，请介绍一下你自己"}
+      ]
+    }'
+  ```
+
+
   ```python Python
   from openai import OpenAI
 
@@ -81,13 +72,47 @@ curl -X POST https://llm.ziy.cc/v1/chat/completions \
   ```
 </CodeGroup>
 
+## 3. 查看响应
+
+cURL 返回 JSON 时，从 `choices[0].message.content` 读取回答；上面的 Python 和 Node.js 示例会直接打印这个字段。
+
+接口的完整响应结构见[文本对话响应格式](/api-reference/text-chat#非流式响应)。下方保留了 DeepSeek 示例及其响应，便于继续查阅推理模型的用法。
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="文本对话 API" href="/api-reference/text-chat">
+    了解完整的请求参数和高级用法
+  </Card>
+
+  <Card title="配置客户端" href="/client-integration/claude-code">
+    在你常用的工具中接入 KUNPO API
+  </Card>
+</CardGroup>
+
+## 推理模型示例（可选）
+
+### DeepSeek-R1-0528 {#deepseek-r1-0528}
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/chat/completions \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "DeepSeek-R1-0528",
+    "messages": [
+      {"role": "user", "content": "你好，请介绍一下你自己"}
+    ]
+  }'
+```
+
 <Note>
   `DeepSeek-R1-0528` 是推理模型，响应中会额外包含 `reasoning_content` 字段，用于返回模型的思考过程；最终回答仍在 `content` 字段中。若 `max_tokens` 设置过小，token 预算可能被思考过程占满，导致 `content` 为空。流式模式下，`delta.reasoning_content` 会先于 `delta.content` 返回。
 </Note>
 
-## 3. 查看响应
+### DeepSeek 响应示例
 
-成功的响应格式如下：
+下面是该示例的响应结构，实际回答与用量以接口返回为准：
 
 ```json
 {
@@ -111,8 +136,6 @@ curl -X POST https://llm.ziy.cc/v1/chat/completions \
   }
 }
 ```
-
----
 
 ## 使用流式输出
 
@@ -145,39 +168,27 @@ curl -X POST https://llm.ziy.cc/v1/chat/completions \
   ```
 </CodeGroup>
 
----
-
 ## 可用模型
 
-KUNPO API 提供 150+ 模型，涵盖以下供应商：
-
-| 供应商 | 模型示例 | 模型前缀 |
-|--------|----------|----------|
-| Anthropic | Claude Sonnet 4.6, Claude Opus 4.6 | `anthropic/` |
-| OpenAI | GPT-5, GPT-5.4 | `openai/` |
-| Google | Gemini 2.5 Pro, Gemini 3 Pro | `google/` |
-| DeepSeek | DeepSeek-R1, DeepSeek-V3.2 | `deepseek/` |
-| xAI | Grok-4-Fast | `x-ai/` |
-| 阿里巴巴 | Qwen3-Max, Qwen3.5 | 无前缀 |
-| 智谱 | GLM-5, GLM-4.7 | 无前缀 |
-| 字节跳动 | Doubao-Seed-2.0 | 无前缀 |
-| Moonshot | Kimi-K2.5 | 无前缀 |
-| MiniMax | MiniMax-M2.7 | 无前缀 |
-
 <Note>
-  完整模型列表请访问 [KUNPO API 模型广场](https://llm.ziy.cc)。海外模型使用 `供应商/模型名` 格式，国内模型直接使用模型名。
+  请从 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 复制所选模型的完整模型 ID，填写到请求的 `model` 字段。模型 ID 由 KUNPO 中台定义，请保留其前缀、大小写和版本号，不要根据供应商名称自行添加或删除前缀。
 </Note>
 
----
+<Accordion title="展开供应商与模型示例">
+  KUNPO API 提供 150+ 模型，涵盖以下供应商：
 
-## 下一步
+  | 供应商 | 模型示例 |
+  |--------|----------|
+  | Anthropic | Claude Sonnet 4.6, Claude Opus 4.6 |
+  | OpenAI | GPT-5, GPT-5.4 |
+  | Google | Gemini 2.5 Pro, Gemini 3 Pro |
+  | DeepSeek | DeepSeek-R1, DeepSeek-V3.2 |
+  | xAI | Grok-4-Fast |
+  | 阿里巴巴 | Qwen3-Max, Qwen3.5 |
+  | 智谱 | GLM-5, GLM-4.7 |
+  | 字节跳动 | Doubao-Seed-2.0 |
+  | Moonshot | Kimi-K2.5 |
+  | MiniMax | MiniMax-M2.7 |
 
-<CardGroup cols={2}>
-  <Card title="文本对话 API" href="/api-reference/text-chat">
-    了解完整的请求参数和高级用法
-  </Card>
-
-  <Card title="配置客户端" href="/client-integration/claude-code">
-    在你常用的工具中接入 KUNPO API
-  </Card>
-</CardGroup>
+  上表用于浏览供应商与模型示例；请求时请使用模型广场中的完整模型 ID。
+</Accordion>

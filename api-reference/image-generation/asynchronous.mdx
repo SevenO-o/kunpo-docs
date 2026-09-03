@@ -1,15 +1,14 @@
 ---
-title: "异步接口"
+title: "异步任务与结果查询"
 description: "通过异步任务方式生成图片 — 提交任务获取 task_id，轮询查询结果。适合 Image-GPT2 等长耗时模型。"
 ---
 
-# 异步图片生成
+<span id="异步任务与结果查询" />
+<span id="异步图片生成" />
 
-异步接口适用于耗时较长的图片生成任务。提交后立即返回任务 ID，服务端定时轮询上游状态，客户端可随时查询进度和结果。
+异步接口适用于耗时较长的图像生成任务。提交后立即返回任务 ID，服务端定时轮询上游状态，客户端可随时查询进度和结果。
 
-<Note>
-  `model` 参数与对应产品名称：`Image-GI`（Nano Banana Pro）、`Image-GI2`（Nano Banana 2）、`Image-GPT2`（GPT Image 2）、`Image-MI`（Midjourney）。详见 [图片生成概览](/api-reference/image-generation/overview#支持模型)。
-</Note>
+适用模型及推荐方式见[模型选择表](/api-reference/image-generation/overview#支持模型)。认证方式见[图像生成认证](/api-reference/image-generation/overview#认证)。
 
 <Note>
   `qwen-image-3.0-pro` 仅支持同步接口 `POST /v1/images/generations`，请勿用于本页接口。
@@ -25,13 +24,13 @@ POST https://llm.ziy.cc/v1/images/tasks
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|:----:|------|
-| `model` | string | **是** | `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI` |
+| `model` | string | **是** | [模型选择表](/api-reference/image-generation/overview#支持模型)中支持异步的 API 调用名 |
 | `prompt` | string | **是** | 图片描述文本 |
-| `size` | string | 否 | 图片尺寸 |
-| `images` | string[] | 否 | 参考图 URL 数组（图生图） |
-| `quality` | string | 否 | Image-GPT2 画质档位，也可通过 `metadata.quality` 传入；取值见 [概览页](/api-reference/image-generation/overview#quality-映射规则) |
-| `background` | string | 否 | Image-GPT2 背景模式，可放在请求顶层或 `metadata.background`；取值见 [透明背景](/api-reference/image-generation/overview#image-gpt2-透明背景) |
-| `output_format` | string | 否 | Image-GPT2 图片文件格式，可放在请求顶层或 `metadata.output_format`；透明背景的格式要求见 [概览](/api-reference/image-generation/overview#image-gpt2-透明背景) |
+| `size` | string | 否 | 图片尺寸，规则见对应模型页 |
+| `images` | string[] | 否 | 支持图生图的模型使用此参考图数组；支持 URL、Base64 或 data URL，具体用法见模型页 |
+| `quality` | string | 否 | Image-GPT2 画质档位，也可通过 `metadata.quality` 传入；取值见 [模型参数](/api-reference/image-generation/models/gpt-image-2#画质与专属参数) |
+| `background` | string | 否 | Image-GPT2 背景模式，可放在请求顶层或 `metadata.background`；取值见 [透明背景](/api-reference/image-generation/models/gpt-image-2#透明背景) |
+| `output_format` | string | 否 | Image-GPT2 图片文件格式，可放在请求顶层或 `metadata.output_format`；透明背景的格式要求见 [模型说明](/api-reference/image-generation/models/gpt-image-2#透明背景) |
 | `metadata` | object | 否 | 附加参数容器，可传入 `quality`、`output_format`、`background`、`input_fidelity` 等 |
 
 ### 提交响应
@@ -81,6 +80,7 @@ POST https://llm.ziy.cc/v1/images/tasks
       }
   )
 
+  resp.raise_for_status()
   task_id = resp.json()["task_id"]
   print(f"任务已提交: {task_id}")
   ```
@@ -100,32 +100,15 @@ POST https://llm.ziy.cc/v1/images/tasks
     }),
   });
 
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const { task_id } = await resp.json();
   console.log(`任务已提交: ${task_id}`);
   ```
 </CodeGroup>
 
-### 透明背景示例
+<span id="透明背景示例" />
 
-将 `background` 显式放在请求**顶层**（或 `metadata.background`），不要只写在提示词里。下面示例使用顶层参数：
-
-```bash
-curl -X POST https://llm.ziy.cc/v1/images/tasks \
-  -H "Authorization: Bearer sk-你的密钥" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "Image-GPT2",
-    "prompt": "A single 3D game asset of a small house, isolated object, no environment, no ground plane, no sky, centered, studio lighting.",
-    "size": "1024x1024",
-    "quality": "low",
-    "output_format": "png",
-    "background": "transparent"
-  }'
-```
-
-提交后使用返回的 `task_id`，通过 `GET /v1/images/tasks/{task_id}` 轮询；当 `data.status` 为 `SUCCESS` 时，从 `data.result_url` 获取图片。查询方式见 [查询任务](/api-reference/image-generation/asynchronous#查询任务)，下载后按 [透明效果验收](/api-reference/image-generation/overview#透明效果验收) 检查。
-
----
+模型专属示例见 [GPT Image 2：透明背景](/api-reference/image-generation/models/gpt-image-2#透明背景)与各模型页的图生图章节。
 
 ## 查询任务
 
@@ -179,6 +162,7 @@ GET https://llm.ziy.cc/v1/images/tasks/:task_id
       headers={"Authorization": "Bearer sk-你的密钥"}
   )
 
+  resp.raise_for_status()
   data = resp.json()["data"]
   print(f"状态: {data['status']}")
   if data["status"] == "SUCCESS":
@@ -191,6 +175,7 @@ GET https://llm.ziy.cc/v1/images/tasks/:task_id
     { headers: { Authorization: "Bearer sk-你的密钥" } }
   );
 
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const { data } = await resp.json();
   console.log(`状态: ${data.status}`);
   if (data.status === "SUCCESS") {
@@ -207,6 +192,8 @@ GET https://llm.ziy.cc/v1/images/tasks/:task_id
 
 ## 完整异步工作流（Python）
 
+先保存提交响应中的 `task_id`。查询临时超时或遇到 `502` / `503` / `504` 时，继续查询同一个任务；不要重新提交生成请求。下面将提交与查询分开，查询超时后仍可用原任务 ID 恢复。
+
 ```python
 import time
 import requests
@@ -214,30 +201,43 @@ import requests
 BASE_URL = "https://llm.ziy.cc"
 HEADERS = {"Authorization": "Bearer sk-你的密钥"}
 
-def generate_image(prompt, model="Image-GPT2", size="1536x1024"):
-    """提交异步图片生成任务并轮询至完成。"""
-    # 提交任务
-    resp = requests.post(f"{BASE_URL}/v1/images/tasks", headers=HEADERS, json={
-        "model": model, "prompt": prompt, "size": size,
-        "metadata": {"quality": "high"}
-    })
-    task_id = resp.json()["task_id"]
-    print(f"任务已提交: {task_id}")
+def wait_for_image(task_id, timeout=900):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            resp = requests.get(
+                f"{BASE_URL}/v1/images/tasks/{task_id}",
+                headers=HEADERS,
+                timeout=30,
+            )
+        except (requests.Timeout, requests.ConnectionError):
+            time.sleep(15)
+            continue
 
-    # 轮询结果
-    while True:
-        resp = requests.get(f"{BASE_URL}/v1/images/tasks/{task_id}", headers=HEADERS)
+        if resp.status_code in (502, 503, 504):
+            time.sleep(15)
+            continue
+        resp.raise_for_status()
         data = resp.json()["data"]
-        status = data["status"]
-
-        if status == "SUCCESS":
-            print(f"图片地址: {data['result_url']}")
+        if data["status"] == "SUCCESS":
             return data["result_url"]
-        elif status == "FAILURE":
-            raise Exception(f"生成失败: {data['fail_reason']}")
-
+        if data["status"] == "FAILURE":
+            raise RuntimeError(f"任务 {task_id} 失败: {data.get('fail_reason', '')}")
         time.sleep(15)
 
-# 使用示例
-url = generate_image("赛博朋克风格的未来城市夜景，霓虹灯闪烁")
+    raise TimeoutError(f"等待超时，任务不一定失败；保留 {task_id}，稍后继续查询")
+
+# 只提交一次；如果提交未返回任务 ID，请先排查，不要自动重试 POST。
+resp = requests.post(
+    f"{BASE_URL}/v1/images/tasks",
+    headers=HEADERS,
+    json={"model": "Image-GPT2", "prompt": "赛博朋克风格的未来城市夜景"},
+    timeout=60,
+)
+resp.raise_for_status()
+task_id = resp.json()["task_id"]
+print(f"请保存任务 ID: {task_id}")
+print(wait_for_image(task_id))
+
+# 恢复已有任务时，只调用 wait_for_image("已保存的任务 ID")。
 ```

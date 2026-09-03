@@ -1,0 +1,60 @@
+---
+title: "Nano Banana Pro"
+description: "使用 Image-GI 生成图片：最小示例、参考图输入、尺寸与分辨率规则。"
+---
+
+import NanoBananaParameters from "/snippets/image-generation/nano-banana-parameters.mdx";
+import ReferenceInputs from "/snippets/image-generation/reference-inputs.mdx";
+
+<span id="nano-banana-pro" />
+
+支持文生图和参考图生成，可用于风格迁移与构图调整。 请求中的 API 模型名为 **`Image-GI`**。
+
+**调用方式**：支持[同步调用](/api-reference/image-generation/synchronous)和[异步任务](/api-reference/image-generation/asynchronous)，推荐同步；典型耗时约 30–60 秒。
+
+## 最小示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GI",
+    "prompt": "赛博朋克风格的武汉长江大桥夜景"
+  }'
+```
+
+请求完成后，从 `data[0].url` 获取图片。Python、Node.js 和 SDK 用法见[同步调用示例](/api-reference/image-generation/synchronous#示例)。
+
+## 图生图
+
+<ReferenceInputs />
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-GI",
+    "prompt": "保持构图，改为水彩风格",
+    "images": [
+      "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1600"
+    ]
+  }'
+```
+
+## 尺寸与质量
+
+<NanoBananaParameters />
+
+## 常见问题
+
+**为什么传了宽高，返回尺寸仍不相同？** `size` 用于选择比例；需要调整分辨率时，请按上表设置 `quality`。
+
+**参考图没有生效怎么办？** 确认传入的是 `images` 数组，并检查图片地址能否公开访问或图片编码是否完整。
+
+## 相关文档
+
+- [模型选择与计费](/api-reference/image-generation/overview)
+- [同步请求参数与响应](/api-reference/image-generation/synchronous)
+- [异步提交与结果查询](/api-reference/image-generation/asynchronous)

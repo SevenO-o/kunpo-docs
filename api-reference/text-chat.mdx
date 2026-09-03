@@ -1,9 +1,9 @@
 ---
-title: "文本对话"
+title: "文本对话（Chat Completions）"
 description: "OpenAI 兼容的 Chat Completions 接口 — 一个端点访问 150+ 主流大模型，包括 Claude、GPT、Gemini、DeepSeek 等。"
 ---
 
-# 文本对话 (Chat Completions)
+<span id="文本对话-chat-completions" />
 
 ```
 POST https://llm.ziy.cc/v1/chat/completions
@@ -26,7 +26,7 @@ Authorization: Bearer sk-你的密钥
 ### 通用参数
 
 <ParamField path="model" type="string" required>
-  模型 ID。海外模型使用 `供应商/模型名` 格式（如 `anthropic/claude-sonnet-4.6`），国内模型直接使用名称（如 `DeepSeek-R1`）。具体可用模型请在控制台模型市场查看。
+  填写 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 中所选模型的完整模型 ID，保留其前缀、大小写和版本号，不要根据供应商名称自行添加或删除前缀。
 </ParamField>
 
 <ParamField path="messages" type="array" required>
@@ -216,7 +216,7 @@ data: [DONE]
 
 ## 视觉理解（多模态）
 
-支持在消息中传入图片，用于视觉理解任务：
+支持在消息中传入图片，用于视觉理解任务。下方保留请求结构示例，调用时请将 `https://example.com/image.jpg` 替换为实际可访问的图片 URL：
 
 ```bash
 curl -X POST https://llm.ziy.cc/v1/chat/completions \
@@ -252,7 +252,7 @@ KUNPO 平台上的 DeepSeek 模型提供两种协议格式：
 - **不带 `c/` 前缀**（如 `DeepSeek-R1`）— 原生 OpenAI 兼容接口，通过 `/v1/chat/completions` 调用。
 - **带 `c/` 前缀**（如 `c/deepseek-v4-pro`）— Claude 兼容接口，客户端使用 Anthropic 原生协议，但底层模型仍为 DeepSeek。
 
-`c/` 前缀模型的详细用法（模型列表、价格、调用示例、选择建议）请参见 [Claude Messages API — DeepSeek 兼容模型](/api-reference/claude-messages#deepseek-兼容模型c-前缀)。
+`c/` 前缀模型的详细用法（模型列表、价格、调用示例、选择建议）请参见 [Claude Messages API — DeepSeek 兼容模型](/api-reference/claude-messages#deepseek-compatible-models)。
 
 不带前缀的 DeepSeek 模型调用方式与其他模型一致：
 

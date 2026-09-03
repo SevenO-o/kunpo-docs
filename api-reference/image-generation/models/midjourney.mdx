@@ -1,0 +1,56 @@
+---
+title: "Midjourney"
+description: "使用 Image-MI 文生图：最小示例、固定四图返回和参数限制。"
+---
+
+<span id="midjourney" />
+
+适合一次生成多张候选图，单次请求固定返回 4 张图片。请求中的 API 模型名为 **`Image-MI`**。
+
+**调用方式**：支持[同步调用](/api-reference/image-generation/synchronous)和[异步任务](/api-reference/image-generation/asynchronous)，推荐同步；典型耗时约 30–60 秒。以下示例展示同步返回的四张图片。
+
+## 最小示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-MI",
+    "prompt": "一只可爱的橘猫坐在窗台上，阳光照射，写实风格"
+  }'
+```
+
+响应（`data` 数组含 4 项）：
+
+```json
+{
+  "created": 1715689600,
+  "data": [
+    { "url": "https://kunpoapiimg.ziy.cc/...1" },
+    { "url": "https://kunpoapiimg.ziy.cc/...2" },
+    { "url": "https://kunpoapiimg.ziy.cc/...3" },
+    { "url": "https://kunpoapiimg.ziy.cc/...4" }
+  ]
+}
+```
+
+读取 `data` 数组中的全部 `url` 获取四张图片；只读取 `data[0].url` 会遗漏其余三张。公共响应字段见[同步调用](/api-reference/image-generation/synchronous#响应格式)。
+
+## 参数与限制
+
+- 仅支持文生图，提交 `model` 和 `prompt` 即可。
+- `size`、`quality`、`images` 等参数对该模型无效。
+- 每次请求固定返回 4 张图片，按一次请求计费；价格见[计费说明](/api-reference/image-generation/overview#计费说明)。
+
+## 常见问题
+
+**可以用参考图做风格迁移吗？** 当前该模型仅支持文生图，请在[模型选择表](/api-reference/image-generation/overview#支持模型)中选择支持图生图的模型。
+
+**为什么设置尺寸或质量没有变化？** 这些参数对 `Image-MI` 无效，不要直接照搬其他模型的请求参数。
+
+## 相关文档
+
+- [模型选择与计费](/api-reference/image-generation/overview)
+- [同步请求参数与响应](/api-reference/image-generation/synchronous)
+- [异步提交与结果查询](/api-reference/image-generation/asynchronous)

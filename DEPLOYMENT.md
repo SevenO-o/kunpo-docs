@@ -21,6 +21,10 @@ scripts/verify-docs-release.sh --config deployment/sites/docs.ziy.cc.conf
 
 ## 固定边界
 
+构建机首次使用或依赖变化后运行 `npm ci`，安装锁定版本的 Pagefind 和 HTML 解析器。发布脚本在 Mintlify 导出后自动生成中文全文索引、注入搜索入口，并将搜索资源一起打包。`--export-dir` 必须提供已经运行 `scripts/post-export.sh <目录>` 的完整产物，缺少搜索文件会拒绝发布。
+
+服务器只需继续提供静态文件；搜索在访客浏览器中运行，无需 CLI 登录或独立搜索服务。每次文档更新都随构建重新生成索引。本地体验使用 `npm run docs:export` 和 `npm run docs:preview`。
+
 - 域名只能是 `docs.ziy.cc`。
 - 服务器只能使用本机已有的 `dify` SSH 别名。
 - 远端目录只能是 `/opt/1panel/www/sites/docs.ziy.cc`。

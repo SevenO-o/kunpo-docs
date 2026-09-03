@@ -13,6 +13,9 @@ deployment/
 .gitignore
 .mintignore
 .DS_Store
+node_modules/
+package.json
+package-lock.json
 
 # 维护文档（非对外站点内容）
 DOCS_MAINTENANCE.md

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-EXPORT="$ROOT/kunpo-api-docs-export"
+EXPORT="${1:-$ROOT/kunpo-api-docs-export}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [[ ! -d "$EXPORT" ]]; then
@@ -12,6 +12,8 @@ if [[ ! -d "$EXPORT" ]]; then
 fi
 
 cp "$SCRIPT_DIR/serve.js" "$EXPORT/serve.js"
+
+node "$SCRIPT_DIR/build-search.mjs" "$EXPORT"
 
 if [[ -f "$EXPORT/Start Docs.command" ]]; then
   if ! grep -q 'PORT=' "$EXPORT/Start Docs.command"; then
@@ -30,4 +32,4 @@ if [[ -f "$EXPORT/Start Docs.bat" ]]; then
   fi
 fi
 
-echo "Post-export fixes applied (auto port from 5500)."
+echo "Post-export search and launcher setup complete (auto port from 5500)."

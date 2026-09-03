@@ -113,8 +113,22 @@ make_export() {
   local page
   for page in "$@"; do
     mkdir -p "$export_dir/$(dirname "$page")"
-    printf '<html><body>%s</body></html>\n' "$page" > "$export_dir/$page"
+    printf '<html><head><script src="/kunpo-search/search.js"></script></head><body>%s</body></html>\n' "$page" > "$export_dir/$page"
   done
+  mkdir -p "$export_dir/pagefind" "$export_dir/kunpo-search"
+  for page in pagefind/pagefind.js pagefind/pagefind-entry.json kunpo-search/search.js kunpo-search/search.css kunpo-search/matching.js kunpo-search/manifest.json; do
+    printf 'fixture\n' > "$export_dir/$page"
+  done
+}
+
+test_export_without_search_is_rejected() {
+  local config="$FIXTURE_DIR/missing-search.conf"
+  local export_dir="$FIXTURE_DIR/missing-search-export"
+  write_valid_config "$config"
+  make_export "$export_dir" index.html quick-start/index.html api-reference/overview/index.html
+  rm "$export_dir/pagefind/pagefind.js"
+  run_expect_failure "$ROOT/scripts/release-docs.sh" --config "$config" --dry-run --export-dir "$export_dir"
+  assert_output_contains '导出产物缺少搜索资源'
 }
 
 test_invalid_remote_root_is_rejected() {
@@ -284,6 +298,7 @@ test_mintignore_excludes_repository_only_files() {
 test_invalid_remote_root_is_rejected
 test_unknown_config_key_is_rejected
 test_missing_export_page_is_rejected
+test_export_without_search_is_rejected
 test_dry_run_writes_a_sanitized_report
 test_publish_uses_only_the_registered_site_target
 test_export_directory_is_archived_before_upload

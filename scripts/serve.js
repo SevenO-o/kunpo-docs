@@ -13,6 +13,7 @@ const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
   '.js': 'application/javascript',
+  '.wasm': 'application/wasm',
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -99,7 +100,7 @@ async function start() {
         console.log('Port ' + BASE_PORT + ' is in use, using ' + actualPort + ' instead.');
       }
       console.log('Serving docs at ' + url);
-      openInBrowser(url);
+      if (process.env.NO_OPEN !== '1') openInBrowser(url);
       return;
     } catch (err) {
       if (err.code !== 'EADDRINUSE') throw err;

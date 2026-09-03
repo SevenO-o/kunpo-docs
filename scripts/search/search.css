@@ -1,0 +1,35 @@
+#kunpo-docs-search {
+  --ks-bg: #ffffff; --ks-text: #172026; --ks-muted: #66747d; --ks-line: #e2e8eb; --ks-hover: #f1f8fa; --ks-accent: #087f9b;
+  position: fixed; inset: 12vh 0 auto; width: min(660px, calc(100vw - 32px)); max-height: 76vh;
+  margin: 0 auto; padding: 0; overflow: hidden; color: var(--ks-text); background: var(--ks-bg);
+  border: 1px solid var(--ks-line); border-radius: 18px; box-shadow: 0 24px 100px #0004;
+  font-family: inherit; font-size: 14px; line-height: 1.55;
+}
+.dark #kunpo-docs-search { --ks-bg: #101617; --ks-text: #e5edef; --ks-muted: #95a3a8; --ks-line: #293338; --ks-hover: #17272b; --ks-accent: #52c8e8; }
+#kunpo-docs-search::backdrop { background: #050b11a8; backdrop-filter: blur(4px); }
+#kunpo-docs-search[open] { display: flex; flex-direction: column; }
+#kunpo-docs-search .ks-top { display: flex; justify-content: space-between; align-items: center; padding: 22px 24px 16px; }
+#kunpo-docs-search .ks-brand { color: var(--ks-accent); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+#kunpo-docs-search h2 { color: inherit; margin: 3px 0 0; font-size: 19px; font-weight: 650; line-height: 1.5; }
+#kunpo-docs-search button { font: inherit; cursor: pointer; }
+#kunpo-docs-search .ks-close { padding: 3px 8px; background: transparent; border: 1px solid var(--ks-line); border-radius: 6px; color: var(--ks-muted); font-size: 12px; }
+#kunpo-docs-search .ks-input-wrap { display: flex; align-items: center; gap: 12px; margin: 0 24px; padding: 12px 14px; border: 1px solid var(--ks-line); border-radius: 10px; }
+#kunpo-docs-search .ks-input-wrap:focus-within { border-color: var(--ks-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ks-accent) 12%, transparent); }
+#kunpo-docs-search svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--ks-accent); }
+#kunpo-docs-search input { width: 100%; min-width: 0; padding: 0; color: var(--ks-text); background: transparent; outline: none; border: 0; border-radius: 0; box-shadow: none; font: inherit; font-size: 16px; }
+#kunpo-docs-search input::placeholder { color: var(--ks-muted); }
+#kunpo-docs-search .ks-status { padding: 16px 24px 10px; color: var(--ks-muted); font-size: 12px; }
+#kunpo-docs-search .ks-results { overflow-y: auto; overscroll-behavior: contain; min-height: 100px; padding: 0 12px 12px; }
+#kunpo-docs-search .ks-result { display: block; padding: 14px 12px; margin: 2px 0; border: 1px solid transparent; border-radius: 9px; color: inherit; text-decoration: none; }
+#kunpo-docs-search .ks-result:hover, #kunpo-docs-search .ks-result:focus-visible { outline: none; background: var(--ks-hover); border-color: var(--ks-line); }
+#kunpo-docs-search .ks-category { display: block; margin-bottom: 4px; color: var(--ks-accent); font-size: 11px; }
+#kunpo-docs-search strong { font-size: 15px; font-weight: 650; }
+#kunpo-docs-search .ks-section { margin-left: 8px; color: var(--ks-muted); font-size: 12px; }
+#kunpo-docs-search p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: 6px 0 0; color: var(--ks-muted); font-size: 13px; overflow-wrap: anywhere; }
+#kunpo-docs-search mark { background: color-mix(in srgb, var(--ks-accent) 14%, transparent); color: var(--ks-accent); border-radius: 2px; }
+#kunpo-docs-search .ks-examples { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 12px 22px; }
+#kunpo-docs-search .ks-examples button, #kunpo-docs-search .ks-retry { padding: 6px 11px; border: 1px solid var(--ks-line); border-radius: 7px; background: transparent; color: var(--ks-text); font-size: 12px; }
+#kunpo-docs-search .ks-examples button:hover { background: var(--ks-hover); }
+#kunpo-docs-search .ks-retry { margin: 8px 12px; }
+#kunpo-docs-search .ks-footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 24px; border-top: 1px solid var(--ks-line); color: var(--ks-muted); font-size: 10px; }
+@media (max-width: 600px) { #kunpo-docs-search { top: 6vh; max-height: 86vh; } #kunpo-docs-search .ks-footer span:last-child { display: none; } }

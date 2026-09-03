@@ -1,0 +1,13 @@
+{
+  "name": "kunpo-api-docs",
+  "private": true,
+  "scripts": {
+    "docs:export": "bash scripts/export-docs.sh",
+    "docs:preview": "node kunpo-api-docs-export/serve.js",
+    "test:search": "node --test tests/docs-search.test.mjs"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.13",
+    "pagefind": "1.5.2"
+  }
+}

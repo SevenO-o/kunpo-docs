@@ -78,6 +78,11 @@ validate_export() {
   [ -f "$export_dir/index.html" ] || release_fail '导出产物缺少 index 页面' || return 1
   [ -f "$export_dir/quick-start/index.html" ] || release_fail '导出产物缺少 quick-start 页面' || return 1
   [ -f "$export_dir/api-reference/overview/index.html" ] || release_fail '导出产物缺少 api-reference/overview 页面' || return 1
+  local asset
+  for asset in pagefind/pagefind.js pagefind/pagefind-entry.json kunpo-search/search.js kunpo-search/search.css kunpo-search/matching.js kunpo-search/manifest.json; do
+    [ -s "$export_dir/$asset" ] || release_fail "导出产物缺少搜索资源：${asset}；请运行 scripts/post-export.sh" || return 1
+  done
+  grep -q 'kunpo-search/search.js' "$export_dir/index.html" || release_fail '导出产物首页未接入搜索' || return 1
 }
 
 build_site() {
@@ -91,8 +96,9 @@ build_site() {
   ) || return 1
   unzip -tq "$zip_path" >/dev/null || return 1
   unzip -q "$zip_path" -d "$EXPORT_DIR" || return 1
-  validate_export "$EXPORT_DIR"
-  EXPORT_ARCHIVE="$zip_path"
+  bash "$RELEASE_REPO_ROOT/scripts/post-export.sh" "$EXPORT_DIR" || return 1
+  validate_export "$EXPORT_DIR" || return 1
+  archive_export_dir "$EXPORT_DIR"
 }
 
 archive_export_dir() {

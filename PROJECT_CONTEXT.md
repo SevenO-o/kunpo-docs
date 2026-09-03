@@ -20,7 +20,8 @@ KUNPO API 是一个统一的大语言模型（LLM）网关服务，用户通过�
 - **文件格式**：MDX（Markdown + JSX 组件）
 - **配置文件**：`docs.json`（导航结构、主题色、页脚等）
 - **开发服务器**：`npx mintlify dev --port 3333`
-- **静态导出**：`npx mintlify export`（输出 `export.zip`）
+- **静态导出**：`npm run docs:export`（含 Pagefind 搜索，输出 `kunpo-api-docs-export.zip`）
+- **静态预览**：`npm run docs:preview`（默认端口 5500）
 - **线上地址**：https://docs.ziy.cc
 
 ---
@@ -216,9 +217,9 @@ POST https://llm.ziy.cc/v1/chat/completions
 
 ## 已知问题和备注
 
-- Mintlify 搜索功能在本地预览不可用（需登录 CLI），这是 Mintlify 限制，非配置问题
-- `npx mintlify export` 导出的 zip 中 `Start Docs.command` 需要 `chmod +x` 才能在 macOS 直接双击运行
-- 静态导出的 serve.js 默认使用 3000 端口，可能被占用
+- `mintlify dev` 的原生搜索需要登录 CLI；本项目在静态导出时接入 Pagefind，访客无需登录。体验搜索请使用静态预览。
+- 导出及发布脚本自动运行 `scripts/post-export.sh`，生成搜索资源并修复启动器；不要直接上传原始 Mintlify ZIP。
+- 静态预览默认从 5500 端口起寻找空闲端口；可用 `PORT` 指定起始端口。
 - Image-GPT2 的 `response_format: b64_json` 实际仍返回 URL，这是网关行为，非 bug
 
 ---
@@ -231,8 +232,13 @@ cd /Users/kunpo/Projects/work/doc/docs
 npx mintlify dev --port 3333
 
 # 导出静态 HTML 到项目目录
-rm -rf kunpo-api-docs-export
-mintlify export --output /tmp/export.zip && unzip -q /tmp/export.zip -d kunpo-api-docs-export
+npm ci
+npm run docs:export
+npm run docs:preview
+
+# 检查搜索与发布脚本（无服务器写入）
+npm run test:search
+bash tests/docs-release.test.sh
 ```
 
 ---

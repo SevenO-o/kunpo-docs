@@ -185,18 +185,21 @@ POST https://llm.ziy.cc/v1/chat/completions
 修改源文档后重新导出：
 
 ```bash
-cd docs
-rm -rf kunpo-api-docs-export
-mintlify export --output /tmp/export.zip
-unzip -q /tmp/export.zip -d kunpo-api-docs-export
+npm ci
+npm run docs:export
 ```
 
-本地预览：
+脚本会导出 Mintlify 页面、生成 Pagefind 中文索引、接入搜索弹窗，再打包为 `kunpo-api-docs-export.zip`。搜索只索引 `docs.json` 导航中的页面正文、标题与代码示例，不索引侧栏或仓库草稿。模型 ID 和参数名按原文检索，多个关键词按全部包含匹配。
+
+本地体验完整静态站点（含搜索，默认端口 5500）：
 
 ```bash
-mintlify dev --port 3000
-# 或进入 kunpo-api-docs-export && node serve.js
+npm run docs:preview
 ```
+
+日常 MDX 热更新仍可使用 `mintlify dev --port 3333`；该模式是 Mintlify 原生搜索，Pagefind 搜索在导出后生效。修改源文档或搜索脚本后须重新导出。访客点击侧栏搜索或按 `⌘K` / `Ctrl+K` 即可使用，无需登录。
+
+搜索实现位于 `scripts/build-search.mjs` 和 `scripts/search/`；运行 `npm run test:search` 检查索引生成、模型 ID 匹配、正文隔离与 HTML 注入。发布流程也会自动生成并校验搜索资源，不能直接上传未经后处理的 Mintlify 原始 ZIP。
 
 ---
 

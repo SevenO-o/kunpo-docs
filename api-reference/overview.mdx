@@ -61,6 +61,10 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
   <Card title="豆包视频" icon="video" href="/api-reference/doubao-video">
     基于 Seedance 2.0，支持文生视频、图生视频、首尾帧控制等异步任务模式。
   </Card>
+
+  <Card title="腾讯 SE 视频" icon="video" href="/api-reference/video-se">
+    基于腾讯混元生视频 SE，接口与豆包视频相同，结果地址长期有效。
+  </Card>
 </CardGroup>
 
 ---
@@ -87,14 +91,14 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 模式 | 特点 | 适用接口 |
 |------|------|----------|
 | **同步** | 请求阻塞至任务完成，直接返回结果 | 文本对话、图片 GI/GI2/MI/Qwen Image 3.0 Pro、豆包 Seed Audio |
-| **异步** | 提交后立即返回 `task_id`，客户端轮询结果 | 图片 Image-GPT2、豆包视频 |
+| **异步** | 提交后立即返回 `task_id`，客户端轮询结果 | 图片 Image-GPT2、豆包视频、腾讯 SE 视频 |
 
 异步任务通用流程：
 
 ```
-1. POST 提交任务 → 获取 task_id
-2. GET  轮询状态 → 直至 SUCCESS / completed
-3. 读取 result_url / video_url
+1. POST 提交任务 → 获取 task_id（响应 status 为小写 queued）
+2. GET  轮询状态 → 直至 data.status 为 SUCCESS 或 FAILURE
+3. 读取 data.result_url
 ```
 
 ---

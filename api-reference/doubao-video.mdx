@@ -94,10 +94,15 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
 
 ```json
 {
-  "task_id": "7489123456789012345",
-  "status": "pending"
+  "id": "task_xxxxxxxxxxxx",
+  "task_id": "task_xxxxxxxxxxxx",
+  "model": "doubao-seedance-2",
+  "status": "queued",
+  "created_at": 1715689600
 }
 ```
+
+用 `task_id` 去查询进度。提交响应的 `status` 固定为小写 `queued`，与轮询返回的大写枚举不是同一套取值。
 
 ---
 
@@ -215,14 +220,15 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
             resp = requests.get(
                 f"{BASE_URL}/v1/video/generations/{task_id}", headers=HEADERS
             )
-            data = resp.json()
+            data = resp.json()["data"]
+            status = data["status"]
 
-            if data["status"] == "completed":
-                return data["video_url"]
-            elif data["status"] == "failed":
-                raise Exception("视频生成失败")
+            if status == "SUCCESS":
+                return data["result_url"]
+            elif status == "FAILURE":
+                raise Exception(f"视频生成失败: {data.get('fail_reason')}")
 
-            print(f"状态: {data['status']}，等待 {interval}s...")
+            print(f"状态: {status}，等待 {interval}s...")
             time.sleep(interval)
 
         raise TimeoutError("轮询超时")
@@ -265,22 +271,48 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
 
 ```json
 {
-  "task_id": "7489123456789012345",
-  "status": "completed",
-  "video_url": "https://example.com/output/video.mp4",
-  "duration": 5,
-  "ratio": "16:9"
+  "code": "success",
+  "message": "",
+  "data": {
+    "task_id": "task_xxxxxxxxxxxx",
+    "status": "SUCCESS",
+    "progress": "100%",
+    "action": "image_to_video",
+    "result_url": "https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/...mp4?X-Tos-Expires=86400&...",
+    "fail_reason": ""
+  }
 }
 ```
 
+| 字段 | 说明 |
+|------|------|
+| `data.status` | 任务状态（见下表） |
+| `data.progress` | 进度百分比字符串，如 `"100%"` |
+| `data.result_url` | 视频地址（仅 `SUCCESS` 时可用） |
+| `data.fail_reason` | 失败原因（仅 `FAILURE` 时有值） |
+
+<Warning>
+  字段都在 **`data`** 对象里，视频地址是 **`data.result_url`**。
+
+  豆包视频的 `result_url` 是**火山引擎 TOS 的预签名链接**（带 `X-Tos-Expires`，通常 24 小时后失效），
+  与图片生成不同，**不会转存到 KUNPO CDN**。请在拿到后尽快下载或转存到自己的存储。
+</Warning>
+
 ### 任务状态
+
+轮询返回的 `data.status` 是大写枚举，与提交响应的小写 `queued` 不是同一套取值：
 
 | 状态 | 说明 |
 |------|------|
-| `pending` | 排队等待中 |
-| `processing` | 生成中 |
-| `completed` | 生成完成，可获取 `video_url` |
-| `failed` | 生成失败 |
+| `NOT_START` | 已受理入库，尚未开始生成 |
+| `QUEUED` | 上游排队中 |
+| `IN_PROGRESS` | 生成中，可读 `data.progress` |
+| `SUCCESS` | 生成完成，可获取 `data.result_url` |
+| `FAILURE` | 生成失败，查看 `data.fail_reason` |
+
+<Note>
+  只把 `SUCCESS` 和 `FAILURE` 当作终态；遇到未列出的取值一律按「继续等待」处理。
+</Note>
 
 <Tip>
   建议每 5 秒轮询一次，视频生成通常需要 30~120 秒。

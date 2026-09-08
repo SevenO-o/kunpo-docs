@@ -1,0 +1,339 @@
+---
+title: "视频生成（腾讯 SE）"
+description: "基于腾讯混元生视频 SE 的视频生成 API，支持文生视频、图生视频、首尾帧与参考视频。"
+---
+
+腾讯 SE 视频生成采用异步任务模式：先提交任务获取 `task_id`，再轮询查询结果。
+
+对外接口与 [视频生成（Seedance）](/api-reference/doubao-video) 完全相同，把 `model` 换成 SE 模型名即可。两者的差异只有两处：可选参数（见 [请求参数说明](#请求参数说明)）和结果地址的有效期（见 [查询任务结果](#查询任务结果)）。
+
+## 接口地址
+
+```
+POST https://llm.ziy.cc/v1/video/generations       # 提交任务
+GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
+```
+
+<Warning>
+  不要发到 `/v1/chat/completions`。视频模型只走上面两个地址。
+</Warning>
+
+---
+
+## 可用模型
+
+| 模型名 | 说明 |
+|--------|------|
+| `Video-SE-2.0` | 高品质模式，支持 `1080p` |
+| `Video-SE-2.0-fast` | 快速模式，出片更快，不支持 `1080p` |
+
+完整模型 ID 与单价请从 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a> 复制。
+
+---
+
+## 文生视频
+
+<CodeGroup>
+  ```bash cURL
+  curl -X POST https://llm.ziy.cc/v1/video/generations \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "Video-SE-2.0",
+      "prompt": "一只橘猫走过阳光草地，电影感，慢动作",
+      "metadata": {
+        "Resolution": "720p",
+        "Ratio": "16:9",
+        "Duration": 5,
+        "GenerateAudio": false
+      }
+    }'
+  ```
+
+  ```python Python
+  import requests
+
+  resp = requests.post(
+      "https://llm.ziy.cc/v1/video/generations",
+      headers={"Authorization": "Bearer sk-你的密钥"},
+      json={
+          "model": "Video-SE-2.0",
+          "prompt": "一只橘猫走过阳光草地，电影感，慢动作",
+          "metadata": {
+              "Resolution": "720p",
+              "Ratio": "16:9",
+              "Duration": 5,
+              "GenerateAudio": False
+          }
+      }
+  )
+  resp.raise_for_status()
+  print("任务已提交:", resp.json()["task_id"])
+  ```
+</CodeGroup>
+
+### 提交任务响应
+
+```json
+{
+  "id": "task_xxxxxxxxxxxx",
+  "task_id": "task_xxxxxxxxxxxx",
+  "model": "Video-SE-2.0",
+  "status": "queued",
+  "created_at": 1788838809
+}
+```
+
+用 `task_id`（或等价的 `id`）去查询进度。提交响应的 `status` 固定为小写 `queued`，与轮询返回的大写枚举不是同一套取值。
+
+---
+
+## 图生视频 / 多模态生成
+
+顶层 `images` 数组是参考图的快捷写法；需要指定素材角色（首帧、尾帧、参考视频）时用 `metadata.content`。
+
+<CodeGroup>
+  ```bash 参考图
+  curl -X POST https://llm.ziy.cc/v1/video/generations \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "Video-SE-2.0",
+      "prompt": "镜头缓慢推进，云雾在山间飘动",
+      "images": ["https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg"],
+      "metadata": {
+        "Resolution": "720p",
+        "Ratio": "16:9",
+        "Duration": 8
+      }
+    }'
+  ```
+
+  ```bash 首尾帧
+  curl -X POST https://llm.ziy.cc/v1/video/generations \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "Video-SE-2.0",
+      "prompt": "花朵从含苞待放到盛开",
+      "metadata": {
+        "Resolution": "720p",
+        "Ratio": "1:1",
+        "Duration": 6,
+        "content": [
+          {
+            "type": "image_url",
+            "image_url": {"url": "https://你的图片地址/bud.jpg"},
+            "role": "first_frame"
+          },
+          {
+            "type": "image_url",
+            "image_url": {"url": "https://你的图片地址/bloom.jpg"},
+            "role": "last_frame"
+          }
+        ]
+      }
+    }'
+  ```
+
+  ```bash 参考视频
+  curl -X POST https://llm.ziy.cc/v1/video/generations \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "Video-SE-2.0",
+      "prompt": "保持人物动作，把场景换成海边黄昏",
+      "metadata": {
+        "Resolution": "720p",
+        "Ratio": "16:9",
+        "Duration": 5,
+        "content": [
+          {
+            "type": "video_url",
+            "video_url": {"url": "https://你的视频地址/clip.mp4"},
+            "role": "reference_video"
+          }
+        ]
+      }
+    }'
+  ```
+</CodeGroup>
+
+<Note>
+  含真实人像的参考图，上游要求先创建角色素材再以 `asset://...` 传入；普通风景或物体的公网图片可以直接传 URL。
+</Note>
+
+---
+
+## 查询任务结果
+
+```bash
+curl https://llm.ziy.cc/v1/video/generations/{task_id} \
+  -H "Authorization: Bearer sk-你的密钥"
+```
+
+### 响应示例
+
+```json
+{
+  "code": "success",
+  "message": "",
+  "data": {
+    "task_id": "task_xxxxxxxxxxxx",
+    "status": "SUCCESS",
+    "progress": "100%",
+    "action": "text_to_video",
+    "result_url": "https://kunpoapiimg.ziy.cc/images/output/2.0-fast/20260908/1788838914716_d87caf.mp4",
+    "fail_reason": ""
+  }
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `data.status` | 任务状态（见下表） |
+| `data.progress` | 进度百分比字符串，如 `"100%"` |
+| `data.result_url` | 视频地址（仅 `SUCCESS` 时可用） |
+| `data.fail_reason` | 失败原因（仅 `FAILURE` 时有值） |
+
+<Warning>
+  字段都在 **`data`** 对象里，视频地址是 **`data.result_url`**。
+
+  SE 视频由 KUNPO 转存到自有 CDN（`kunpoapiimg.ziy.cc`），**长期有效**，这一点与 Seedance 的预签名地址不同。
+</Warning>
+
+### 任务状态
+
+轮询返回的 `data.status` 是大写枚举，与提交响应的小写 `queued` 不是同一套取值：
+
+| 状态 | 说明 |
+|------|------|
+| `NOT_START` | 已受理入库，尚未开始生成 |
+| `QUEUED` | 上游排队中 |
+| `IN_PROGRESS` | 生成中，可读 `data.progress` |
+| `SUCCESS` | 生成完成，可获取 `data.result_url` |
+| `FAILURE` | 生成失败，查看 `data.fail_reason` |
+
+<Tip>
+  建议每 5 秒轮询一次。`720p` 通常 1～3 分钟，`1080p` 更久。
+  只把 `SUCCESS` 和 `FAILURE` 当作终态，遇到未列出的取值一律按「继续等待」处理。
+</Tip>
+
+### 轮询示例
+
+```python Python
+import time
+import requests
+
+BASE_URL = "https://llm.ziy.cc/v1"
+HEADERS = {"Authorization": "Bearer sk-你的密钥"}
+
+
+def poll_video(task_id, interval=5, timeout=600):
+    """轮询任务直到完成，返回视频 URL。"""
+    start = time.time()
+    while time.time() - start < timeout:
+        resp = requests.get(
+            f"{BASE_URL}/video/generations/{task_id}", headers=HEADERS
+        )
+        data = resp.json()["data"]
+        status = data["status"]
+
+        if status == "SUCCESS":
+            return data["result_url"]
+        elif status == "FAILURE":
+            raise Exception(f"视频生成失败: {data.get('fail_reason')}")
+
+        print(f"状态: {status} {data.get('progress', '')}，等待 {interval}s...")
+        time.sleep(interval)
+
+    raise TimeoutError("轮询超时")
+```
+
+---
+
+## 请求参数说明
+
+<ParamField path="model" type="string" required>
+  `Video-SE-2.0` 或 `Video-SE-2.0-fast`。
+</ParamField>
+
+<ParamField path="prompt" type="string" required>
+  视频描述，会作为 `text` 内容发给上游。
+</ParamField>
+
+<ParamField path="images" type="string[]">
+  参考图 URL 列表，等价于在 `metadata.content` 里写 `image_url`。
+</ParamField>
+
+<ParamField path="seconds" type="string">
+  时长（秒）的字符串写法，例如 `"5"`。与 `metadata.Duration` 等效，同时出现时以本字段为准。
+</ParamField>
+
+<ParamField path="metadata.Resolution" type="string" default="720p">
+  `480p` / `720p` / `1080p`。`1080p` 仅 `Video-SE-2.0` 支持，且按更高档计费。
+</ParamField>
+
+<ParamField path="metadata.Ratio" type="string">
+  画面比例，常见 `16:9` / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`。
+</ParamField>
+
+<ParamField path="metadata.Duration" type="integer">
+  时长（秒）。
+</ParamField>
+
+<ParamField path="metadata.GenerateAudio" type="boolean" default="false">
+  是否同时生成音频。
+</ParamField>
+
+<ParamField path="metadata.Seed" type="integer">
+  随机种子，便于复现同一结果。
+</ParamField>
+
+<ParamField path="metadata.ReturnLastFrame" type="boolean" default="false">
+  是否额外返回末帧图片。
+</ParamField>
+
+<ParamField path="metadata.content" type="array">
+  多模态输入数组。元素的 `type` 取 `text` / `image_url` / `video_url` / `audio_url`，
+  `role` 取 `reference_image` / `reference_video` / `reference_audio` / `first_frame` / `last_frame`。
+</ParamField>
+
+<Warning>
+  `metadata` 里的字段名**不区分大小写**（`Resolution` 与 `resolution` 等效），
+  但**不接受下划线写法**：写 `generate_audio` 不会开启音频，会被忽略并落回默认值，必须写 `GenerateAudio` 或 `generateAudio`。
+</Warning>
+
+网关默认不给视频加 Logo（`LogoAdd=0`）。
+
+---
+
+## 计费
+
+按视频时长结算，不是按条固定价。提交时按预估时长预扣，任务完成后依上游实际用量多退少补；
+含参考视频更便宜，`1080p` 更贵。单价见 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a>。
+
+---
+
+## 常见错误
+
+| 现象 | 原因 | 处理 |
+|------|------|------|
+| 提示只支持 `POST /v1/video/generations` | 请求打到了对话接口 | 改用本页两个地址 |
+| `FAILURE` 且原因提到真人 / real person | 参考图含真实人像且未走角色素材 | 换非真人图，或先创建角色素材再传 `asset://` |
+| `1080p` 被上游拒绝 | `Video-SE-2.0-fast` 不支持 `1080p` | 改 `720p`，或换 `Video-SE-2.0` |
+| 音频没生成 | 写成了 `generate_audio` | 改成 `GenerateAudio` |
+| 长时间停在 `QUEUED` / `IN_PROGRESS` | 上游排队 | 继续轮询，`1080p` 更慢 |
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="视频生成（Seedance）" href="/api-reference/doubao-video">
+    豆包 Seedance 视频生成，接口格式相同
+  </Card>
+  <Card title="API 总览" href="/api-reference/overview">
+    全部端点与协议对比
+  </Card>
+</CardGroup>

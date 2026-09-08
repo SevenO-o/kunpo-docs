@@ -39,6 +39,7 @@ docs/
 │   ├── claude-messages.mdx                    # Claude Messages API (Anthropic 原生)
 │   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
+│   ├── video-se.mdx                           # 腾讯 SE 视频生成 (混元生视频)
 │   └── image-generation/
 │       ├── overview.mdx                       # 概览与模型选择：需求入口、能力矩阵、计费
 │       ├── synchronous.mdx                    # 同步调用：公共请求、响应和多语言示例
@@ -66,7 +67,7 @@ docs/
 | 分组 | 页面 |
 |------|------|
 | 开始 | index, quick-start |
-| API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video |
+| API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video, video-se |
 | 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
 图像生成子组直接展示“概览与模型选择 → 五个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。
@@ -175,6 +176,15 @@ POST https://llm.ziy.cc/v1/chat/completions
 - 异步模式：提交 → 轮询
 - 文生视频 / 图生视频 / 首尾帧控制
 - metadata.content 多模态输入
+- 提交响应 `status` 为小写 `queued`；轮询字段在 `data` 下，终态为大写 `SUCCESS` / `FAILURE`
+- `data.result_url` 是火山 TOS 预签名地址（约 24 小时失效），不转存 KUNPO CDN
+
+### video-se.mdx（腾讯 SE 视频生成）
+- 模型：Video-SE-2.0（支持 1080p）/ Video-SE-2.0-fast（更快，无 1080p）
+- 与豆包视频共用 `/v1/video/generations` 提交与查询端点，仅换 model
+- 文生视频 / 图生视频 / 首尾帧 / 参考视频（metadata.content）
+- `data.result_url` 由 KUNPO 转存自有 CDN，长期有效（与豆包不同）
+- `metadata` 字段名不区分大小写但不接受下划线：`generate_audio` 会被忽略，须写 `GenerateAudio`
 
 ### client-integration/claude-code.mdx
 - `ANTHROPIC_BASE_URL=https://llm.ziy.cc`（不加 `/v1`）

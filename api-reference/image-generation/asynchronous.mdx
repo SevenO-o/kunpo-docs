@@ -40,7 +40,7 @@ POST https://llm.ziy.cc/v1/images/tasks
   "id": "task_xxxxxxxxxxxx",
   "task_id": "task_xxxxxxxxxxxx",
   "model": "Image-GPT2",
-  "status": "submitted",
+  "status": "queued",
   "created_at": 1715689600
 }
 ```
@@ -48,7 +48,7 @@ POST https://llm.ziy.cc/v1/images/tasks
 | 字段 | 说明 |
 |------|------|
 | `task_id` | 任务 ID，用于后续查询 |
-| `status` | 初始状态，固定为 `submitted` |
+| `status` | 初始状态，固定为 `queued` |
 | `created_at` | 创建时间戳 |
 
 ### 示例
@@ -139,12 +139,20 @@ GET https://llm.ziy.cc/v1/images/tasks/:task_id
 
 ### 任务状态
 
+轮询返回的 `data.status` 是大写枚举，与提交响应的小写 `queued` 不是同一套取值：
+
 | 状态 | 说明 |
 |------|------|
-| `submitted` / `QUEUED` | 已提交，等待处理 |
-| `IN_PROGRESS` | 生成中 |
+| `NOT_START` | 已受理入库，尚未开始生成 |
+| `QUEUED` | 上游排队中 |
+| `IN_PROGRESS` | 生成中，可读 `data.progress`（如 `"30%"`） |
 | `SUCCESS` | 完成，`result_url` 可用 |
 | `FAILURE` | 失败，查看 `fail_reason` |
+
+<Note>
+  轮询开头可能出现 `NOT_START`，属正常过程状态，继续轮询即可。
+  只把 `SUCCESS` 和 `FAILURE` 当作终态，遇到未列出的取值一律按「继续等待」处理。
+</Note>
 
 ### 查询示例
 

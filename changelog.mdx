@@ -1,0 +1,118 @@
+---
+title: "更新日志"
+description: "KUNPO API 的模型上线、接口变更与问题修复记录，按时间倒序。"
+---
+
+这里只记录**对 API 调用方有影响**的变更：新增模型、接口行为调整、参数支持和已修复的问题。
+平台内部重构、后台功能调整不在此列。
+
+<Note>
+  标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
+</Note>
+
+<Update label="2026-09-08" tags={["修复"]}>
+
+## 视频结果地址后缀修正
+
+腾讯 SE 视频转存后的 `result_url` 此前带 `.png` 后缀、`Content-Type` 为 `image/png`，
+虽然文件本身是标准 MP4，但部分播放器和浏览器会因此拒绝直接播放。
+
+现已按文件真实格式返回 `.mp4` 与 `Content-Type: video/mp4`。**已生成的旧链接不受影响**，仍可正常下载。
+
+</Update>
+
+<Update label="2026-09-07" tags={["行为变更"]}>
+
+## 异步任务提交响应的 status 改为 queued
+
+提交异步任务（生图、视频）后，响应里的 `status` 由 `submitted` 改为 `queued`：
+
+```json
+{
+  "task_id": "task_xxxxxxxxxxxx",
+  "status": "queued"
+}
+```
+
+<Warning>
+  如果你的代码用 `status == "submitted"` 判断提交是否成功，需要改掉。
+  推荐**只用 HTTP 状态码和 `task_id` 是否存在**来判断提交结果，不要依赖提交时的 `status` 取值。
+</Warning>
+
+轮询接口不受影响，仍是 `data.status` 加大写枚举，终态为 `SUCCESS` / `FAILURE`。
+完整说明见 [异步任务与结果查询](/api-reference/image-generation/asynchronous#任务状态)。
+
+## 文档新增腾讯 SE 视频页
+
+[视频生成（腾讯 SE）](/api-reference/video-se) 补齐了 `Video-SE-2.0` / `Video-SE-2.0-fast` 的
+完整参数、多模态输入与轮询说明。
+
+</Update>
+
+<Update label="2026-09-03" tags={["新增", "修复"]}>
+
+## Image-GPT2 异步接口支持透明背景
+
+此前只有同步接口 `/v1/images/generations` 支持透明背景，异步接口会丢弃相关参数。
+现在两条路径行为一致，异步提交也可以拿到带 Alpha 通道的 PNG：
+
+```json
+{
+  "model": "Image-GPT2",
+  "prompt": "一只柴犬，纯色背景",
+  "background": "transparent",
+  "output_format": "png"
+}
+```
+
+`quality` 与 `input_fidelity` 同样已透传。用法见 [GPT Image 2 透明背景](/api-reference/image-generation/models/gpt-image-2#透明背景)。
+
+## 修复登录偶发失败
+
+使用飞书登录时偶发「无法连接至 OIDC 服务器」，多出现在服务刚发布后的首次登录。已修复。
+
+</Update>
+
+<Update label="2026-08-20" tags={["新增"]}>
+
+## 新增 Image-SI 生图模型
+
+腾讯智能生图，模型名 `Image-SI`，支持文生图与参考图生图，
+通过 `quality` 选择输出分辨率（默认 1K，`medium`/`2k` 为 2K，`hd`/`high` 为 4K 超分）。
+
+入口与其他生图模型一致：同步 `POST /v1/images/generations`，异步 `POST /v1/images/tasks`。
+
+</Update>
+
+<Update label="2026-08-18" tags={["新增"]}>
+
+## 新增腾讯 SE 视频模型
+
+`Video-SE-2.0` 与 `Video-SE-2.0-fast`，走 `POST /v1/video/generations` 提交，
+查询方式与豆包视频相同。按视频时长结算。
+
+详见 [视频生成（腾讯 SE）](/api-reference/video-se)。
+
+</Update>
+
+<Update label="2026-07-31" tags={["新增"]}>
+
+## 新增豆包音频生成
+
+`seed-audio-1.0` 与 `seed-audio-1.0-multilingual`，通过 OpenAI 兼容入口
+`POST /v1/audio/speech` 调用，支持纯文本、参考音频和参考图片生成，直接返回音频二进制。
+
+详见 [音频生成（Seed Audio）](/api-reference/seed-audio)。
+
+</Update>
+
+<Update label="2026-06-18" tags={["修复"]}>
+
+## 修复同步生图偶发连接中断
+
+启用图片转存的同步生图请求（如 `Image-GPT2` 配 `response_format: url`）在 HTTP/2 下
+偶发 `curl: (92)` 或 `RST_STREAM` 报错——响应内容其实完整正确，但客户端随后报错。
+
+根因是响应头里的 `Content-Length` 与转存后的实际长度不一致，已修复。
+
+</Update>

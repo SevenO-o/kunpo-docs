@@ -51,6 +51,12 @@
               "client-integration/lobechat",
               "client-integration/openai-compatible"
             ]
+          },
+          {
+            "group": "更新记录",
+            "pages": [
+              "changelog"
+            ]
           }
         ]
       }

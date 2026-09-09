@@ -36,6 +36,9 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 豆包 Seed Audio | `POST` | `/v1/audio/speech` | 生成音频，直接返回音频二进制 |
 | 视频生成（提交） | `POST` | `/v1/video/generations` | 返回 `task_id` |
 | 视频生成（查询） | `GET` | `/v1/video/generations/:task_id` | 查询任务状态与视频 URL |
+| 3D 生成（文生 / 图生） | `POST` | `/tripo/v3/generation/text-to-model`<br />`/tripo/v3/generation/image-to-model` | 返回 `task_id` |
+| 3D 生成（查询） | `GET` | `/tripo/v3/tasks/:task_id` | 查询任务状态 |
+| 3D 产物（列出 / 下载） | `GET` | `/v1/tasks/:task_id/artifacts` | 取 GLB 模型与预览图 |
 
 ---
 
@@ -64,6 +67,10 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 
   <Card title="腾讯 SE 视频" icon="video" href="/api-reference/video-se">
     基于腾讯混元生视频 SE，接口与豆包视频相同，结果地址长期有效。
+  </Card>
+
+  <Card title="3D 模型生成" icon="cube" href="/api-reference/tripo-3d">
+    基于 Tripo API v3，文生 3D 与图生 3D，输出 GLB 模型与渲染预览图。
   </Card>
 </CardGroup>
 

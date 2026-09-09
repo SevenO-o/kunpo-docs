@@ -1,0 +1,400 @@
+---
+title: "3D 模型生成（Tripo）"
+description: "基于 Tripo API v3 的三维模型生成，支持文生 3D 与图生 3D，输出 GLB 模型和渲染预览图。"
+---
+
+3D 生成是异步任务：先提交任务拿到 `task_id`，轮询到完成后再取产物。产物有两个——GLB 模型文件和一张渲染预览图。
+
+接口路径与 Tripo 官方 v3 保持一致，只需把域名换成 `llm.ziy.cc`、密钥换成 KUNPO 的 `sk-` 密钥。
+
+## 接口地址
+
+```
+POST https://llm.ziy.cc/tripo/v3/generation/text-to-model    # 文生 3D
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-model   # 图生 3D
+GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}             # 查询任务
+GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出产物
+```
+
+<Warning>
+  这几个地址不走 `/v1/chat/completions`，也不走图像生成接口。
+</Warning>
+
+---
+
+## 可用模型
+
+| 模型名 | 说明 |
+|--------|------|
+| `v3.1-20260211` | 当前主力版本，几何与贴图质量最好 |
+| `v3.0-20250812` | 上一版，参数与 3.1 相同，几何面数上限更低 |
+| `v2.5-20250123` | 旧版本，仅在需要复现历史结果时使用 |
+| `P1-20260311` | 低模专用，面数可精确控制，适合游戏资产；不支持 `quad` |
+| `P2-20260801` | P1 的升级版，唯一支持四边面输出（`quad`）的版本，单价明显更高 |
+
+<Warning>
+  `model` 必须写上表中带日期后缀的完整 ID。像 `tripo-v3.1`、`v3.1` 这样的简写会直接返回 400。
+  完整模型 ID 与单价可从 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a> 复制。
+</Warning>
+
+---
+
+## 文生 3D
+
+<CodeGroup>
+  ```bash cURL
+  curl -X POST https://llm.ziy.cc/tripo/v3/generation/text-to-model \
+    -H "Authorization: Bearer sk-你的密钥" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "v3.1-20260211",
+      "prompt": "a small red wooden cube with carved patterns",
+      "texture": true,
+      "pbr": true,
+      "texture_quality": "detailed"
+    }'
+  ```
+
+  ```python Python
+  import requests
+
+  resp = requests.post(
+      "https://llm.ziy.cc/tripo/v3/generation/text-to-model",
+      headers={"Authorization": "Bearer sk-你的密钥"},
+      json={
+          "model": "v3.1-20260211",
+          "prompt": "a small red wooden cube with carved patterns",
+          "texture": True,
+          "pbr": True,
+          "texture_quality": "detailed",
+      },
+  )
+  resp.raise_for_status()
+  print("任务已提交:", resp.json()["data"]["task_id"])
+  ```
+</CodeGroup>
+
+### 提交任务响应
+
+```json
+{
+  "code": 0,
+  "status": "success",
+  "data": {
+    "task_id": "task_xxxxxxxxxxxx",
+    "type": "text_to_model",
+    "status": "queued"
+  }
+}
+```
+
+`prompt` 必填，最长 1024 字符；`negative_prompt` 最长 255 字符。
+
+---
+
+## 图生 3D
+
+把参考图地址放进 `input`：
+
+```bash
+curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-model \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "v3.1-20260211",
+    "input": "https://kunpoapiimg.ziy.cc/images/output/Image-GI/20260909/xxxx.png",
+    "texture": true,
+    "pbr": true
+  }'
+```
+
+<Warning>
+  **图片必须是上游能直接抓取的公网 URL**，且这一步有真实门槛：
+
+  - 不支持 Base64 和 `data:` URL，上游会明确拒绝
+  - 带防盗链的图床（例如 Pexels）会被上游判为「无法访问」，任务提交成功但随后失败（`error_code: 2020`）
+  - 已验证可用：KUNPO 图床 `https://kunpoapiimg.ziy.cc/...`，以及你自己可控的对象存储
+
+  最顺的做法是先用 KUNPO 的图像生成接口出图（结果本来就落在 `kunpoapiimg.ziy.cc`），再把该地址传给 `input`。
+</Warning>
+
+图生 3D 不吃 `prompt` / `negative_prompt` / `image_seed`，传了会被忽略。
+
+---
+
+## 查询任务
+
+```bash
+curl https://llm.ziy.cc/tripo/v3/tasks/{task_id} \
+  -H "Authorization: Bearer sk-你的密钥"
+```
+
+### 响应示例
+
+```json
+{
+  "code": 0,
+  "status": "success",
+  "data": {
+    "task_id": "task_xxxxxxxxxxxx",
+    "type": "image_to_model",
+    "status": "success",
+    "progress": 100,
+    "credits_consumed": 20,
+    "created_at": "2026-09-09T04:35:47.552457Z",
+    "completed_at": "2026-09-09T04:37:12.707544Z",
+    "input": { "model_version": "v3.1-20260211", "texture": false, "pbr": false },
+    "output": {
+      "model_url": "https://tripo-data.rg1.data.tripo3d.com/...glb?Policy=...",
+      "rendered_image_url": "https://tripo-data.rg1.data.tripo3d.com/...webp?Policy=..."
+    }
+  }
+}
+```
+
+### 任务状态
+
+`data.status` 沿用上游的小写取值：
+
+| 状态 | 说明 |
+|------|------|
+| `queued` | 排队中 |
+| `running` | 生成中，可读 `data.progress`（0–100 的数字，不是百分号字符串） |
+| `success` | 完成，产物在 `data.output` |
+| `failed` | 失败，原因见 `data.error_message` 与 `data.error_code` |
+
+<Tip>
+  建议每 5～10 秒轮询一次。实测无贴图的模型 2～4 分钟出结果，开贴图更久。
+  只把 `success` 和 `failed` 当终态，其余一律继续等待。
+</Tip>
+
+<Note>
+  请求里写的是 `model`，但任务回显里这个字段叫 `input.model_version`；`task_id` 由 KUNPO 签发（`task_` 前缀），
+  与上游内部 ID 不同，查询和取产物都用 KUNPO 返回的这个。
+</Note>
+
+---
+
+## 获取产物
+
+`data.output` 里的地址是上游签名链接，**约 24 小时后失效**。推荐改用 KUNPO 的产物接口，由网关代取，不必自己处理上游签名：
+
+```bash
+# 1. 列出产物
+curl https://llm.ziy.cc/v1/tasks/{task_id}/artifacts \
+  -H "Authorization: Bearer sk-你的密钥"
+```
+
+```json
+{
+  "task_id": "task_xxxxxxxxxxxx",
+  "artifacts": [
+    {
+      "key": "model",
+      "type": "file",
+      "mime_type": "model/gltf-binary",
+      "content_url": "https://llm.ziy.cc/v1/tasks/task_xxxx/artifacts/model/content?access=..."
+    },
+    {
+      "key": "preview",
+      "type": "image",
+      "mime_type": "image/png",
+      "content_url": "https://llm.ziy.cc/v1/tasks/task_xxxx/artifacts/preview/content?access=..."
+    }
+  ]
+}
+```
+
+```bash
+# 2. 下载：带 access 参数可直接分发，带密钥则不需要 access
+curl -L -o model.glb \
+  "https://llm.ziy.cc/v1/tasks/{task_id}/artifacts/model/content" \
+  -H "Authorization: Bearer sk-你的密钥"
+```
+
+| 产物 key | 内容 |
+|----------|------|
+| `model` | GLB 模型（glTF 2.0 二进制），开贴图后体积可达数十 MB |
+| `preview` | 512×512 的渲染预览图 |
+
+---
+
+## 轮询与下载示例
+
+```python Python
+import time
+import requests
+
+BASE = "https://llm.ziy.cc"
+HEADERS = {"Authorization": "Bearer sk-你的密钥"}
+
+
+def generate_3d(prompt, interval=8, timeout=900):
+    resp = requests.post(
+        f"{BASE}/tripo/v3/generation/text-to-model",
+        headers=HEADERS,
+        json={"model": "v3.1-20260211", "prompt": prompt, "texture": True, "pbr": True},
+    )
+    resp.raise_for_status()
+    task_id = resp.json()["data"]["task_id"]
+
+    start = time.time()
+    while time.time() - start < timeout:
+        data = requests.get(f"{BASE}/tripo/v3/tasks/{task_id}", headers=HEADERS).json()["data"]
+        status = data["status"]
+        if status == "success":
+            break
+        if status == "failed":
+            raise RuntimeError(f"生成失败: {data.get('error_message')}")
+        print(f"状态: {status} {data.get('progress', 0)}%")
+        time.sleep(interval)
+    else:
+        raise TimeoutError("轮询超时")
+
+    glb = requests.get(
+        f"{BASE}/v1/tasks/{task_id}/artifacts/model/content", headers=HEADERS
+    )
+    glb.raise_for_status()
+    with open(f"{task_id}.glb", "wb") as fp:
+        fp.write(glb.content)
+    return task_id
+```
+
+---
+
+## 请求参数说明
+
+<ParamField path="model" type="string" required>
+  见 [可用模型](#可用模型)。必须写完整 ID。
+</ParamField>
+
+<ParamField path="prompt" type="string">
+  文生 3D 必填，最长 1024 字符。图生 3D 忽略该字段。
+</ParamField>
+
+<ParamField path="negative_prompt" type="string">
+  不希望出现的内容，最长 255 字符。仅文生 3D 有效。
+</ParamField>
+
+<ParamField path="input" type="string">
+  图生 3D 必填，参考图的公网 URL（限制见 [图生 3D](#图生-3d)）。
+</ParamField>
+
+<ParamField path="texture" type="boolean" default="true">
+  是否生成贴图。关掉出白模，更快也更便宜。
+</ParamField>
+
+<ParamField path="pbr" type="boolean" default="true">
+  是否生成 PBR 材质。`texture` 与 `pbr` 同时为 `false` 才算无贴图。
+</ParamField>
+
+<ParamField path="texture_quality" type="string" default="standard">
+  `standard` / `detailed` / `extreme`。质量越高越贵。传其他值会被网关拒绝。
+</ParamField>
+
+<ParamField path="geometry_quality" type="string" default="standard">
+  `standard` / `detailed`。`detailed` 面数更高、更贵。传其他值会被网关拒绝。
+</ParamField>
+
+<ParamField path="face_limit" type="integer">
+  面数上限。P 系列可精确控制（48–20000）；H 系列按模型上限截断。
+</ParamField>
+
+<ParamField path="quad" type="boolean" default="false">
+  输出四边面。**仅 `P2-20260801` 支持**，P1 传了会 400。
+</ParamField>
+
+<ParamField path="smart_low_poly" type="boolean" default="false">
+  智能低模化。
+</ParamField>
+
+<ParamField path="generate_parts" type="boolean" default="false">
+  拆分部件。v3.1 图生 3D 下与 `texture: true` 互斥，同时传会 400。
+</ParamField>
+
+<ParamField path="auto_size" type="boolean" default="false">
+  按真实世界尺度自动缩放。
+</ParamField>
+
+<ParamField path="export_uv" type="boolean" default="true">
+  是否导出 UV。
+</ParamField>
+
+<ParamField path="export_orientation" type="string">
+  导出朝向，取 `+x` / `-x` / `+y` / `-y`。其他值会被网关拒绝。
+</ParamField>
+
+<ParamField path="orientation" type="string">
+  模型朝向策略。
+</ParamField>
+
+<ParamField path="texture_alignment" type="string">
+  贴图对齐策略。
+</ParamField>
+
+<ParamField path="compress" type="string">
+  几何压缩，取 `geometry`。
+</ParamField>
+
+<ParamField path="model_seed" type="integer">
+  几何随机种子，用于复现同一形状。
+</ParamField>
+
+<ParamField path="texture_seed" type="integer">
+  贴图随机种子。
+</ParamField>
+
+<ParamField path="image_seed" type="integer">
+  中间图随机种子，仅文生 3D 有效。
+</ParamField>
+
+<ParamField path="enable_image_autofix" type="boolean" default="false">
+  自动修正输入图。
+</ParamField>
+
+<Note>
+  上游对部分参数的校验比文档宽松：非法的 `orientation` / `texture_alignment` / `compress` 取值不会报错，
+  而是被静默忽略并按默认值生成（**仍然计费**）。网关只对 `texture_quality`、`geometry_quality`、
+  `export_orientation` 和模型名做了严格校验，其余字段请自行核对拼写。
+</Note>
+
+---
+
+## 计费
+
+按上游实际消耗的 credits 结算：提交时按参数预估并冻结额度，任务完成后用上游返回的真实用量多退少补。
+影响单价的主要是模型、是否开贴图、贴图与几何质量档位。**任务失败会全额退回**。
+
+单价见 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a>。
+
+---
+
+## 常见错误
+
+| 现象 | 原因 | 处理 |
+|------|------|------|
+| `unsupported model "..."` | 模型名写了简写 | 用带日期后缀的完整 ID |
+| 提交返回 HTML 而不是 JSON | 路径写错 | 核对本页的四个地址 |
+| 任务 `failed`，`error_code: 2020` | 上游抓不到图片 | 换成 KUNPO 图床或你自己可控的对象存储地址 |
+| 提示 `data:` 不支持 | 传了 Base64 / data URL | 改成公网 URL |
+| `quad` 报 400 | P1 不支持四边面 | 换 `P2-20260801` |
+| `generate_parts` + 贴图报 400 | v3.1 图生 3D 下两者互斥 | 二选一 |
+| 产物链接过期 | 用了 `output` 里的上游签名地址 | 改用 `/v1/tasks/{task_id}/artifacts` |
+
+<Note>
+  当前没有取消任务的接口，提交后只能等它跑完或失败。
+  也不能通过网关上传图片文件——上游要求先上传拿 `file_token`，该接口未开放代理，请用公网 URL。
+</Note>
+
+---
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="图像生成" href="/api-reference/image-generation/overview">
+    先出图再转 3D，图片地址可直接用于 `input`
+  </Card>
+  <Card title="API 总览" href="/api-reference/overview">
+    全部端点与协议对比
+  </Card>
+</CardGroup>

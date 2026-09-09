@@ -10,6 +10,33 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-09" tags={["新增"]}>
+
+## 新增 3D 模型生成（Tripo）
+
+新增五个 3D 生成模型，异步任务模式，输出 GLB 模型文件和渲染预览图：
+
+```
+POST https://llm.ziy.cc/tripo/v3/generation/text-to-model    # 文生 3D
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-model   # 图生 3D
+GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}             # 查询任务
+GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出并下载产物
+```
+
+可用模型为 `v3.1-20260211`、`v3.0-20250812`、`v2.5-20250123`、`P1-20260311`、`P2-20260801`。
+`model` 必须写完整 ID，简写会返回 400。
+
+计费按上游实际消耗结算：提交时预估冻结，完成后按真实用量多退少补，任务失败全额退回。
+
+<Warning>
+  图生 3D 的 `input` 只接受上游能抓取的公网图片 URL，不支持 Base64 和 `data:` URL，
+  带防盗链的图床也会失败。建议使用 KUNPO 图床地址（图像生成接口的输出本来就落在那里）。
+</Warning>
+
+完整参数、轮询与下载示例见 [3D 模型生成（Tripo）](/api-reference/tripo-3d)。
+
+</Update>
+
 <Update label="2026-09-08" tags={["修复"]}>
 
 ## 视频结果地址后缀修正

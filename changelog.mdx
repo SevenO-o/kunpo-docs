@@ -28,10 +28,8 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出并下载�
 
 计费按上游实际消耗结算：提交时预估冻结，完成后按真实用量多退少补，任务失败全额退回。
 
-<Warning>
-  图生 3D 的 `input` 只接受上游能抓取的公网图片 URL，不支持 Base64 和 `data:` URL，
-  带防盗链的图床也会失败。建议使用 KUNPO 图床地址（图像生成接口的输出本来就落在那里）。
-</Warning>
+图生 3D 的 `input` 可以直接传本地图片的 Base64（或 `data:` URL），网关会自动转存到 KUNPO 图床后再交给上游，
+不需要自己准备图片外链。也支持直接传公网 URL，但带防盗链的图床（例如 Pexels）会被上游判为无法访问。
 
 完整参数、轮询与下载示例见 [3D 模型生成（Tripo）](/api-reference/tripo-3d)。
 

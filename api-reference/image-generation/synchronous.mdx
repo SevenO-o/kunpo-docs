@@ -30,7 +30,7 @@ POST https://llm.ziy.cc/v1/images/generations
 | `quality` | string | 否 | 质量或分辨率档位，适用范围与取值见各模型页 |
 | `response_format` | string | 否 | 默认 `url`；传入 `b64_json` 仍返回 URL，`b64_json` 为空 |
 | `images` | string[] | 否 | 参考图数组，输入规则见各模型的图生图章节 |
-| `image` | string | 否 | 单张参考图（URL 或 Base64）；Qwen 请使用多模态结构 |
+| `image` | string | 否 | 单张参考图（URL 或 Base64）；Qwen 请使用多模态结构，Seedream 5.0 Pro 请使用 `images` 数组 |
 
 ### 模型扩展字段
 
@@ -140,6 +140,7 @@ POST https://llm.ziy.cc/v1/images/generations
 - [Nano Banana 2：文生图与参考图](/api-reference/image-generation/models/nano-banana-2)
 - [GPT Image 2：自定义尺寸与透明背景](/api-reference/image-generation/models/gpt-image-2)
 - [Qwen Image 3.0 Pro：多模态输入](/api-reference/image-generation/models/qwen-image-3-pro)
+- [Seedream 5.0 Pro：参考图与 1K/2K/4K 分辨率](/api-reference/image-generation/models/image-si)
 - [Midjourney：一次返回四张图片](/api-reference/image-generation/models/midjourney)
 
 <span id="image-gpt2-文生图" />

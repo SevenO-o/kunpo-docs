@@ -84,9 +84,10 @@
 | `Image-GPT2` | GPT Image 2 |
 | `Image-MI` | Midjourney |
 | `qwen-image-3.0-pro` | Qwen Image 3.0 Pro |
+| `Image-SI` | Seedream 5.0 Pro |
 
 - **首页 / 营销文案**：使用上表「对外展示名」，不写 `Image-GI` 等代号
-- **API 文档 / 代码示例**：继续使用 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro`
+- **API 文档 / 代码示例**：继续使用 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro`、`Image-SI`
 - **模型页标题 / 侧栏**：使用对外展示名；正文开头醒目标注 API 调用名，示例 `model` 必须使用调用代号
 
 **禁止**在 API 示例页把 `model` 改成展示名；**禁止**在首页把展示名改成未上表所列的别称（如即梦、DALL-E）。
@@ -103,10 +104,10 @@
 
 | 行为 | 正确描述 |
 |------|----------|
-| 图片 `response_format: b64_json` | 实际仍返回 CDN `url`，`b64_json` 为空；公共定义在同步页，GPT 页说明与 `output_format` 的区别 |
+| 图片 `response_format: b64_json` | 六款模型均返回 CDN `url`；传入 `b64_json` 也返回 URL，`b64_json` 为空；公共定义在同步页 |
 | 图片存储 | 统一转存 KUNPO CDN：`https://kunpoapiimg.ziy.cc/...` |
-| 图片计费 | 五款模型均为**按次计费**，价格表只在 overview 维护 |
-| 图生图参考图 | `Image-GI`、`Image-GI2`、`Image-GPT2` 的 `images[]` 支持公网 URL、Base64 或 data URL；Qwen 多模态 `content[].image` 支持公网 URL 或 data URL，不支持裸 Base64 |
+| 图片计费 | 原有五款模型固定按次，Image-SI 动态计费；计费说明只在 overview 维护，不将测试额度差写成固定单价 |
+| 图生图参考图 | `Image-GI`、`Image-GI2`、`Image-GPT2` 的 `images[]` 支持公网 URL、Base64 或 data URL；Qwen 多模态 `content[].image` 支持公网 URL 或 data URL，不支持裸 Base64；Image-SI 通过 `images[]` 传入最多 10 张公网 URL / Base64 data URL，不复用 GI/GPT 参考图片段 |
 | Claude Code Base URL | `https://llm.ziy.cc`（不加 `/v1`） |
 | OpenAI 兼容 Base URL | `https://llm.ziy.cc/v1` |
 | API Key 占位符 | 统一 `sk-你的密钥` |
@@ -118,8 +119,8 @@
 - 新页面**必须**加入 `docs.json` 对应分组，否则 export 不会包含
 - **不要**添加 GitHub 等占位外链（已移除 navbar/footer socials）
 - API 接口分组顺序：`overview` → `text-chat` → `claude-messages` → 图像生成子组 → `seed-audio` → `doubao-video`
-- 图像生成子组顺序：概览与模型选择 → Nano Banana Pro → Nano Banana 2 → GPT Image 2 → Qwen Image 3.0 Pro → Midjourney → 同步调用 → 异步任务与结果查询
-- 五个模型页直接放在图像生成子组内，不再嵌套“模型指南”分组
+- 图像生成子组顺序：概览与模型选择 → Nano Banana Pro → Nano Banana 2 → GPT Image 2 → Qwen Image 3.0 Pro → Seedream 5.0 Pro → Midjourney → 同步调用 → 异步任务与结果查询
+- 六个模型页直接放在图像生成子组内，不再嵌套“模型指南”分组
 - 保留现有 `overview`、`synchronous`、`asynchronous` URL；迁移内容时保留旧锚点，并提供指向新章节的短链接说明
 - 概览按需求提供快捷入口；模型支持范围与计费只在概览汇总
 - 文本、音频、视频页面标题统一使用“能力（协议或产品）”；这只改变导航展示，不修改代码中的模型调用名
@@ -127,6 +128,8 @@
 - 快速开始先展示原有 Gemini 的 cURL / Python / Node.js 示例和结果读取方式，再放下一步、原有 DeepSeek 示例、流式用法与可用模型表
 
 ---
+
+对外文档直接描述支持范围、参数规则与使用方法，不使用“已验证”“尚未实测”等测试状态表述，不展示测试过程或单次耗时记录。未知能力不写成“不支持”，也不当作可用能力列出；测试证据保留在独立记录中。
 
 ## 5. Mintlify 组件约定
 
@@ -227,6 +230,7 @@ docs/
 │           ├── nano-banana-2.mdx
 │           ├── gpt-image-2.mdx
 │           ├── qwen-image-3-pro.mdx
+│           ├── image-si.mdx
 │           └── midjourney.mdx
 ├── snippets/image-generation/
 │   ├── nano-banana-parameters.mdx     # GI/GI2 共用规则
@@ -246,7 +250,7 @@ docs/
 |------|----------|
 | 在 sync 页新增完整计费表 | 只在 overview 维护，sync 加链接 |
 | quick-start 用未验证模型 | 只用第 2 节已验证模型 |
-| 首页写「DALL-E / 即梦」等未接入模型 | 首页图片能力写展示名表五款；API 页用 API `model` 名 |
+| 首页写「DALL-E / 即梦」等未接入模型 | 首页图片能力写展示名表六款；API 页用 API `model` 名 |
 | Image-GPT2 写成 OpenAI 直连 | API 页用代号 `Image-GPT2`，展示名 GPT Image 2 |
 | 三处都写 DeepSeek 说明 | text-chat 写 OpenAI 格式，claude-messages 写 c/ 前缀，互相链接 |
 | 导出后手动改 HTML | 改 `.mdx` 后重新 export |

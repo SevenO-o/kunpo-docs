@@ -33,6 +33,7 @@
                   "api-reference/image-generation/models/nano-banana-2",
                   "api-reference/image-generation/models/gpt-image-2",
                   "api-reference/image-generation/models/qwen-image-3-pro",
+                  "api-reference/image-generation/models/image-si",
                   "api-reference/image-generation/models/midjourney",
                   "api-reference/image-generation/synchronous",
                   "api-reference/image-generation/asynchronous"

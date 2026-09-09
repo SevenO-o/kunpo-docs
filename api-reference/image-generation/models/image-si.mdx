@@ -1,0 +1,140 @@
+---
+title: "Seedream 5.0 Pro"
+description: "使用 Seedream 5.0 Pro 生成图片：同步调用、多参考图、1K/2K/4K 分辨率与画面比例。"
+---
+
+通过腾讯云点播 AIGC 接入的豆包 Seedream 5.0 Pro，上游模型标识为 SI 5.0-pro，支持文生图和参考图生成。请求中的 API 模型名为 **`Image-SI`**。
+
+**调用方式**：使用[同步调用](/api-reference/image-generation/synchronous) `POST /v1/images/generations`，完成后读取 `data[0].url`。
+
+<Warning>
+  当前不支持 `/v1/images/tasks` 异步调用，请使用同步接口。
+</Warning>
+
+## 最小示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-SI",
+    "prompt": "极简产品摄影：一只亮黄色陶瓷杯，杯身正面有一个清晰的蓝色五角星，杯把朝右。杯子放在浅灰色桌面上，纯白背景，柔和棚拍光，正方形构图，无文字，无水印。",
+    "quality": "1k",
+    "size": "1:1",
+    "n": 1,
+    "response_format": "url"
+  }'
+```
+
+请求完成后，从 `data[0].url` 获取图片。同步请求可能需要等待较长时间，请为客户端设置足够的超时；公共响应和多语言用法见[同步调用](/api-reference/image-generation/synchronous)。
+
+## 图生图
+
+支持单张和多张参考图，**最多 10 张**。使用 **`images` 字符串数组**传入图片，并在 `prompt` 中说明需要保留和修改的内容。
+
+参考图支持以下输入形式：
+
+- **公网 URL**：图片地址需可公开访问。
+- **Base64 data URL**：使用 `data:image/jpeg;base64,` 或 `data:image/png;base64,` 等前缀，后接图片文件的完整 Base64 编码。MIME 类型应与文件格式一致。
+
+```json
+{
+  "images": ["data:image/jpeg;base64,<图片文件的完整Base64编码>"]
+}
+```
+
+使用 Base64 时，将上方占位内容替换为完整编码，再把 `images` 字段加入下方请求。
+
+### 单张参考图
+
+下面使用一张黄色陶瓷杯参考图，保留杯身、蓝色五角星和右侧杯把，将桌面与背景改成木桌和浅绿色：
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Image-SI",
+    "prompt": "以参考图为依据，保留同一只黄色陶瓷杯的形状、杯身蓝色五角星和朝右的杯把。将杯子放在浅木色桌面中央，背景改为浅绿色。横向产品摄影，画面比例 16:9，无文字，无水印。",
+    "images": [
+      "https://kunpoapiimg.ziy.cc/images/output/Image-SI/20260909/1788922581271_e07344.jpeg"
+    ],
+    "quality": "2k",
+    "size": "16:9",
+    "n": 1,
+    "response_format": "url"
+  }'
+```
+
+生成结果保留杯子的主要特征并更换了背景。可对照查看[参考原图](https://kunpoapiimg.ziy.cc/images/output/Image-SI/20260909/1788922581271_e07344.jpeg)与[生成结果](https://kunpoapiimg.ziy.cc/images/output/Image-SI/20260909/1788922716017_da005f.jpeg)。使用自己的图片时，替换 `images` 中的 URL 和对应提示词。
+
+### 多张参考图
+
+将最多 10 张图片依次放入 `images` 数组，提示词中的“图 1”“图 2”对应数组顺序。为每张图明确指定用途，例如图 1 提供主体，图 2 提供背景环境。
+
+以下示例把第一张图中的杯子放入第二张图的山湖环境：
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+  "model": "Image-SI",
+  "prompt": "使用两张参考图创作一张写实产品摄影。图1提供唯一的前景主体，完整保留它的形状、颜色、表面图案和部件朝向，不使用图1的背景。图2提供拍摄环境，保留它的地形、植被、色彩、光线和空间关系。将图1主体自然放在图2环境前景的一块平整石面上，主体占画面高度约一半，环境仍然清晰可辨。保持主体原有比例与视角，融合光照，横向画面比例16:9，不添加文字，不拼接边框。",
+  "images": [
+    "https://kunpoapiimg.ziy.cc/images/output/Image-SI/20260909/1788922581271_e07344.jpeg",
+    "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1600"
+  ],
+  "quality": "2k",
+  "size": "16:9",
+  "n": 1,
+  "response_format": "url"
+}'
+```
+
+查看[图 1：主体参考](https://kunpoapiimg.ziy.cc/images/output/Image-SI/20260909/1788922581271_e07344.jpeg)、[图 2：环境参考](https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1600)和[双图生成结果](https://kunpoapiimg.ziy.cc/images/output/Image-SI/20260909/1788924393292_8ef2ba.jpeg)。
+
+## 尺寸与质量
+
+`quality` 选择分辨率档位，`size` 表达画面比例。建议明确传入 `1k`、`2k` 或 `4k`，并直接使用比例字符串。
+
+| `quality` | 分辨率档位 | 网关兼容值 |
+|-----------|------------|------------|
+| `1k` | 1K（默认） | 未传或未识别的值回退到此档 |
+| `2k` | 2K | `medium` |
+| `4k` | 4K（超分） | `high`、`hd` |
+
+4K 档位通过超分输出，不代表原生 4K 生成。当前接口不提供 1.5K 档位；不要将 `1K`、`1.5K` 或 `2K` 写入 `size` 来设置分辨率。
+
+| `size` 写法 | 规则 |
+|-------------|------|
+| 比例字符串 | 网关识别 `1:1`、`16:9`、`9:16`、`4:3`、`3:4`、`3:2`、`2:3`、`21:9` |
+| 像素宽高 | 不作为精确输出尺寸；部分值映射到预设比例，例如 `1536x1024` 映射为 `16:9`，需要 `3:2` 时直接传 `3:2` |
+| 未传、`auto` 或未识别的值 | 回退到 `1:1` 映射；`auto` 不表示自动匹配参考图比例 |
+
+<Note>
+  非方形比例会写入提示词，不是硬性宽高约束。请让提示词与 `size` 保持一致，实际尺寸以返回图片为准。
+</Note>
+
+## 参数限制
+
+- `n` 设置为 `1`，每次生成一张图片。
+- 参考图使用 `images` 数组，最多 10 张；不要用单独的 `image` 字段替代。
+- `response_format` 默认使用 `url`；传入 `b64_json` 也返回 CDN URL，`b64_json` 为空。统一从 `data[0].url` 获取结果。
+- 当前 KUNPO 接入不支持 `seed`、`negative_prompt`、`mask`、`background`、`output_format`、`layer_decomposition` 和 `optimize_prompt_options`，无法通过这些字段控制生成结果。
+
+## 常见问题
+
+**为什么异步请求报 `model_price_error`？** 当前不支持异步调用，请改用本页同步接口。
+
+**为什么 2K 横图不是 2048×1152？** `quality` 是分辨率档位，`size` 是比例提示，不保证指定的精确像素。请读取结果图的真实宽高。
+
+**参考图没有生效怎么办？** 检查 `images` 是否为字符串数组、图片 URL 是否能公开访问或 data URL 编码是否完整，并明确描述要保留的主体特征和要修改的部分。
+
+**为什么不能直接使用 TokenHub 的参数？** 本页通过 KUNPO 的云点播适配调用模型，参数转换由当前接入决定。腾讯云 [TokenHub 调用指南](https://cloud.tencent.com/document/product/1823/136609)中的分辨率、透明背景和图层拆分字段不能直接用于本接口。
+
+## 相关文档
+
+- [模型选择与计费](/api-reference/image-generation/overview)
+- [同步请求参数与响应](/api-reference/image-generation/synchronous)

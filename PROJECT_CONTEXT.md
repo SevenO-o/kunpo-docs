@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-09-03（图像生成第一阶段及首页、快速开始结构调整）
+> 最后更新：2026-09-09（新增 Seedream 5.0 Pro（API 调用名 Image-SI）模型文档、动态计费与调用限制）
 
 ---
 
@@ -49,6 +49,7 @@ docs/
 │           ├── nano-banana-2.mdx
 │           ├── gpt-image-2.mdx
 │           ├── qwen-image-3-pro.mdx
+│           ├── image-si.mdx                    # Seedream 5.0 Pro：URL 参考图、分辨率档位与比例
 │           └── midjourney.mdx
 ├── snippets/image-generation/
 │   ├── nano-banana-parameters.mdx             # GI/GI2 共用尺寸与分辨率规则
@@ -70,7 +71,7 @@ docs/
 | API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video, video-se |
 | 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
-图像生成子组直接展示“概览与模型选择 → 五个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。
+图像生成子组直接展示“概览与模型选择 → 六个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。
 
 文本、音频和视频导航标题统一为“能力（协议或产品）”。所有页面只保留一个可见主标题，旧标题锚点保留。页面路径不变。
 
@@ -140,20 +141,21 @@ POST https://llm.ziy.cc/v1/chat/completions
 ### image-generation/overview.mdx（概览与模型选择）
 - 按需求进入第一张图、参考图、透明背景和多张候选图的具体模型章节
 - 模型矩阵区分文生图、图生图、同步支持、异步支持与推荐方式
-- 模型选择建议、按次计费表（唯一维护位置）、认证和图片存储约定
+- 模型选择建议、固定按次与 Image-SI 动态计费（唯一维护位置）、认证和图片存储约定
 - 参数规则迁入模型页；旧参数与透明背景锚点保留短链接说明
 
 ### image-generation/models/*.mdx（模型用法）
-- 五个模型分别提供调用名、调用方式、最小示例、能力用法、参数限制与常见问题
+- 六个模型分别提供调用名、调用方式、最小示例、能力用法、参数限制与常见问题
 - Nano Banana Pro / 2 导入同一份尺寸和质量片段，避免两份规则漂移
 - GI/GI2/GPT 导入共用参考图格式；每个模型保留可直接复制的请求示例
 - GPT 页集中维护自定义尺寸、透明背景、Alpha 验收和专属参数
 - Qwen 页直接展示多模态文生图、图生图、输入限制和两种尺寸写法
+- Seedream 5.0 Pro 页（`image-si.mdx`，API 调用名 `Image-SI`）维护同步调用、最多 10 张参考图（公网 URL / Base64 data URL）、1K/2K/4K 档位与比例规则；明确不支持异步调用
 - Midjourney 页解释固定四图、遍历结果与无效参数
 
 ### image-generation/synchronous.mdx（同步调用）
 - 接口：`POST https://llm.ziy.cc/v1/images/generations`
-- 参数表含 `response_format`：传入 `b64_json` 仍返回 URL
+- 参数表含 `response_format`：六款模型传入 `b64_json` 均返回 URL，`b64_json` 为空
 - 代码示例：cURL / Python / Node.js / Python (OpenAI SDK)
 - 模型示例迁入模型页，协议页提供直达链接并保留旧入口锚点
 - Warning：同步最长等待约 15 分钟，长耗时推荐异步；补充超时处理提示
@@ -162,7 +164,7 @@ POST https://llm.ziy.cc/v1/chat/completions
 - 提交：`POST https://llm.ziy.cc/v1/images/tasks`
 - 查询：`GET https://llm.ziy.cc/v1/images/tasks/:task_id`
 - metadata 参数：quality、output_format、background、input_fidelity 等
-- 支持模型链接到概览矩阵，Qwen 仅同步的限制保留
+- 支持模型链接到概览矩阵，Qwen 仅同步的限制保留，并提示 Image-SI 当前异步不可用
 - 完整 Python 异步工作流将提交与查询分开，查询临时失败时使用同一个 task_id 恢复
 - 透明背景示例迁入 GPT 页，保留旧锚点入口
 
@@ -219,7 +221,7 @@ POST https://llm.ziy.cc/v1/chat/completions
    - OpenAI 兼容格式（Chat Completions）：带前缀，如 `anthropic/claude-sonnet-4.6`
 4. **DeepSeek 模型名**：quick-start / text-chat 示例用 `DeepSeek-R1-0528`；首页卡片标题仍为 DeepSeek-R1
 5. **图片生成**：选型和计费在 overview；模型参数在 models；共用规则在 snippets；公共请求/响应和轮询在 sync/async，各自单一维护
-6. **图片 response_format**：传入 `b64_json` 仍返回 CDN URL
+6. **图片 response_format**：六款模型传入 `b64_json` 均返回 CDN URL，`b64_json` 为空
 7. **docs.json**：无 navbar/footer GitHub 占位链接
 8. **Seed Audio 响应**：成功时读取音频二进制，不调用 `response.json()`；图片参考使用火山服务可访问的公网 URL
 

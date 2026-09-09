@@ -10,6 +10,18 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-09" tags={["修复"]}>
+
+## 修复异步图生图传 Base64 报 502
+
+`Image-GI` / `Image-GI2` 通过异步接口 `POST /v1/images/tasks` 传 Base64 参考图时会返回 502，
+上游报「URL 格式不合法」；同一张图走同步接口 `/v1/images/generations` 一直是正常的。
+
+现在两条接口行为一致：`images` 数组里可以直接放 Base64、`data:` URL 或公网 URL，
+网关会把 Base64 转存到 KUNPO 图床后再交给上游。单图字段 `image` 同样适用。
+
+</Update>
+
 <Update label="2026-09-09" tags={["新增"]}>
 
 ## 新增 3D 模型生成（Tripo）

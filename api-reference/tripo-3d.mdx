@@ -94,28 +94,35 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出产物
 
 ## 图生 3D
 
-把参考图地址放进 `input`：
+参考图放进 `input`，可以直接传本地图片的 Base64，也可以传图片 URL。
 
 ```bash
+# 本地图片：直接传 Base64（推荐，网关会自动转存）
 curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-model \
   -H "Authorization: Bearer sk-你的密钥" \
   -H "Content-Type: application/json" \
-  -d '{
-    "model": "v3.1-20260211",
-    "input": "https://kunpoapiimg.ziy.cc/images/output/Image-GI/20260909/xxxx.png",
-    "texture": true,
-    "pbr": true
-  }'
+  -d "{
+    \"model\": \"v3.1-20260211\",
+    \"input\": \"$(base64 -i shoe.jpg)\",
+    \"texture\": true,
+    \"pbr\": true
+  }"
+```
+
+<Note>
+  **传 Base64 时网关会自动把图片转存到 KUNPO 图床**，再把公网地址交给上游，你不需要自己找地方放图。`data:image/jpeg;base64,...` 这种 data URL 同样可以。
+
+  转存只对真实图片生效（PNG / JPEG / WebP / GIF），非图片内容会原样透传。
+</Note>
+
+也可以直接传 URL，此时不经过转存，**上游必须能直接抓到这个地址**：
+
+```json
+{ "input": "https://kunpoapiimg.ziy.cc/images/output/Image-GI/20260909/xxxx.png" }
 ```
 
 <Warning>
-  **图片必须是上游能直接抓取的公网 URL**，且这一步有真实门槛：
-
-  - 不支持 Base64 和 `data:` URL，上游会明确拒绝
-  - 带防盗链的图床（例如 Pexels）会被上游判为「无法访问」，任务提交成功但随后失败（`error_code: 2020`）
-  - 已验证可用：KUNPO 图床 `https://kunpoapiimg.ziy.cc/...`，以及你自己可控的对象存储
-
-  最顺的做法是先用 KUNPO 的图像生成接口出图（结果本来就落在 `kunpoapiimg.ziy.cc`），再把该地址传给 `input`。
+  自带 URL 时注意：带防盗链的图床（例如 Pexels）会被上游判为「无法访问」，任务提交成功但随后失败（`error_code: 2020`）。拿不准就改传 Base64，让网关转存。
 </Warning>
 
 图生 3D 不吃 `prompt` / `negative_prompt` / `image_seed`，传了会被忽略。
@@ -277,7 +284,7 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <ParamField path="input" type="string">
-  图生 3D 必填，参考图的公网 URL（限制见 [图生 3D](#图生-3d)）。
+  图生 3D 必填，参考图。可传 Base64 / data URL（网关自动转存图床）或公网 URL，见 [图生 3D](#图生-3d)。
 </ParamField>
 
 <ParamField path="texture" type="boolean" default="true">
@@ -376,14 +383,14 @@ def generate_3d(prompt, interval=8, timeout=900):
 | `unsupported model "..."` | 模型名写了简写 | 用带日期后缀的完整 ID |
 | 提交返回 HTML 而不是 JSON | 路径写错 | 核对本页的四个地址 |
 | 任务 `failed`，`error_code: 2020` | 上游抓不到图片 | 换成 KUNPO 图床或你自己可控的对象存储地址 |
-| 提示 `data:` 不支持 | 传了 Base64 / data URL | 改成公网 URL |
+| 提示 `data:` 不支持 | 传的内容没被识别成图片，原样透传给上游 | 确认是 PNG / JPEG / WebP / GIF 且 Base64 完整 |
 | `quad` 报 400 | P1 不支持四边面 | 换 `P2-20260801` |
 | `generate_parts` + 贴图报 400 | v3.1 图生 3D 下两者互斥 | 二选一 |
 | 产物链接过期 | 用了 `output` 里的上游签名地址 | 改用 `/v1/tasks/{task_id}/artifacts` |
 
 <Note>
   当前没有取消任务的接口，提交后只能等它跑完或失败。
-  也不能通过网关上传图片文件——上游要求先上传拿 `file_token`，该接口未开放代理，请用公网 URL。
+  上游的文件上传接口（`file_token`）未开放代理，但不影响你用本地图片——把 Base64 放进 `input` 即可，网关会代为转存。
 </Note>
 
 ---

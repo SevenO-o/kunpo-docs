@@ -22,6 +22,39 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
   这几个地址不走 `/v1/chat/completions`，也不走图像生成接口。
 </Warning>
 
+## 效果示例
+
+下面几张图来自同一条真实链路：一张参考图 → 四视角 → 出模，参考图本身由 KUNPO 的 `Image-GI2` 生成。
+
+<Frame caption="参考图：一张普通的产品图即可">
+  <img src="/images/tripo-3d/input.jpg" alt="用作参考图的锡皮玩具机器人产品图" />
+</Frame>
+
+`image-to-multiview` 把这张图补成四个角度。注意背面：胸前的仪表盘换成了另一块面板，发条也翻到了另一侧——这些都是模型补出来的，原图里看不到。
+
+<Frame caption="image-to-multiview 输出的四张视角图，产物 key 就是 front / left / back / right">
+  <img src="/images/tripo-3d/multiview-views.jpg" alt="玩具机器人的前、左、后、右四张视角图" />
+</Frame>
+
+拿这四个视角走 `multiview-to-model` 出模，和直接用一张图走 `image-to-model` 的对比：
+
+<Columns cols={2}>
+  <Frame caption="image-to-model：单图出模">
+    <img src="/images/tripo-3d/single-image-model.png" alt="单图出模的渲染预览" />
+  </Frame>
+  <Frame caption="multiview-to-model：四视角出模">
+    <img src="/images/tripo-3d/multiview-model.png" alt="四视角出模的渲染预览" />
+  </Frame>
+</Columns>
+
+<Tip>
+  单图出模在正面看几乎一样好，差别主要在**看不见的那一侧**——背面和侧面的结构是模型推测的。
+  物体前后差异大（背包、把手、面板、不对称造型）时，多视角的还原会明显更准；
+  对称物体（杯子、花瓶、球体）用单图就够了，不必多花一次四视角的钱。
+</Tip>
+
+---
+
 ## 该用哪个接口
 
 | 你手上有 | 用这个接口 | 说明 |
@@ -232,25 +265,28 @@ curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview \
   }"
 ```
 
-这个任务**不产出模型**，产出四张 1024×1024 的视角图，产物 key 就是 `front` / `left` / `back` / `right`：
+这个任务**不产出模型**，产出四张 1024×1024 的视角图，产物 key 就是 `front` / `left` / `back` / `right`（效果见 [效果示例](#效果示例)）：
 
 ```bash
 curl https://llm.ziy.cc/v1/tasks/{task_id}/artifacts -H "Authorization: Bearer sk-你的密钥"
 # → artifacts: [{"key":"front",...},{"key":"left",...},{"key":"back",...},{"key":"right",...}]
 ```
 
-拿到之后不必把四张图再传一遍，**直接用 `task_id` 复用**：
+拿到之后不必把四张图再传一遍，**直接填这个任务的 `task_id` 复用**：
 
 ```json
 {
   "model": "v3.1-20260211",
-  "inputs": [{ "task_id": "task_上一步的四视角任务ID" }],
+  "inputs": [{ "task_id": "task_kHTi3NXahVnZ3lRlGdkmFgAq6RdmL5b0" }],
   "texture": true
 }
 ```
 
+填的就是 `image-to-multiview` 返回的那个 `task_` 开头的 ID，网关会自动换成上游认的引用。计费与图生 3D 相同。
+
 <Note>
   `inputs` 里带 `task_id` 时只允许这一个元素，不能和视角图混着传。
+  被引用的任务必须是你自己的、已成功的四视角任务。
 </Note>
 
 <Warning>
@@ -544,6 +580,7 @@ def generate_3d(prompt, interval=8, timeout=900):
 | `unsupported view "top"` | 视角键写错 | 只能用 `front` / `left` / `back` / `right` |
 | `front view is required` | 缺正面视角 | 补一个 `front` |
 | `at least 2 views are required` | 只给了 1 个视角 | 补视角，或改用 `image-to-model` |
+| `origin task is unavailable` | `inputs` 里的 `task_id` 不是你自己的、或任务不存在 | 用自己账号下已成功的四视角任务 ID |
 | `You have exceeded the limit of generation`（429） | 上游有并发生成上限，你的在跑任务太多 | 等前面的任务出结果再提交，别并发压 |
 
 <Note>

@@ -10,6 +10,34 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-10" tags={["新增"]}>
+
+## 3D 生成支持多图参考
+
+新增两个接口，多张参考图终于能一起用了：
+
+```
+POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model   # 多视角生 3D
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview   # 单图出四视角图
+```
+
+多视角出模把视角图放进 `inputs`，键取 `front` / `left` / `back` / `right`（`front` 必填、至少 2 个视角），
+每个视角同样支持直接传 Base64，网关自动转存图床。也可以传扁平的 `images` 数组，按前左后右顺序映射。
+
+只有一张图时可以先用 `image-to-multiview` 让模型补出四视角（固定 10 credits），
+再把该任务的 `task_id` 填进 `inputs` 复用，不必把图片回传一遍。
+
+计费上 `multiview-to-model` 与图生 3D 同价，**视角数量不影响价格**。
+
+<Note>
+  原有的 `image-to-model` 始终只接受一张参考图（`input` 是字符串），
+  往它传多张图会返回 400 `file is required for image_to_model`，所有模型都一样。多图请走新接口。
+</Note>
+
+详见 [3D 模型生成（Tripo）](/api-reference/tripo-3d)。
+
+</Update>
+
 <Update label="2026-09-09" tags={["修复"]}>
 
 ## 修复异步图生图传 Base64 报 502

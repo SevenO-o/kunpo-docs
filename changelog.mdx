@@ -29,9 +29,11 @@ POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview   # 单图出四�
 
 计费上 `multiview-to-model` 与图生 3D 同价，**视角数量不影响价格**。
 
+五个模型 `v3.1-20260211`、`v3.0-20250812`、`v2.5-20250123`、`P1-20260311`、`P2-20260801` **走多视角接口都支持多图**。
+
 <Note>
-  原有的 `image-to-model` 始终只接受一张参考图（`input` 是字符串），
-  往它传多张图会返回 400 `file is required for image_to_model`，所有模型都一样。多图请走新接口。
+  原有的 `image-to-model` 始终只接受一张参考图（`input` 是字符串），往它传多张图会返回 400
+  `file is required for image_to_model`——**五个模型一个都不例外，`P2-20260801` 也不支持**。多图请走新接口。
 </Note>
 
 详见 [3D 模型生成（Tripo）](/api-reference/tripo-3d)。

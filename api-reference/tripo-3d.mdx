@@ -32,9 +32,10 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 | 一张图，但想先看四视角 | `image-to-multiview` → `multiview-to-model` | 先由模型补出四视角，再拿 `task_id` 复用出模 |
 
 <Warning>
-  **`image-to-model` 不支持多图参考。** 无论把多张图放进 `input`、`images`、`files` 还是 `inputs` 数组，
-  上游都会返回 400 `file is required for image_to_model`。这是接口本身的限制，与模型无关——
-  `v3.1`、`P1`、`P2` 的表现完全一致，**P2 也不支持**。要用多张图请走 `multiview-to-model`。
+  **`image-to-model` 不支持多图参考，五个模型一个都不例外。** 无论把多张图放进 `input`、`images`、`files`
+  还是 `inputs` 数组，上游都会返回 400 `file is required for image_to_model`。这是接口本身的限制，与模型无关，
+  **`P2-20260801` 同样不支持**。要用多张图请走 `multiview-to-model`，见
+  [哪些模型支持多图参考](#哪些模型支持多图参考)。
 </Warning>
 
 ---
@@ -49,7 +50,25 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 | `P1-20260311` | 低模专用，面数可精确控制，适合游戏资产；不支持 `quad` |
 | `P2-20260801` | P1 的升级版，唯一支持四边面输出（`quad`）的版本，单价明显更高 |
 
-上表五个模型在 `text-to-model`、`image-to-model`、`multiview-to-model` 上都可用。`image-to-multiview` 也要求填写合法模型 ID（网关会校验），但**上游忽略该接口的模型选择**，实际总是用它自己的默认版本。
+### 哪些模型支持多图参考
+
+**多图参考取决于用哪个接口，不取决于用哪个模型。** 五个模型的表现完全一致：
+
+| 模型名 | `text-to-model` | `image-to-model`（单图） | `image-to-model` 传多图 | `multiview-to-model`（多图） |
+|--------|:---------------:|:------------------------:|:-----------------------:|:----------------------------:|
+| `v3.1-20260211` | 支持 | 支持 | **不支持** | 支持 |
+| `v3.0-20250812` | 支持 | 支持 | **不支持** | 支持 |
+| `v2.5-20250123` | 支持 | 支持 | **不支持** | 支持 |
+| `P1-20260311` | 支持 | 支持 | **不支持** | 支持 |
+| `P2-20260801` | 支持 | 支持 | **不支持** | 支持 |
+
+换句话说：**没有任何模型能让 `image-to-model` 吃下多张图，而五个模型走 `multiview-to-model` 都能用多图出模。**
+包括 `P2-20260801`——它并不因为单价更高就多一项多图能力。
+
+<Note>
+  `image-to-multiview` 也要求填写上表中的合法模型 ID（网关会校验），但**上游忽略该接口的模型选择**，
+  实际总是用它自己的默认版本（任务回显 `model_version: "default"`）。所以这个接口填哪个模型都一样。
+</Note>
 
 <Warning>
   `model` 必须写上表中带日期后缀的完整 ID。像 `tripo-v3.1`、`v3.1` 这样的简写会直接返回 400。

@@ -1,23 +1,40 @@
 ---
 title: "3D 模型生成（Tripo）"
-description: "基于 Tripo API v3 的三维模型生成，支持文生 3D 与图生 3D，输出 GLB 模型和渲染预览图。"
+description: "基于 Tripo API v3 的三维模型生成，支持文生 3D、图生 3D、多视角生 3D 与单图出四视角，输出 GLB 模型和渲染预览图。"
 ---
 
-3D 生成是异步任务：先提交任务拿到 `task_id`，轮询到完成后再取产物。产物有两个——GLB 模型文件和一张渲染预览图。
+3D 生成是异步任务：先提交任务拿到 `task_id`，轮询到完成后再取产物。出模任务的产物有两个——GLB 模型文件和一张渲染预览图。
 
 接口路径与 Tripo 官方 v3 保持一致，只需把域名换成 `llm.ziy.cc`、密钥换成 KUNPO 的 `sk-` 密钥。
 
 ## 接口地址
 
 ```
-POST https://llm.ziy.cc/tripo/v3/generation/text-to-model    # 文生 3D
-POST https://llm.ziy.cc/tripo/v3/generation/image-to-model   # 图生 3D
-GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}             # 查询任务
-GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出产物
+POST https://llm.ziy.cc/tripo/v3/generation/text-to-model        # 文生 3D
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-model       # 图生 3D（单图）
+POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model   # 多视角生 3D（多图参考）
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview   # 单图出四视角图
+GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}                 # 查询任务
+GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 ```
 
 <Warning>
   这几个地址不走 `/v1/chat/completions`，也不走图像生成接口。
+</Warning>
+
+## 该用哪个接口
+
+| 你手上有 | 用这个接口 | 说明 |
+|----------|-----------|------|
+| 一段文字 | `text-to-model` | 文生 3D |
+| **一张**参考图 | `image-to-model` | 图生 3D。这个接口只接受一张图 |
+| **多张**同一物体的不同角度图 | `multiview-to-model` | 多图参考的唯一入口，最多 4 张（前 / 左 / 后 / 右） |
+| 一张图，但想先看四视角 | `image-to-multiview` → `multiview-to-model` | 先由模型补出四视角，再拿 `task_id` 复用出模 |
+
+<Warning>
+  **`image-to-model` 不支持多图参考。** 无论把多张图放进 `input`、`images`、`files` 还是 `inputs` 数组，
+  上游都会返回 400 `file is required for image_to_model`。这是接口本身的限制，与模型无关——
+  `v3.1`、`P1`、`P2` 的表现完全一致，**P2 也不支持**。要用多张图请走 `multiview-to-model`。
 </Warning>
 
 ---
@@ -31,6 +48,8 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出产物
 | `v2.5-20250123` | 旧版本，仅在需要复现历史结果时使用 |
 | `P1-20260311` | 低模专用，面数可精确控制，适合游戏资产；不支持 `quad` |
 | `P2-20260801` | P1 的升级版，唯一支持四边面输出（`quad`）的版本，单价明显更高 |
+
+上表五个模型在 `text-to-model`、`image-to-model`、`multiview-to-model` 上都可用。`image-to-multiview` 也要求填写合法模型 ID（网关会校验），但**上游忽略该接口的模型选择**，实际总是用它自己的默认版本。
 
 <Warning>
   `model` 必须写上表中带日期后缀的完整 ID。像 `tripo-v3.1`、`v3.1` 这样的简写会直接返回 400。
@@ -127,6 +146,99 @@ curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-model \
 
 图生 3D 不吃 `prompt` / `negative_prompt` / `image_seed`，传了会被忽略。
 
+<Warning>
+  `input` 只接受**一个**字符串。要用多张参考图请看下一节。
+</Warning>
+
+---
+
+## 多视角生 3D（多图参考）
+
+同一物体的多个角度一起喂给模型，几何还原比单图准得多。视角图放进 `inputs`，每个元素是一个只有一个键的对象：
+
+```bash
+curl -X POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"v3.1-20260211\",
+    \"inputs\": [
+      {\"front\": \"$(base64 -i front.jpg)\"},
+      {\"left\":  \"$(base64 -i left.jpg)\"},
+      {\"back\":  \"$(base64 -i back.jpg)\"},
+      {\"right\": \"$(base64 -i right.jpg)\"}
+    ],
+    \"texture\": true,
+    \"pbr\": true
+  }"
+```
+
+规则（都是上游硬校验，网关会提前拦下并给出同样语义的报错）：
+
+| 规则 | 说明 |
+|------|------|
+| 视角键 | 只能是 `front` / `left` / `back` / `right`。`top`、`bottom` 等一律报错 |
+| `front` 必填 | 缺少正面视角会被拒绝 |
+| 至少 2 个视角 | 只给 1 个视角请改用 `image-to-model` |
+| 最多 4 个视角 | 同一视角不能重复 |
+| 顺序 | 与数组顺序无关，只看键名 |
+
+每个视角的值和 `input` 一样，可传 Base64 / data URL（网关自动转存图床）或公网 URL，两者可以混用。
+
+<Tip>
+  嫌 `inputs` 写起来麻烦，也可以传扁平的 `images` 数组，网关按 **`[front, left, back, right]`** 的顺序映射：
+
+  ```json
+  { "model": "v3.1-20260211", "images": ["<正面>", "<左侧>", "<背面>"] }
+  ```
+
+  等价于 `inputs: [{"front": ...}, {"left": ...}, {"back": ...}]`。
+</Tip>
+
+多视角出模同样忽略 `prompt` / `negative_prompt` / `image_seed`，其余参数（`texture`、`pbr`、`face_limit`、`quad` 等）与图生 3D 完全一致。
+
+---
+
+## 单图出四视角
+
+只有一张图但想走多视角链路时，先用这个接口让模型补出四个角度：
+
+```bash
+curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"v3.1-20260211\",
+    \"input\": \"$(base64 -i shoe.jpg)\"
+  }"
+```
+
+这个任务**不产出模型**，产出四张 1024×1024 的视角图，产物 key 就是 `front` / `left` / `back` / `right`：
+
+```bash
+curl https://llm.ziy.cc/v1/tasks/{task_id}/artifacts -H "Authorization: Bearer sk-你的密钥"
+# → artifacts: [{"key":"front",...},{"key":"left",...},{"key":"back",...},{"key":"right",...}]
+```
+
+拿到之后不必把四张图再传一遍，**直接用 `task_id` 复用**：
+
+```json
+{
+  "model": "v3.1-20260211",
+  "inputs": [{ "task_id": "task_上一步的四视角任务ID" }],
+  "texture": true
+}
+```
+
+<Note>
+  `inputs` 里带 `task_id` 时只允许这一个元素，不能和视角图混着传。
+</Note>
+
+<Warning>
+  这个接口只接受 `model` 和 `input` 两个字段，`texture`、`face_limit` 之类的 3D 参数传了也没用——
+  它出的是图，不是模型。上游甚至会忽略 `model`，按自己的默认版本生成。
+</Warning>
+
 ---
 
 ## 查询任务
@@ -219,10 +331,16 @@ curl -L -o model.glb \
   -H "Authorization: Bearer sk-你的密钥"
 ```
 
-| 产物 key | 内容 |
-|----------|------|
-| `model` | GLB 模型（glTF 2.0 二进制），开贴图后体积可达数十 MB |
-| `preview` | 512×512 的渲染预览图 |
+| 产物 key | 出现在 | 内容 |
+|----------|--------|------|
+| `model` | 三个出模接口 | GLB 模型（glTF 2.0 二进制），开贴图后体积可达数十 MB |
+| `preview` | 三个出模接口 | 512×512 的渲染预览图 |
+| `front` / `left` / `back` / `right` | `image-to-multiview` | 四张 1024×1024 JPEG 视角图 |
+
+<Note>
+  `image-to-multiview` 的任务在 `data.output` 里把视角地址嵌在 `generate_multiview_image` 下
+  （`front_view_url` 等），且没有 `model_url`。用 `/v1/tasks/{task_id}/artifacts` 就不用关心这层嵌套。
+</Note>
 
 ---
 
@@ -284,7 +402,18 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <ParamField path="input" type="string">
-  图生 3D 必填，参考图。可传 Base64 / data URL（网关自动转存图床）或公网 URL，见 [图生 3D](#图生-3d)。
+  图生 3D 与单图出四视角必填，参考图。**只接受一个字符串**，不接受数组。
+  可传 Base64 / data URL（网关自动转存图床）或公网 URL，见 [图生 3D](#图生-3d)。
+</ParamField>
+
+<ParamField path="inputs" type="array">
+  多视角生 3D 必填。元素为单键对象 `{"front": "<图>"}`，键取 `front` / `left` / `back` / `right`；
+  `front` 必填、至少 2 个视角。也可以写成 `[{"task_id": "..."}]` 复用四视角任务的输出，
+  见上文「多视角生 3D」一节。
+</ParamField>
+
+<ParamField path="images" type="array">
+  `inputs` 的简写形式，按 `[front, left, back, right]` 顺序映射，最多 4 项。仅多视角生 3D 有效。
 </ParamField>
 
 <ParamField path="texture" type="boolean" default="true">
@@ -372,6 +501,11 @@ def generate_3d(prompt, interval=8, timeout=900):
 按上游实际消耗的 credits 结算：提交时按参数预估并冻结额度，任务完成后用上游返回的真实用量多退少补。
 影响单价的主要是模型、是否开贴图、贴图与几何质量档位。**任务失败会全额退回**。
 
+关于多视角的两点：
+
+- **`multiview-to-model` 与 `image-to-model` 同价**，视角数量不影响价格——传 2 张和传 4 张一样贵
+- **`image-to-multiview` 固定 10 credits**，与模型、参数都无关
+
 单价见 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a>。
 
 ---
@@ -387,6 +521,11 @@ def generate_3d(prompt, interval=8, timeout=900):
 | `quad` 报 400 | P1 不支持四边面 | 换 `P2-20260801` |
 | `generate_parts` + 贴图报 400 | v3.1 图生 3D 下两者互斥 | 二选一 |
 | 产物链接过期 | 用了 `output` 里的上游签名地址 | 改用 `/v1/tasks/{task_id}/artifacts` |
+| `file is required for image_to_model` | 往 `image-to-model` 传了多张图 | 该接口只收一张，多图改走 `multiview-to-model` |
+| `unsupported view "top"` | 视角键写错 | 只能用 `front` / `left` / `back` / `right` |
+| `front view is required` | 缺正面视角 | 补一个 `front` |
+| `at least 2 views are required` | 只给了 1 个视角 | 补视角，或改用 `image-to-model` |
+| `You have exceeded the limit of generation`（429） | 上游有并发生成上限，你的在跑任务太多 | 等前面的任务出结果再提交，别并发压 |
 
 <Note>
   当前没有取消任务的接口，提交后只能等它跑完或失败。

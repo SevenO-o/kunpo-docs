@@ -1,0 +1,168 @@
+---
+title: "GPT Images 2.5"
+description: "使用 gpt-image-2.5-flare 与 gpt-image-2.5-sunburst 生成或编辑图片，支持 4K、透明背景和标准 Images API。"
+---
+
+<span id="gpt-image-2.5" />
+
+[ChatGPT Images 2.5](https://openai.com/zh-Hans-CN/index/introducing-chatgpt-images-2-5/) 的两个 API 模型。请求中的 `model` 必须使用下列调用名：
+
+| API 调用名 | 定位 |
+|------------|------|
+| `gpt-image-2.5-flare` | 日常高质量出图，速度更快 |
+| `gpt-image-2.5-sunburst` | 精细编辑与更高精度，生成更久 |
+
+两个模型单价相同，差别在速度和编辑精度，不在计费档位。
+
+**调用方式**：只走同步 [Images API](/api-reference/image-generation/synchronous)。
+
+```
+POST https://llm.ziy.cc/v1/images/generations
+POST https://llm.ziy.cc/v1/images/edits
+```
+
+不走 `/v1/images/tasks`。Sunburst 或 `quality` 为 `xhigh` / `max` 时可能接近同步接口上限，客户端超时请自行加大等待时间。
+
+## 最小示例
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2.5-flare",
+    "prompt": "一只橘猫坐在书桌上看书，赛博朋克风格",
+    "size": "1024x1024",
+    "quality": "low"
+  }'
+```
+
+从 `data[0].url` 读取图片。完整响应字段见[同步调用](/api-reference/image-generation/synchronous)。
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="https://llm.ziy.cc/v1", api_key="sk-你的密钥")
+result = client.images.generate(
+    model="gpt-image-2.5-flare",
+    prompt="一只橘猫坐在书桌上看书，赛博朋克风格",
+    size="1024x1024",
+    quality="low",
+)
+print(result.data[0].url)
+```
+
+## 图片编辑
+
+编辑走 `POST /v1/images/edits`，可传 1–16 张输入图。JSON 体用 `images` 数组（公网 URL 或 data URL）；OpenAI SDK 的 `images.edit()` 默认走 multipart，把本地文件放在 `image` 字段即可。
+
+<Tabs>
+  <Tab title="JSON">
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/edits \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2.5-flare",
+    "prompt": "把背景改成日落时分的海边",
+    "images": ["https://kunpoapiimg.ziy.cc/example.png"],
+    "size": "1024x1024",
+    "quality": "low"
+  }'
+```
+  </Tab>
+  <Tab title="multipart / Python">
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/edits \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -F model=gpt-image-2.5-flare \
+  -F prompt="把背景改成日落时分的海边" \
+  -F image=@original.png \
+  -F size=1024x1024 \
+  -F quality=low
+```
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="https://llm.ziy.cc/v1", api_key="sk-你的密钥")
+result = client.images.edit(
+    model="gpt-image-2.5-flare",
+    image=open("original.png", "rb"),
+    prompt="把背景改成日落时分的海边",
+    size="1024x1024",
+    quality="low",
+)
+print(result.data[0].url)
+```
+  </Tab>
+</Tabs>
+
+输入图格式为 png / jpg。局部重绘可另传 `mask`。精细编辑优先用 `gpt-image-2.5-sunburst`。
+
+## 尺寸与质量
+
+`size` 决定输出像素，`quality` 决定画质档位。分辨率和档位越高，消耗的 token 越多。
+
+### 尺寸
+
+可传标准尺寸，也可传自定义 `宽x高`。未传时默认 `1024x1024`。
+
+| 常用尺寸 | 说明 |
+|----------|------|
+| `1024x1024` | 方形 |
+| `1536x1024` | 横向 |
+| `1024x1536` | 竖向 |
+| `2048x2048` | 2K 方形 |
+| `3840x2160` | 4K 横向 |
+| `2160x3840` | 4K 竖向 |
+
+自定义尺寸规则：宽、高为正整数且均为 16 的倍数；单边不超过 3840；长短边比不超过 3:1；总像素 `W×H` 在 `655,360` 至 `8,294,400` 之间（均含边界）。4K 没有单独的 `4k` 档，直接把 `size` 写成 `3840x2160` 或 `2160x3840`。
+
+### 画质与参数
+
+| 参数 | 取值与说明 |
+|------|------------|
+| `quality` | `auto`（默认）、`low`、`medium`、`high`、`xhigh`、`max`。后两档为 2.5 新增 |
+| `n` | 一次生成张数，`1`–`10` |
+| `background` | `opaque`、`transparent`、`auto` |
+| `output_format` | `png`、`jpeg` |
+| `output_compression` | `0`–`100`，仅 `jpeg` 生效 |
+| `response_format` | `url` 或 `b64_json`。当前网关即使收到 `b64_json` 也仍返回图片 URL |
+
+<Warning>
+  `output_format` 控制图片文件格式；`response_format` 只表示返回 `url` 还是 `b64_json`，不能设为 `png`。
+</Warning>
+
+## 透明背景
+
+设置 `background: "transparent"`，并使用 `output_format: "png"`，即可得到带 Alpha 通道的 PNG。
+
+```bash
+curl -X POST https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer sk-你的密钥" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2.5-flare",
+    "prompt": "A single 3D game asset of a small house, isolated object, no environment, no ground plane, no sky, centered, studio lighting.",
+    "size": "1024x1024",
+    "quality": "low",
+    "n": 2,
+    "background": "transparent",
+    "output_format": "png"
+  }'
+```
+
+下载原图检查：文件为 PNG（RGBA），主体外背景 Alpha 为 0。聊天或预览工具可能用黑色衬底显示透明 PNG，请用支持透明棋盘格的查看器确认。
+
+## 计费
+
+按实际消耗的 token 计费，不是按张固定价。文本输入、图片输入、图片输出单价不同，分辨率、`quality`、`n` 和是否带参考图都会影响总量。图编辑会额外计入输入图片 token。
+
+实时单价见[模型广场](https://llm.ziy.cc/pricing)。
+
+## 相关文档
+
+- [模型选择与计费](/api-reference/image-generation/overview)
+- [同步请求参数与响应](/api-reference/image-generation/synchronous)
+- [ChatGPT Images 2.5 介绍](https://openai.com/zh-Hans-CN/index/introducing-chatgpt-images-2-5/)

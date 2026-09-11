@@ -82,12 +82,14 @@
 | `Image-GI` | Nano Banana Pro |
 | `Image-GI2` | Nano Banana 2 |
 | `Image-GPT2` | GPT Image 2 |
+| `gpt-image-2.5-flare` | GPT Images 2.5 Flare |
+| `gpt-image-2.5-sunburst` | GPT Images 2.5 Sunburst |
 | `Image-MI` | Midjourney |
 | `qwen-image-3.0-pro` | Qwen Image 3.0 Pro |
 | `Image-SI` | Seedream 5.0 Pro |
 
 - **首页 / 营销文案**：使用上表「对外展示名」，不写 `Image-GI` 等代号
-- **API 文档 / 代码示例**：继续使用 `Image-GI`、`Image-GI2`、`Image-GPT2`、`Image-MI`、`qwen-image-3.0-pro`、`Image-SI`
+- **API 文档 / 代码示例**：继续使用 `Image-GI`、`Image-GI2`、`Image-GPT2`、`gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`、`Image-MI`、`qwen-image-3.0-pro`、`Image-SI`
 - **模型页标题 / 侧栏**：使用对外展示名；正文开头醒目标注 API 调用名，示例 `model` 必须使用调用代号
 
 **禁止**在 API 示例页把 `model` 改成展示名；**禁止**在首页把展示名改成未上表所列的别称（如即梦、DALL-E）。
@@ -104,9 +106,9 @@
 
 | 行为 | 正确描述 |
 |------|----------|
-| 图片 `response_format: b64_json` | 六款模型均返回 CDN `url`；传入 `b64_json` 也返回 URL，`b64_json` 为空；公共定义在同步页 |
+| 图片 `response_format: b64_json` | 生图模型均返回 CDN `url`；传入 `b64_json` 也返回 URL，`b64_json` 为空；公共定义在同步页 |
 | 图片存储 | 统一转存 KUNPO CDN：`https://kunpoapiimg.ziy.cc/...` |
-| 图片计费 | 原有五款模型固定按次，Image-SI 动态计费；计费说明只在 overview 维护，不将测试额度差写成固定单价 |
+| 图片计费 | 原有五款模型固定按次，Image-SI 与 GPT Images 2.5 动态计费；计费说明只在 overview 维护，不将测试额度差写成固定单价 |
 | 图生图参考图 | `Image-GI`、`Image-GI2`、`Image-GPT2` 的 `images[]` 支持公网 URL、Base64 或 data URL；Qwen 多模态 `content[].image` 支持公网 URL 或 data URL，不支持裸 Base64；Image-SI 通过 `images[]` 传入最多 10 张公网 URL / Base64 data URL，不复用 GI/GPT 参考图片段 |
 | Claude Code Base URL | `https://llm.ziy.cc`（不加 `/v1`） |
 | OpenAI 兼容 Base URL | `https://llm.ziy.cc/v1` |
@@ -119,8 +121,8 @@
 - 新页面**必须**加入 `docs.json` 对应分组，否则 export 不会包含
 - **不要**添加 GitHub 等占位外链（已移除 navbar/footer socials）
 - API 接口分组顺序：`overview` → `text-chat` → `claude-messages` → 图像生成子组 → `seed-audio` → `doubao-video`
-- 图像生成子组顺序：概览与模型选择 → Nano Banana Pro → Nano Banana 2 → GPT Image 2 → Qwen Image 3.0 Pro → Seedream 5.0 Pro → Midjourney → 同步调用 → 异步任务与结果查询
-- 六个模型页直接放在图像生成子组内，不再嵌套“模型指南”分组
+- 图像生成子组顺序：概览与模型选择 → Nano Banana Pro → Nano Banana 2 → GPT Image 2 → GPT Images 2.5 → Qwen Image 3.0 Pro → Seedream 5.0 Pro → Midjourney → 同步调用 → 异步任务与结果查询
+- 模型页直接放在图像生成子组内，不再嵌套“模型指南”分组
 - 保留现有 `overview`、`synchronous`、`asynchronous` URL；迁移内容时保留旧锚点，并提供指向新章节的短链接说明
 - 概览按需求提供快捷入口；模型支持范围与计费只在概览汇总
 - 文本、音频、视频页面标题统一使用“能力（协议或产品）”；这只改变导航展示，不修改代码中的模型调用名

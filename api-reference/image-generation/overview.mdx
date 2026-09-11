@@ -6,7 +6,7 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
 <span id="概览与模型选择" />
 <span id="图片生成" />
 
-先按需求或模型找到示例，再查阅需要的接口说明。KUNPO 提供六款图像生成模型，共用一个 API Key。
+先按需求或模型找到示例，再查阅需要的接口说明。KUNPO 提供多款图像生成模型，共用一个 API Key。
 
 ## 按需求开始
 
@@ -17,8 +17,8 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
   <Card title="使用参考图" icon="images" href="/api-reference/image-generation/models/nano-banana-pro#图生图">
     使用 Nano Banana Pro 保持构图或调整风格；其他支持范围见下表。
   </Card>
-  <Card title="生成透明背景" icon="chess-pawn" href="/api-reference/image-generation/models/gpt-image-2#透明背景">
-    查看 GPT Image 2 的透明背景参数和效果检查方法。
+  <Card title="生成透明背景" icon="chess-pawn" href="/api-reference/image-generation/models/gpt-image-2.5#透明背景">
+    查看 GPT Images 2.5 的透明背景参数，也可参考 GPT Image 2。
   </Card>
   <Card title="一次生成多张候选图" icon="layer-group" href="/api-reference/image-generation/models/midjourney#最小示例">
     使用 Midjourney，一次请求返回四张图片。
@@ -34,13 +34,14 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
 | [Nano Banana Pro](/api-reference/image-generation/models/nano-banana-pro) | `Image-GI` | 支持 | 支持 | 支持 | 支持 | 同步 |
 | [Nano Banana 2](/api-reference/image-generation/models/nano-banana-2) | `Image-GI2` | 支持 | 支持 | 支持 | 支持 | 同步 |
 | [GPT Image 2](/api-reference/image-generation/models/gpt-image-2) | `Image-GPT2` | 支持 | 支持 | 支持 | 支持 | 异步 |
+| [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5) | `gpt-image-2.5-flare` / `gpt-image-2.5-sunburst` | 支持 | 支持 | 支持 | 不支持 | 同步 |
 | [Qwen Image 3.0 Pro](/api-reference/image-generation/models/qwen-image-3-pro) | `qwen-image-3.0-pro` | 支持 | 多模态输入 | 支持 | 不支持 | 同步 |
 | [Seedream 5.0 Pro](/api-reference/image-generation/models/image-si) | `Image-SI` | 支持 | 支持 | 支持 | 不支持 | 同步 |
 | [Midjourney](/api-reference/image-generation/models/midjourney) | `Image-MI` | 支持 | 不支持 | 支持 | 支持 | 同步 |
 
 ### 选择建议
 
-日常出图可从 Nano Banana 2 开始；复杂图文排版、中文小字和界面素材可查看 [Qwen Image 3.0 Pro](/api-reference/image-generation/models/qwen-image-3-pro)；高质量精细出图可查看 [GPT Image 2](/api-reference/image-generation/models/gpt-image-2)。具体耗时、输入格式与限制以各模型页说明为准。
+日常出图可从 Nano Banana 2 开始；复杂图文排版、中文小字和界面素材可查看 [Qwen Image 3.0 Pro](/api-reference/image-generation/models/qwen-image-3-pro)；高质量精细出图可查看 [GPT Image 2](/api-reference/image-generation/models/gpt-image-2) 或 [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5)（Flare 更快，Sunburst 更适合精细编辑）。具体耗时、输入格式与限制以各模型页说明为准。
 
 ## 接入方式
 
@@ -55,7 +56,7 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
 
 ## 计费说明
 
-以下五款模型为**固定按次计费**，每次请求固定扣费，与输出分辨率无关。Seedream 5.0 Pro 为动态计费，不适用这一规则。
+以下五款模型为**固定按次计费**，每次请求固定扣费，与输出分辨率无关。Seedream 5.0 Pro 与 GPT Images 2.5 为动态计费，不适用这一规则。
 
 | 模型 | 单价（美元/次） | 约合人民币 | 计费方式 |
 |------|:-------------:|:----------:|----------|
@@ -65,7 +66,7 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
 | `Image-MI` | $0.069 | ≈ ¥0.5 | 固定按次（一次 4 张） |
 | `qwen-image-3.0-pro` | $0.069 | ≈ ¥0.5 | 固定按次 |
 
-Seedream 5.0 Pro 的动态计费请以[模型广场](https://llm.ziy.cc/pricing)和实际调用账单为准，不能将某次测试扣费当作固定单价。
+Seedream 5.0 Pro 与 GPT Images 2.5 的动态计费请以[模型广场](https://llm.ziy.cc/pricing)和实际调用账单为准，不能将某次测试扣费当作固定单价。GPT Images 2.5 按 token 计费，分辨率、`quality`、`n` 和参考图都会影响用量，详见[模型页](/api-reference/image-generation/models/gpt-image-2.5#计费)。
 
 <Tip>
   以上价格仅供参考，实际计费请以控制台模型市场中的实时价格为准。
@@ -98,7 +99,7 @@ Authorization: Bearer sk-你的密钥
 <span id="qwen-image-3-0-pro：具体尺寸规则" />
 <span id="qwen-image-3-0-pro-具体尺寸规则" />
 
-尺寸、质量和参考图规则请按模型查看：[Nano Banana Pro](/api-reference/image-generation/models/nano-banana-pro#尺寸与质量)、[Nano Banana 2](/api-reference/image-generation/models/nano-banana-2#尺寸与质量)、[GPT Image 2](/api-reference/image-generation/models/gpt-image-2#尺寸与质量)、[Qwen Image 3.0 Pro](/api-reference/image-generation/models/qwen-image-3-pro#尺寸与参数)、[Seedream 5.0 Pro](/api-reference/image-generation/models/image-si#尺寸与质量)、[Midjourney](/api-reference/image-generation/models/midjourney#参数与限制)。公共字段见[同步调用](/api-reference/image-generation/synchronous#请求参数)和[异步提交](/api-reference/image-generation/asynchronous#请求参数)。
+尺寸、质量和参考图规则请按模型查看：[Nano Banana Pro](/api-reference/image-generation/models/nano-banana-pro#尺寸与质量)、[Nano Banana 2](/api-reference/image-generation/models/nano-banana-2#尺寸与质量)、[GPT Image 2](/api-reference/image-generation/models/gpt-image-2#尺寸与质量)、[GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5#尺寸与质量)、[Qwen Image 3.0 Pro](/api-reference/image-generation/models/qwen-image-3-pro#尺寸与参数)、[Seedream 5.0 Pro](/api-reference/image-generation/models/image-si#尺寸与质量)、[Midjourney](/api-reference/image-generation/models/midjourney#参数与限制)。公共字段见[同步调用](/api-reference/image-generation/synchronous#请求参数)和[异步提交](/api-reference/image-generation/asynchronous#请求参数)。
 
 <span id="image-gpt2-透明背景" />
 <span id="透明效果验收" />

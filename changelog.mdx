@@ -10,6 +10,32 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-11" tags={["新增"]}>
+
+## 新增 GPT Images 2.5
+
+新增两个同步生图 / 修图模型，名称与定位跟 [OpenAI 官网介绍](https://openai.com/zh-Hans-CN/index/introducing-chatgpt-images-2-5/) 一致：
+
+| API 调用名 | 定位 |
+|------------|------|
+| `gpt-image-2.5-flare` | 日常高质量，更快 |
+| `gpt-image-2.5-sunburst` | 精细编辑，生成更久 |
+
+走标准 Images API：
+
+```
+POST https://llm.ziy.cc/v1/images/generations
+POST https://llm.ziy.cc/v1/images/edits
+```
+
+编辑同时支持 JSON（`images` URL 数组）和 OpenAI SDK 默认的 multipart（本地文件字段 `image`）。可用参数包括 `size`、`quality`（含 2.5 新增的 `xhigh` / `max`）、`n`、`background`、`output_format`、`output_compression`。4K 直接传 `size=3840x2160` 或 `2160x3840`，没有单独的 `4k` 档。
+
+按 token 计费，分辨率、画质和是否带参考图都会影响用量。实时单价见[模型广场](https://llm.ziy.cc/pricing)。
+
+完整参数与示例见 [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5)。
+
+</Update>
+
 <Update label="2026-09-10" tags={["新增"]}>
 
 ## 3D 生成支持多图参考

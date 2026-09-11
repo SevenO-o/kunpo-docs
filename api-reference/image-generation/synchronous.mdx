@@ -38,8 +38,10 @@ POST https://llm.ziy.cc/v1/images/generations
 |------|------|----------------|
 | `input` | object | Qwen 多模态请求必填；结构见 [Qwen 图生图](/api-reference/image-generation/models/qwen-image-3-pro#图生图) |
 | `parameters` | object | Qwen 多模态参数容器；见 [Qwen 示例](/api-reference/image-generation/models/qwen-image-3-pro#多模态文生图) |
-| `background` | string | GPT Image 2 背景模式，见[透明背景](/api-reference/image-generation/models/gpt-image-2#透明背景) |
-| `output_format` | string | GPT Image 2 图片文件格式，见[专属参数](/api-reference/image-generation/models/gpt-image-2#画质与专属参数) |
+| `background` | string | GPT Image 2 / 2.5 背景模式，见 [GPT Image 2](/api-reference/image-generation/models/gpt-image-2#透明背景) 与 [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5#透明背景) |
+| `output_format` | string | GPT Image 2 / 2.5 图片文件格式 |
+| `output_compression` | number | GPT Images 2.5 的 JPEG 压缩率，见[画质与参数](/api-reference/image-generation/models/gpt-image-2.5#画质与参数) |
+| `n` | number | GPT Images 2.5 一次生成张数，`1`–`10` |
 | `input_fidelity` | string | GPT Image 2 参考图参数，见[专属参数](/api-reference/image-generation/models/gpt-image-2#画质与专属参数) |
 
 不要把参数表中的所有字段一起传给每个模型。请先使用模型页的最小示例，再按需要增加参数。

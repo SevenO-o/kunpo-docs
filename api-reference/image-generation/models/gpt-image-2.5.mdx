@@ -157,7 +157,13 @@ curl -X POST https://llm.ziy.cc/v1/images/generations \
 
 ## 计费
 
-按实际消耗的 token 计费，不是按张固定价。文本输入、图片输入、图片输出单价不同，分辨率、`quality`、`n` 和是否带参考图都会影响总量。图编辑会额外计入输入图片 token。
+当前 KUNPO 按渠道返回的实际 token 用量计费，尚未开放固定的“分辨率 × 张数”售价。分辨率、`quality`、`n` 和参考图都会影响总费用。
+
+当前腾讯 TokenHub 渠道可能返回 `tokenhub_usage.total_tokens`，这是已统一折算的计费用量。网关在缺少标准独立模态用量时将其归入输入用量；此时模型广场显示的单价对应**折算 token**，不能再套用 OpenAI / OpenRouter 的原始文本、图片输入、图片输出 token 单价重复计算。客户端应读取本站返回的用量及实际账单，不要仅根据输出像素数推算账单。
+
+OpenAI Sunburst 的原始价目为文本输入 $5/百万 token、图片输入 $8/百万 token、图片输出 $30/百万 token、图片缓存输入 $2/百万 token；这些数值用于说明单位差异，不是本站固定张价。[原厂模型价格说明](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst)明确说明 GPT Image 2 的计算器不估算 GPT Image 2.5 的 token 消耗。
+
+如需按张估算，可依据相同分辨率、质量和参考图条件下的实测账单统计范围；不能将一次示例的费用当成所有请求的固定价格。
 
 实时单价见[模型广场](https://llm.ziy.cc/pricing)。
 

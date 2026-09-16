@@ -9,6 +9,16 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-16" tags={["Seedance 2.5", "定价展示"]}>
+
+## Seedance 2.5 可视化秒价
+
+Seedance 2.5 现可按“有／无参考视频 × 输出分辨率”查看和编辑美元秒价，分别列出参考视频与生成视频费用。原有价格、预扣、结算和分组倍率保持不变，调用方不需要新增参数。完整价表见 [Seedance 2.5 接入文档](/api-reference/seedance-25)。
+
+同时补充 [GPT Images 2.5 计费口径](/api-reference/image-generation/models/gpt-image-2.5#计费)：区分原始模态 token 与当前渠道折算用量，避免把其他供应商的数字直接用于估算本站账单。
+
+</Update>
+
 <Update label="2026-09-16" tags={["VS 2.5", "定价展示"]}>
 
 ## VS 2.5 可视化秒价

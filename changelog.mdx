@@ -9,6 +9,18 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-16" tags={["VS 2.5", "视频"]}>
+
+## 腾讯云点播 VS 2.5
+
+VS 2.5 接入支持 Videos、Responses 和云点播插件接口，覆盖图片、视频和音频参考、首尾帧、480P 至 4K 输出及按秒计费。调用名、完整参数、请求和响应、轮询状态与 USD 价格统一见 [VS 2.5 接入文档](/api-reference/video-vs25)。
+
+生成主视频沿用 KUNPO CDN 存储，参考视频在测长预处理时转存。首帧模式需用 `adaptive`，不支持 `-1` 自动时长或媒体文件直传；输出尾帧目前使用腾讯临时地址。
+
+现已开放调用。文档同时提供供 AI 直接读取的 Markdown 与 [llms.txt](https://docs.ziy.cc/llms.txt) 索引，参数、代码与协议表由同一份页面源码生成。
+
+</Update>
+
 <Update label="2026-09-16" tags={["v9.9", "维护"]}>
 
 ## v9.9：平台升级与兼容性维护

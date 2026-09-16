@@ -25,6 +25,8 @@ scripts/verify-docs-release.sh --config deployment/sites/docs.ziy.cc.conf
 
 服务器只需继续提供静态文件；搜索在访客浏览器中运行，无需 CLI 登录或独立搜索服务。每次文档更新都随构建重新生成索引。本地体验使用 `npm run docs:export` 和 `npm run docs:preview`。
 
+后处理同时生成公开 `/llms.txt` 与导航页面 `.md` 文本供 AI 读取，共用片段从单一 MDX 源展开；内部维护文档不导出。发布前还需确认 `/api-reference/video-vs25`、`/api-reference/video-vs25.md` 与 `/llms.txt` 可用，不能只验收旧有三条页面。
+
 - 域名只能是 `docs.ziy.cc`。
 - 服务器只能使用本机已有的 `dify` SSH 别名。
 - 远端目录只能是 `/opt/1panel/www/sites/docs.ziy.cc`。

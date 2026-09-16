@@ -34,8 +34,12 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 图像生成（异步提交） | `POST` | `/v1/images/tasks` | 返回 `task_id`，适合长耗时模型 |
 | 图像生成（异步查询） | `GET` | `/v1/images/tasks/:task_id` | 查询任务状态与结果 URL |
 | 豆包 Seed Audio | `POST` | `/v1/audio/speech` | 生成音频，直接返回音频二进制 |
-| 视频生成（提交） | `POST` | `/v1/video/generations` | 返回 `task_id` |
-| 视频生成（查询） | `GET` | `/v1/video/generations/:task_id` | 查询任务状态与视频 URL |
+| 豆包 / SE 视频（提交） | `POST` | `/v1/video/generations` | 返回 `task_id` |
+| 豆包 / SE 视频（查询） | `GET` | `/v1/video/generations/:task_id` | 查询任务状态与视频 URL |
+| VS 2.5 Videos | `POST` / `GET` | `/v1/videos`<br />`/v1/videos/:task_id` | 提交、查询，成功结果在 `url` |
+| VS 2.5 视频内容 | `GET` / `HEAD` | `/v1/videos/:task_id/content` | 下载或获取视频内容头 |
+| VS 2.5 Responses | `POST` / `GET` | `/v1/responses`<br />`/v1/responses/:response_id` | 后台、同步或流式响应 |
+| VS 2.5 插件接口 | `POST` / `GET` | `/tencent-vod/v1/videos`<br />`/tencent-vod/v1/videos/:task_id` | `Response` 外层结构；见[完整契约](/api-reference/video-vs25) |
 | 3D 生成（文生 / 图生） | `POST` | `/tripo/v3/generation/text-to-model`<br />`/tripo/v3/generation/image-to-model` | 返回 `task_id` |
 | 3D 生成（查询） | `GET` | `/tripo/v3/tasks/:task_id` | 查询任务状态 |
 | 3D 产物（列出 / 下载） | `GET` | `/v1/tasks/:task_id/artifacts` | 取 GLB 模型与预览图 |
@@ -69,6 +73,10 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
     基于腾讯混元生视频 SE，接口与豆包视频相同，结果地址长期有效。
   </Card>
 
+  <Card title="VS 2.5 视频" icon="video" href="/api-reference/video-vs25">
+    腾讯云点播接入，支持图片、视频、音频参考及首尾帧；查看协议差异、素材限制和按秒价格。
+  </Card>
+
   <Card title="3D 模型生成" icon="cube" href="/api-reference/tripo-3d">
     基于 Tripo API v3，文生 3D 与图生 3D，输出 GLB 模型与渲染预览图。
   </Card>
@@ -98,15 +106,17 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 模式 | 特点 | 适用接口 |
 |------|------|----------|
 | **同步** | 请求阻塞至任务完成，直接返回结果 | 文本对话、图片 GI/GI2/MI/Qwen Image 3.0 Pro/Seedream 5.0 Pro、豆包 Seed Audio |
-| **异步** | 提交后立即返回 `task_id`，客户端轮询结果 | 图片 Image-GPT2、豆包视频、腾讯 SE 视频 |
+| **异步** | 提交后返回任务 ID，客户端轮询结果 | 图片 Image-GPT2、豆包视频、腾讯 SE 视频、VS 2.5 |
 
-异步任务通用流程：
+图片任务及豆包 / SE 旧视频接口的轮询流程：
 
 ```
 1. POST 提交任务 → 获取 task_id（响应 status 为小写 queued）
 2. GET  轮询状态 → 直至 data.status 为 SUCCESS 或 FAILURE
 3. 读取 data.result_url
 ```
+
+VS 2.5 的 Videos、Responses 和插件接口各自使用不同 ID、状态和结果字段；请按 [VS 2.5 接口契约](/api-reference/video-vs25#protocols)解析。不要把旧接口的 `data.status` 套用到新接口。
 
 ---
 

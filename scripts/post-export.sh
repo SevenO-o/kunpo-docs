@@ -14,6 +14,7 @@ fi
 cp "$SCRIPT_DIR/serve.js" "$EXPORT/serve.js"
 
 node "$SCRIPT_DIR/build-search.mjs" "$EXPORT"
+node "$SCRIPT_DIR/export-ai-docs.mjs" "$EXPORT"
 
 if [[ -f "$EXPORT/Start Docs.command" ]]; then
   if ! grep -q 'PORT=' "$EXPORT/Start Docs.command"; then

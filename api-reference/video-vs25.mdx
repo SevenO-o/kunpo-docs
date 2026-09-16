@@ -1,0 +1,390 @@
+---
+title: "视频生成（VS 2.5）"
+description: "腾讯云点播 VS 2.5：Videos、Responses 与插件接口，参考素材、任务轮询、CDN 存储及按秒计费。"
+---
+
+VS 2.5（即梦 2.5）通过腾讯云点播接入 KUNPO，支持文本生成视频、图片参考、首尾帧、视频与音频参考。
+
+AI 可直接读取[本页 Markdown](https://docs.ziy.cc/api-reference/video-vs25.md)，或从 [llms.txt](https://docs.ziy.cc/llms.txt) 查找其他接口。
+
+| 项目 | 值 |
+|------|----|
+| API 调用名 | `tencent-vod-vs-2.5` |
+| 兼容别名 | `VS-2.5` |
+| API 根地址 | `https://llm.ziy.cc` |
+| 客户端鉴权 | `Authorization: Bearer sk-你的密钥` |
+| 默认输出 | `720P`、`5` 秒、无音频；无首帧时比例为 `16:9` |
+| 输出范围 | `480P`、`720P`、`1080P`、`2K`、`4K`；时长 `4` 至 `30` 秒 |
+
+客户端只使用 KUNPO API Key。腾讯云签名、密钥和子应用由服务端管理，请勿在请求中填写腾讯云 `SecretId`、`SecretKey` 或 `SubAppId`。
+
+## 选择接口 {#protocols}
+
+三种接口调用同一模型，参数与计费规则相同，返回结构不同。新集成建议使用 Videos 异步接口。
+
+| 协议 | 提交 | 查询 | ID、状态与成功结果 |
+|------|------|------|-------------------|
+| Videos | `POST /v1/videos` | `GET /v1/videos/:task_id` | `id`、`status`、`url` |
+| Responses | `POST /v1/responses` | `GET /v1/responses/:response_id` | `id`、`status`、`output[].content[]` |
+| 云点播插件 | `POST /tencent-vod/v1/videos` | `GET /tencent-vod/v1/videos/:task_id` | `Response.TaskId`、`Response.Status`、`Response.Url` |
+
+Videos 还提供 `GET` / `HEAD /v1/videos/:task_id/content`，使用同一 API Key 获取视频内容。路径里的 `:task_id`、`:response_id` 必须替换成对应提交响应中的 ID，不能使用腾讯云内部任务 ID。
+
+请求使用 `Content-Type: application/json`。本页只描述 KUNPO 接口；腾讯云原生 `CreateAigcVideoTask` 请求不能原样发到这些路径。
+
+## 最小请求与结果获取 {#quick-start}
+
+### 1. 提交 Videos 任务
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/v1/videos \
+  -H 'Authorization: Bearer sk-你的密钥' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "tencent-vod-vs-2.5",
+    "prompt": "清晨的山间湖泊，薄雾缓慢流动，镜头平稳推进",
+    "seconds": 5,
+    "resolution": "720P",
+    "aspect_ratio": "16:9",
+    "generate_audio": false
+  }'
+```
+
+提交后保存 `id`。下列 ID 和时间仅用于展示响应结构：
+
+```json
+{
+  "id": "task_demo",
+  "object": "video",
+  "model": "tencent-vod-vs-2.5",
+  "status": "queued",
+  "progress": 0,
+  "created_at": 1789516800
+}
+```
+
+### 2. 轮询 Videos 任务
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/v1/videos/task_demo \
+  -H 'Authorization: Bearer sk-你的密钥'
+```
+
+| `status` | 客户端操作 |
+|----------|------------|
+| `queued` | 等待后继续查询 |
+| `in_progress` | 等待后继续查询；`progress` 是进度提示 |
+| `completed` | 成功终态，读取 `url` 或下载 `/content` |
+| `failed` | 失败终态，读取 `error.message`，停止轮询 |
+| `unknown` | 状态暂时未知；保留 ID，有限次数重查或联系支持 |
+
+成功时增加 `url` 和 `completed_at`。不要只凭 HTTP `200` 或 `progress: 100` 判断成功，必须检查 `status`。
+
+```bash
+curl --fail-with-body --location https://llm.ziy.cc/v1/videos/task_demo/content \
+  -H 'Authorization: Bearer sk-你的密钥' \
+  --output video.mp4
+```
+
+### 3. 可复制的 Python 提交与轮询
+
+安装 `requests`，设置环境变量 `KUNPO_API_KEY` 后运行。示例只提交一次；查询失败只重试查询，不重建付费任务。
+
+```python
+import os
+import random
+import time
+import requests
+
+base = "https://llm.ziy.cc"
+headers = {"Authorization": "Bearer " + os.environ["KUNPO_API_KEY"]}
+submitted = requests.post(
+    base + "/v1/videos",
+    headers=headers,
+    json={
+        "model": "tencent-vod-vs-2.5",
+        "prompt": "清晨的山间湖泊，镜头平稳推进",
+        "seconds": 5,
+        "resolution": "720P",
+    },
+    timeout=(15, 120),
+)
+submitted.raise_for_status()
+task_id = submitted.json()["id"]
+print("请持久化任务 ID：", task_id, flush=True)
+
+deadline = time.monotonic() + 1800  # 客户端等待预算，不是服务端任务期限
+delay = 5
+while time.monotonic() < deadline:
+    time.sleep(delay + random.uniform(0, 1))
+    try:
+        response = requests.get(
+            base + "/v1/videos/" + task_id,
+            headers=headers,
+            timeout=(15, 60),
+        )
+    except requests.RequestException:
+        delay = min(delay * 2, 30)
+        continue
+    if response.status_code == 429 or response.status_code >= 500:
+        delay = min(delay * 2, 30)
+        continue
+    response.raise_for_status()
+    task = response.json()
+    if task["status"] == "completed":
+        print(task["url"])
+        break
+    if task["status"] == "failed":
+        raise RuntimeError(task.get("error", {}).get("message", "视频生成失败"))
+    delay = 5
+else:
+    raise TimeoutError("客户端停止等待；任务可能仍在运行，请用原 ID 继续查询：" + task_id)
+```
+
+## 请求参数 {#parameters}
+
+Videos 和插件接口使用 `prompt`；Responses 使用 `input`。除 `model` 外，需要非空文本或至少一个参考素材。建议显式传入模型名、时长、分辨率和音频开关。
+
+| 字段 | JSON 类型 | 默认值 | 规则 |
+|------|-----------|--------|------|
+| `model` | string | 必填 | `tencent-vod-vs-2.5` 或 `VS-2.5` |
+| `prompt` | string | 空 | 描述场景、动作、镜头和声音 |
+| `seconds` | number | `5` | `4 <= seconds <= 30`，允许小数；不支持 `-1` 自动时长 |
+| `duration` | number | 同上 | `seconds` 的兼容写法；同时提供时 `seconds` 优先 |
+| `resolution` | string | `720P` | `480P`、`720P`、`1080P`、`2K`、`4K` |
+| `aspect_ratio` | string | `16:9` | `21:9`、`16:9`、`4:3`、`1:1`、`3:4`、`9:16`、`adaptive`；有首帧时默认并要求 `adaptive` |
+| `generate_audio` | boolean | `false` | 是否同时生成音频 |
+| `seed` | integer | 不传 | `-1` 至 `2147483647`；不是幂等键 |
+| `images` | string[] | `[]` | 普通参考图片，最多 30 张；不是首帧 |
+| `videos` | string[] | `[]` | 参考视频 URL，最多 10 段；见[输入视频限制](#references) |
+| `audios` | string[] | `[]` | 参考音频 URL，最多 10 段 |
+| `first_frame_url` | string | 不传 | 首帧图片；兼容写法 `input_reference` |
+| `last_frame_url` | string | 不传 | 尾帧图片，必须同时提供首帧 |
+| `FileInfos` | object[] | `[]` | 显式指定素材类型和角色，见下表 |
+| `return_last_frame` | boolean | 不传 | `true` 时请求额外返回生成视频的尾帧图片 |
+| `bitrate_mode` | string | 不传 | `high` 请求高码率输出 |
+| `omni_reference_task_type` | string | 不传 | `extend` 用于引导视频延长，需提供参考视频 |
+
+不要在多种字段中重复提供同一素材。`images`、`videos`、`audios`、首尾帧和 `FileInfos` 会合并计数，合计最多 50 个素材，其中图片最多 30 张、视频最多 10 段、音频最多 10 段。
+
+兼容字段 `size` 可使用上述比例、分辨率，或横竖屏尺寸：`854x480` / `480x854`、`1280x720` / `720x1280`、`1920x1080` / `1080x1920`、`2560x1440` / `1440x2560`、`3840x2160` / `2160x3840`。显式 `resolution`、`aspect_ratio` 优先于 `size`。首帧模式不要传入固定比例的 `size`，直接传 `resolution` 和 `aspect_ratio: "adaptive"`。
+
+### 云点播字段兼容
+
+Videos 和插件接口也可使用 `Prompt`、`OutputConfig` 形式；不要与简写重复设置。公共示例统一使用上表字段。
+
+| 字段 | 类型与枚举 | 默认值或映射 |
+|------|------------|--------------|
+| `OutputConfig.Duration` | number，`4` 至 `30` | `seconds` / `duration` 优先 |
+| `OutputConfig.Resolution` | string，同 `resolution` | `720P` |
+| `OutputConfig.AspectRatio` | string，同 `aspect_ratio` | 首帧 `adaptive`，其他 `16:9` |
+| `OutputConfig.AudioGeneration` | `Enabled` / `Disabled` | `Disabled` |
+| `OutputConfig.LogoAdd` | boolean 或 `Enabled` / `Disabled` | `false`，不开启水印 |
+| `OutputConfig.StorageMode` | `Temporary` / `Permanent` | `Temporary`；指腾讯侧存储，不控制 KUNPO CDN |
+| `EnhancePrompt` | boolean 或 `Enabled` / `Disabled` | 不传，由上游决定 |
+| `ExtInfo` | object 或 JSON string | 高级扩展；`AdditionalParameters` 可为 object 或 JSON string |
+
+优先使用 `return_last_frame`、`bitrate_mode`、`omni_reference_task_type` 简写，无需手工双重转义 `ExtInfo`。不可通过 `ExtInfo.AdditionalParameters` 设置模型、时长、分辨率、声音、素材或子应用等核心字段。
+
+## 参考素材与首尾帧 {#references}
+
+普通图片使用公网 HTTP(S) URL 或 `data:image/png;base64,...` / `data:image/jpeg;base64,...`。不支持裸 Base64。音频使用可直接下载的 HTTP(S) URL。视频使用可直接下载的标准 MP4 / MOV URL，具体下载与预扣限制见[费用预留](#reservation)。
+
+本接口不接收本地文件路径，也不支持 multipart 文件直传；图片、音频、视频文件须先上传后传 URL，图片也可传上述 data URL。URL 必须指向媒体文件本身，不能是分享页面、登录页或依赖 Cookie 的下载地址。
+
+### 首尾帧
+
+首帧、尾帧各最多一张，尾帧不能单独使用。首帧模式比例跟随首帧，必须使用 `adaptive`；即使固定比例与原图相同，也不能传固定比例。
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/v1/videos \
+  -H 'Authorization: Bearer sk-你的密钥' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "tencent-vod-vs-2.5",
+    "prompt": "保持山湖场景，镜头缓慢向湖面推进，云雾自然流动",
+    "seconds": 5,
+    "resolution": "720P",
+    "aspect_ratio": "adaptive",
+    "first_frame_url": "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg",
+    "return_last_frame": true
+  }'
+```
+
+需要指定结束画面时再增加 `last_frame_url`，其值替换为你已上传的尾帧 URL。`last_frame_url` 是**输入结束画面**，`return_last_frame` 是**请求输出尾帧**，两者用途不同。
+
+### 图片、视频与音频混合参考
+
+`FileInfos` 每一项建议使用以下字段名，枚举值区分大小写：
+
+| 字段 | 类型 | 允许值 |
+|------|------|--------|
+| `Type` | string | `Url` |
+| `Category` | string | `Image`、`Video`、`Audio` |
+| `Usage` | string | `Reference`、`FirstFrame`、`LastFrame`；后两种仅用于图片 |
+| `Url` | string | 对应类型的素材地址；图片 data URL 或已注册图片 `asset://` 也填在此处 |
+
+下面的 Python 示例使用你自己的素材 URL。先设置 `KUNPO_API_KEY`、`REFERENCE_IMAGE_URL`、`REFERENCE_VIDEO_URL`、`REFERENCE_AUDIO_URL`，再运行；缺少某类参考时直接删除该项。
+
+```python
+import os
+import requests
+
+response = requests.post(
+    "https://llm.ziy.cc/v1/videos",
+    headers={"Authorization": "Bearer " + os.environ["KUNPO_API_KEY"]},
+    json={
+        "model": "tencent-vod-vs-2.5",
+        "prompt": "参考图片保持场景风格，参考视频的镜头运动，结合音频节奏生成新片段",
+        "seconds": 5,
+        "resolution": "720P",
+        "generate_audio": True,
+        "FileInfos": [
+            {"Type": "Url", "Category": "Image", "Usage": "Reference", "Url": os.environ["REFERENCE_IMAGE_URL"]},
+            {"Type": "Url", "Category": "Video", "Usage": "Reference", "Url": os.environ["REFERENCE_VIDEO_URL"]},
+            {"Type": "Url", "Category": "Audio", "Usage": "Reference", "Url": os.environ["REFERENCE_AUDIO_URL"]},
+        ],
+    },
+    timeout=(15, 120),
+)
+response.raise_for_status()
+print(response.json()["id"])  # 使用 Videos 查询接口继续轮询
+```
+
+已有 KUNPO 客户端可使用 `metadata.content`：`type` 为 `text`、`image_url`、`video_url`、`audio_url`；媒体字段使用同名对象 `{"url": "素材地址"}`，`role` 为 `reference_image`、`reference_video`、`reference_audio`、`first_frame`、`last_frame`。新客户端建议采用 `FileInfos`，避免角色歧义。
+
+### 真人素材与 asset 地址 {#real-person}
+
+腾讯云要求现实真人素材先完成活体认证及素材注册。流程为 `CreateAigcLivenessValidate` → `DescribeAigcLivenessValidateResult` → `CreateAigcMaterial` → `DescribeTaskDetail`，取得可用 `AssetId` 后，图片以 `asset://asset-...` 作为 `FileInfos[].Url`，`Type` 仍为 `Url`。虚拟真人形象也可能需要按上游规则创建非真人素材。
+
+KUNPO 当前没有对外提供这些认证或素材注册接口，也不会把普通图片 URL 自动注册为真人素材。需要在当前接入渠道所用腾讯子应用中完成注册；其他账号或子应用的素材不能假定可用。素材注册是独立流程，上传到 CDN 不等于通过真人认证。
+
+当前 `asset://` **视频**不能用于参考视频：平台无法下载并可信测量其时长，会在提交前拒绝。已注册的 `asset://` **图片**可继续使用。不能以改传普通 URL 的方式绕过上游真人素材要求。
+
+## 插件接口与 Responses {#other-protocols}
+
+### 云点播插件接口
+
+将最小 Videos 示例的地址改为 `/tencent-vod/v1/videos`，其余 JSON 请求保持不变。提交返回：
+
+```json
+{
+  "Response": {
+    "TaskId": "task_demo",
+    "Status": "NOT_START"
+  }
+}
+```
+
+使用 `GET /tencent-vod/v1/videos/task_demo` 查询。读取以下字段：
+
+| 字段 | 含义 |
+|------|------|
+| `Response.TaskId` | KUNPO 公开任务 ID |
+| `Response.Status` | `NOT_START`、`SUBMITTED`、`QUEUED`、`IN_PROGRESS`、`SUCCESS`、`FAILURE` 或 `UNKNOWN` |
+| `Response.Progress` | 字符串进度，例如 `"100%"` |
+| `Response.Url` | 成功后的主视频 URL，优先 KUNPO CDN 地址 |
+| `Response.Message` | 失败原因，无错误时为空字符串 |
+| `Response.Result` | 上游任务详情；尚无详情时可为 `null` |
+
+`SUCCESS` 和 `FAILURE` 是终态。`Response.Result.Status` 属于上游状态，不能替代 `Response.Status`。输出尾帧可在 `Response.Result.Output.FileInfos` 中查找 `UsageType == "last_frame_url"`，读取其 `FileUrl`。其他上游诊断字段可能为空或变化，不要用其决定 KUNPO 任务状态或自行计算账单。
+
+### Responses 后台模式
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/v1/responses \
+  -H 'Authorization: Bearer sk-你的密钥' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "tencent-vod-vs-2.5",
+    "input": "清晨的山间湖泊，镜头平稳推进",
+    "background": true,
+    "metadata": {
+      "duration": 5,
+      "resolution": "720P",
+      "aspect_ratio": "16:9",
+      "generate_audio": false
+    }
+  }'
+```
+
+保存返回的 `id`（`resp_` 开头），通过 `GET /v1/responses/:response_id` 和同一 API Key 轮询。`status` 为 `queued` / `in_progress` 时继续查询，`completed` 时读取 `output`，`failed` 时读取 `error`。`incomplete` 表示本次响应观察未完成，保留 ID 查询实际任务结果，不自动重复提交。
+
+成功输出位于 `output[]` 中 `type: "message"` 的 `content[]`，其中 `type: "output_text"` 的 `text` 包含带视频地址的 HTML `<video controls src="..."></video>`，不是 Base64 或 `output_video` 二进制块。视频地址可能是带期限的下载能力链接，应按原样使用，不去掉查询参数，也不要作为无期限地址缓存。
+
+多模态 `input` 可用消息数组，内容项为 `input_text`（`text`）、`input_image`（`image_url`）、`input_video`（`video_url`）、`input_audio`（`audio_url`）。媒体项可用 `usage: "FirstFrame"` / `"LastFrame"` 指定图片角色，默认 `Reference`。
+
+Responses 也支持 `stream: true` 的 SSE 和省略 `background`、`stream` 的同步等待模式。视频可能长时间运行；后台模式更便于保存任务 ID、重连与查询。SSE 的连接结束本身不代表生成成功，必须检查最终响应状态。
+
+## CDN 与素材保存 {#storage}
+
+| 素材 | KUNPO 行为 | 客户端应做什么 |
+|------|------------|----------------|
+| 图片 data URL | 解码后上传 KUNPO CDN，再传给腾讯云 | 发送完整 data URL，不发送裸 Base64 |
+| 公网图片 / 音频 URL | 使用提供的地址，不自动承诺镜像所有远程素材 | 保证任务期间可从公网直接访问 |
+| 公网参考视频 URL | 测长预处理时保存固定副本到 KUNPO CDN，再提交该副本 | 提供合规格式和大小的视频 URL |
+| 生成主视频 | 成功转存后，Videos `url` / 插件 `Response.Url` 返回 KUNPO CDN 地址 | 使用最终响应地址；需要本地副本时下载保存 |
+| 输出尾帧图片 | 目前保留腾讯临时地址，不随主视频归档 | 需要留存时及时下载或自行保存 |
+
+如果主视频转存失败，结果可能回退到腾讯临时地址。腾讯 `Temporary` 产物通常有效 7 天，具体以输出中的 `ExpireTime` 为准；不要将临时地址当成永久存储。`OutputConfig.StorageMode: "Permanent"` 只影响腾讯侧存储，不能替代 KUNPO CDN 转存或尾帧归档。
+
+## 按秒计费 {#pricing}
+
+下表为 VS 2.5 的 **USD / 秒基础价格**，按输出分辨率选列。分组倍率会影响实际账户扣费，最终价格及可用分组以[模型广场](https://llm.ziy.cc/pricing)为准。
+
+| 计费项目 | 480P | 720P | 1080P | 2K | 4K |
+|----------|-----:|-----:|------:|---:|---:|
+| 无参考视频：输出秒价 | 0.1028 | 0.2312 | 0.5686 | 0.6936 | 1.1722 |
+| 有参考视频：输入秒价 | 0.0615 | 0.1383 | 0.3402 | 0.3402 | 0.3402 |
+| 有参考视频：输出秒价 | 0.0615 | 0.1383 | 0.3402 | 0.4135 | 0.6882 |
+
+```text
+没有视频参考：基础费用 = 输出秒数 × 无参考视频输出秒价
+存在视频参考：基础费用 = 全部输入视频秒数之和 × 输入秒价
+                          + 输出秒数 × 有参考视频输出秒价
+账户费用 = 基础费用 × 当前分组倍率
+```
+
+只有 `Category: "Video"` 的参考会切换到“有参考视频”档。仅有图片、首尾帧或音频参考，仍使用“无参考视频”输出秒价。音频时长不计入输入视频秒数；本表不额外乘音频生成系数。
+
+以分组倍率 `1` 为例：720P 输出 5 秒且无视频参考，费用为 `5 × 0.2312 = 1.156 USD`；720P 输入视频合计 4 秒、输出 5 秒，费用为 `(4 + 5) × 0.1383 = 1.2447 USD`。有参考视频时，输入与输出均计费，不能只比较输出秒价。
+
+### 费用预留与结算 {#reservation}
+
+平台先下载、测量并转存参考视频，再根据计算出的预算校验余额、令牌及套餐可用额度并预留费用，最后创建上游生成任务。因此额度不足时，可能已经产生输入视频的 CDN 副本，但不会创建本次上游生成任务。任务失败后退还预留；成功后根据有效用量结算差额。客户端不要提交 `input_video_seconds` 等计费字段，无法通过自报时长降低费用。
+
+参考视频由平台下载、校验并测量时长，按每段 `ceil(测量时长上界) + 1` 秒预留输入费用，完成后用腾讯返回的实际总输入视频时长结算差额，输入视频结算不会超过已预留的输入费用。测量上界综合容器和视频时间表，可能略长于播放器展示的时长；预留额不是最终账单。输出预留使用请求时长。上游没有返回有效用量时保留对应预留值；上游 `Usage` 全零占位不表示任务免费。
+
+预处理只接收带有效媒体时间表的标准、非分片 MP4 / MOV 文件；不接收 HLS 播放列表、分片 MP4 或无法可信测长的媒体。单次请求所有参考视频合计下载不超过 64 MiB，预处理限时 30 秒，总输入预留不超过 3600 秒。这些是网关预处理上限，不代表模型允许任意同等长度的输入。无法读取、格式不符或超限会在创建付费任务前报错；应压缩或转换素材后再提交。
+
+## 错误、重试与幂等 {#errors}
+
+通用状态码见[API 总览](/api-reference/overview#常见-http-状态码)。VS 2.5 的处理规则：
+
+| 情况 | 操作 |
+|------|------|
+| 参数错误、首帧固定比例、`seconds: -1`、文件直传、视频测长失败 | 修正请求或转换素材；不要原样重试 |
+| 余额、令牌或套餐额度不足 | 补充额度或换有权限的 API Key；不要循环提交 |
+| 查询遇到网络错误、`429` 或 `5xx` | 保留 ID，指数退避并加入随机间隔后重试 `GET` |
+| 提交 `POST` 超时或连接中断，未拿到 ID | 结果不确定，可能已创建付费任务；先核对控制台任务和日志，不自动重发 |
+| 任务进入失败终态 | 读取错误原因；内容、权限、真人素材问题应修正后再新建 |
+| 客户端轮询超时或 SSE 断开 | 不等于服务端取消；使用原 ID 恢复查询 |
+
+建议正常轮询间隔至少 5 秒，异常时退避至 30 秒，并设置自己的等待预算。当前接口不承诺 `Idempotency-Key` 去重，也没有公开任务取消接口；相同 prompt、seed 或请求体再次 `POST` 会产生新的任务。调用方应保存任务 ID，并按自身业务 ID 防止重复提交。
+
+### 并发与请求频率 {#concurrency}
+
+腾讯云 [CreateAigcVideoTask 官方接口文档](https://cloud.tencent.com/document/api/266/126239)给出的通用默认值是：同时处理 **1 个生成任务**，创建请求频率上限 **20 次/秒**。请求频率（QPS）不等于同时生成的视频数；这些通用默认值也不代表当前接入应用的 VS 2.5 已核准配额，实际并发以腾讯侧开通情况为准。
+
+客户端应维护待提交队列，限制正在生成的任务数，并对明确的限流响应退避；提交结果不确定时仍按上表保留和核对任务，不能盲目重发。创建多个 KUNPO API Key 不代表腾讯应用并发额度增加，也不要假定网关提供跨用户的腾讯全局排队保障。
+
+## 相关文档
+
+<CardGroup cols={2}>
+  <Card title="API 总览" icon="list" href="/api-reference/overview">
+    查看基础鉴权和其他能力接口。
+  </Card>
+  <Card title="腾讯 SE 视频" icon="video" href="/api-reference/video-se">
+    使用 SE 系列时，参照该系列自己的模型名和旧视频接口。
+  </Card>
+</CardGroup>

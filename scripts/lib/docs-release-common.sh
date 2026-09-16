@@ -83,6 +83,8 @@ validate_export() {
     [ -s "$export_dir/$asset" ] || release_fail "导出产物缺少搜索资源：${asset}；请运行 scripts/post-export.sh" || return 1
   done
   grep -q 'kunpo-search/search.js' "$export_dir/index.html" || release_fail '导出产物首页未接入搜索' || return 1
+  [ -s "$export_dir/llms.txt" ] || release_fail '导出产物缺少 AI 文档索引 llms.txt；请运行 scripts/post-export.sh' || return 1
+  [ -s "$export_dir/api-reference/video-vs25.md" ] || release_fail '导出产物缺少 VS 2.5 Markdown 接口文档' || return 1
 }
 
 build_site() {

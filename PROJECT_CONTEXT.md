@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-09-09（新增 Seedream 5.0 Pro（API 调用名 Image-SI）模型文档、动态计费与调用限制）
+> 最后更新：2026-09-16（新增 VS 2.5 接口契约、USD 秒价与 AI 读者约定）
 
 ---
 
@@ -10,7 +10,7 @@
 
 KUNPO API 是一个统一的大语言模型（LLM）网关服务，用户通过一个 API Key 即可调用 150+ 主流模型（Claude、GPT、Gemini、DeepSeek、Qwen、GLM 等）。API 地址为 `https://llm.ziy.cc`。
 
-本文档项目是该服务的官方 API 文档站点，面向开发者，内容包含文本、图片、音频、视频接口说明、请求示例与客户端接入指南等。
+本文档项目是该服务的官方 API 文档站点，主要供 AI 阅读并生成接入代码，同时供开发者查阅。用户已明确要求长期保持 AI 可准确执行的协议契约；入口为 `AGENTS.md`，详细规范为 `DOCS_MAINTENANCE.md`。
 
 ---
 
@@ -22,6 +22,7 @@ KUNPO API 是一个统一的大语言模型（LLM）网关服务，用户通过�
 - **开发服务器**：`npx mintlify dev --port 3333`
 - **静态导出**：`npm run docs:export`（含 Pagefind 搜索，输出 `kunpo-api-docs-export.zip`）
 - **静态预览**：`npm run docs:preview`（默认端口 5500）
+- **AI 文本入口**：`/llms.txt` + 各导航页 `.md`，由 `scripts/export-ai-docs.mjs` 在后处理时自动生成并展开共用片段，不公开内部文档
 - **线上地址**：https://docs.ziy.cc
 
 ---
@@ -40,6 +41,7 @@ docs/
 │   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
 │   ├── video-se.mdx                           # 腾讯 SE 视频生成 (混元生视频)
+│   ├── video-vs25.mdx                         # VS 2.5 三种协议、素材、CDN、USD 按秒计费
 │   └── image-generation/
 │       ├── overview.mdx                       # 概览与模型选择：需求入口、能力矩阵、计费
 │       ├── synchronous.mdx                    # 同步调用：公共请求、响应和多语言示例
@@ -68,7 +70,7 @@ docs/
 | 分组 | 页面 |
 |------|------|
 | 开始 | index, quick-start |
-| API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video, video-se |
+| API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video, video-se, video-vs25, tripo-3d |
 | 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
 图像生成子组直接展示“概览与模型选择 → 六个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。
@@ -102,6 +104,12 @@ POST https://llm.ziy.cc/v1/chat/completions
 ---
 
 ## 各页面当前状态
+
+### video-vs25.mdx（VS 2.5）
+- 唯一维护三种协议、请求参数、轮询状态、真人素材约束与输入/输出 CDN 行为的页面
+- 唯一维护三行五档 USD 秒价矩阵、公式、参考视频预留与实际结算语义
+- 默认推荐 Videos；明确区别 Responses 与插件响应结构，首帧 adaptive、禁止自动时长和媒体文件直传
+- 页面以当前网关行为为准，不要求用户提供腾讯云密钥或子应用 ID
 
 ### index.mdx（首页）
 - 按用途进入文本对话、图像生成、音频生成、视频生成；音视频介绍沿用现有 API 总览

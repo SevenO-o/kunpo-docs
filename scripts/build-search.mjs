@@ -83,7 +83,14 @@ export async function buildSearch(exportDir, config) {
   try {
     const { index } = checked(await pagefind.createIndex({ forceLanguage: 'zh', includeCharacters: '._-', writePlayground: false }));
     for (const source of sources) checked(await index.addHTMLFile({ url: source.url, content: source.content }));
-    checked(await index.writeFiles({ outputPath: path.join(exportDir, 'pagefind') }));
+    // Own and await disk writes before closing the Pagefind backend. Its
+    // writeFiles response can arrive before all backend file buffers flush.
+    const { files } = checked(await index.getFiles());
+    for (const file of files) {
+      const target = path.join(exportDir, 'pagefind', file.path);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, file.content);
+    }
   } finally { await pagefind.close(); }
   const assetDir = path.join(exportDir, 'kunpo-search');
   await mkdir(assetDir, { recursive: true });

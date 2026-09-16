@@ -1,0 +1,60 @@
+---
+title: "Seedream 5.0 Pro（火山）"
+description: "火山方舟直连 Seedream 5.0 Pro：同步生图、图层拆分和按张计费。"
+---
+
+<Warning>当前为待发布接入说明。以本页发布状态和模型广场为准。</Warning>
+
+调用模型：`doubao-seedream-5-0-pro-260628`；保留 `Seedream-5.0-pro` 兼容别名。火山直连，与腾讯云 `Image-SI` 是独立接入。
+
+## 接口
+
+`POST https://llm.ziy.cc/v1/images/generations`；JSON；`Authorization: Bearer $KUNPO_API_KEY`。同步等待返回，无需任务轮询。
+
+```bash
+curl https://llm.ziy.cc/v1/images/generations \
+  -H "Authorization: Bearer $KUNPO_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"model":"doubao-seedream-5-0-pro-260628","prompt":"红色陶瓷茶壶产品照片","size":"1.5K","output_format":"png","watermark":false,"optimize_prompt_options":{"mode":"fast"}}'
+```
+
+响应 `data[]` 中读取 KUNPO CDN `url`（请求 `b64_json` 也会转存并返回 URL）；`size` 为真实宽×高。图层模式还返回 `z_index`、`bounding_box.absolute/normalized`、`name`、`description`，这些字段完整保留。HTTP错误读取 `error`；网络超时不能证明供应商未生成，不应盲目重试。
+
+## 参数
+
+| 字段 | 类型及规则 |
+| --- | --- |
+| `model` | 必填，真实ID或兼容别名 |
+| `prompt` | string，描述生成或编辑意图；坐标编辑标记直接写在提示词中 |
+| `image` | string或string[]；公网URL或 `data:image/png;base64,...` 等；普通生图最多10张，图层拆分恰好1张 |
+| `layer_decomposition` | boolean，默认false；true返回底图＋最多16个图层 |
+| `size` | 普通生成：1K/1.5K/2K，默认2K；或宽x高，总像素921600–4624220、比例1/16–16。图层：1K/1.5K/2K/auto，默认auto |
+| `optimize_prompt_options.mode` | `standard/fast`，默认standard |
+| `output_format` | `jpeg/png`，默认jpeg；拆分的独立图层为透明PNG |
+| `background` | `opaque/transparent`，默认opaque；透明模式仅支持单张含透明通道的参考图，输出须PNG，不能与JPEG组合 |
+| `response_format` | `url/b64_json`，默认url |
+| `watermark` | boolean，显式false保留 |
+
+不支持组图、联网搜索和流式输出；`n`只能1，不传`sequential_image_generation`、`sequential_image_generation_options`或`tools`。JSON图生图仍用generations端点，不用multipart edits。
+
+图层拆分只传一张图片：
+
+```bash
+jq -n --arg image "$REFERENCE_IMAGE_URL" '{model:"doubao-seedream-5-0-pro-260628",image:$image,layer_decomposition:true,size:"1K"}' | \
+  curl https://llm.ziy.cc/v1/images/generations \
+    -H "Authorization: Bearer $KUNPO_API_KEY" -H 'Content-Type: application/json' -d @-
+```
+
+按 `z_index` 排列图层；底图为0，独立图层结合 `bounding_box.absolute` 定位在底图画布。不要将每个裁剪图层直接拉伸成底图尺寸。
+
+## 按张计费
+
+标准美元价来源：[BytePlus 官方价表](https://docs.byteplus.com/en/docs/modelark/1544106)。每张按真实输出像素判断，261万像素为分界，不根据总token平均分档。
+
+| 项目 | ≤261万像素 USD/张 | >261万像素 USD/张 |
+| --- | ---: | ---: |
+| 普通生成 | 0.045 | 0.09 |
+| 图层拆分（包含底图） | 0.0225 | 0.045 |
+
+输入参考图首张免费，第2张起每张$0.003。图片数按`image`数组的实际长度计算。图层可混合大小，逐张计价后相加，再应用账户分组倍率。例如1张大底图＋1张小图层：$0.045＋$0.0225＝$0.0675。
+
+提交前预扣；图层拆分按最多17张高档预留$0.765（分组倍率前），成功按真实图层数/尺寸退差，失败退款。余额不足不发起上游生成；拆分后的图片不再当成一次请求只收费一张。

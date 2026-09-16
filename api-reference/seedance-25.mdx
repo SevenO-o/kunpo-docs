@@ -1,0 +1,77 @@
+---
+title: "Seedance 2.5（火山）"
+description: "火山方舟直连 Seedance 2.5：参数、异步轮询与按秒计费。"
+---
+
+<Warning>当前为待发布接入说明。以本页发布状态和模型广场为准。</Warning>
+
+调用模型：`doubao-seedance-2-5-260628`。Base URL：`https://llm.ziy.cc`；鉴权：`Authorization: Bearer $KUNPO_API_KEY`。
+
+## 提交与查询
+
+原生接口完整支持下表参数。`POST /doubao/api/v3/contents/generations/tasks`，JSON 请求；返回 `id` 是 KUNPO 公开任务 ID，不能用于火山官网查询。`GET /doubao/api/v3/contents/generations/tasks/{id}` 查询同一用户任务。
+
+```bash
+curl https://llm.ziy.cc/doubao/api/v3/contents/generations/tasks \
+  -H "Authorization: Bearer $KUNPO_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"model":"doubao-seedance-2-5-260628","content":[{"type":"text","text":"茶壶放在桌面上，镜头缓慢环绕"}],"duration":4,"resolution":"720p","ratio":"16:9","generate_audio":false,"seed":0,"output_format":"mp4"}'
+```
+
+提交成功示例：`{"id":"task_..."}`。查询：
+
+```bash
+curl "https://llm.ziy.cc/doubao/api/v3/contents/generations/tasks/$TASK_ID" \
+  -H "Authorization: Bearer $KUNPO_API_KEY"
+```
+
+每 10 秒查询一次。非终态 `queued/running`；成功 `succeeded`，视频在 `content.video_url`，尾帧在 `content.last_frame_url`；失败 `failed/expired/cancelled`，读取 `error`。保存任务 ID，断线后继续 GET；POST 超时不代表未提交，不自动重放以免重复计费。
+
+也支持 `POST /v1/videos` 及 `POST /v1/responses`。Videos 用 `prompt`、`seconds`（或 `duration`）；Responses 用 `input` 和 `background:true`，按 Responses 协议查询。其他 Ark 参数可放顶层或 `metadata`，顶层优先；`seconds` 优先于 `duration`。原生查询返回上游临时视频 URL；Videos 查询使用 `queued/in_progress/completed/failed`，不返回 `url`，成功后通过 `GET /v1/videos/{id}/content` 获取已归档主视频（支持 HEAD 和 Range）。不要把三种协议的响应格式混用。
+
+Videos 最小请求（其他 Ark 参数也可放入 `metadata`）：
+
+```bash
+curl https://llm.ziy.cc/v1/videos \
+  -H "Authorization: Bearer $KUNPO_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"model":"doubao-seedance-2-5-260628","prompt":"小球在桌面滚动","seconds":4,"resolution":"480p","generate_audio":false}'
+```
+
+Videos JSON 与 multipart 均接受字段参数；multipart 的 `content`、`metadata` 等对象/数组传 JSON 字符串，数字和布尔字段保持对应 JSON 字面量。不支持媒体文件直接上传，素材使用 URL。
+
+Responses 使用 `POST /v1/responses`、`input` 提示词、`background:true` 和 `metadata` 参数，保存返回的 `id` 后轮询 `GET /v1/responses/{id}`；非终态 `queued/in_progress`，成功 `completed`，视频信息位于 `output[].content[].text`。未成功完成时检查 `status` 和 `error`，不要把进度文本当作视频地址。
+
+## 参数
+
+| 字段 | 类型及规则 |
+| --- | --- |
+| `model` | 必填，上述真实 ID |
+| `content` | 原生必填数组；`text`、`image_url`、`video_url`、`audio_url` |
+| `content[].image_url.url` | URL/Base64/供应商支持的图片素材 ID；图片 `role` 为 `first_frame/last_frame/reference_image` |
+| `content[].video_url.url` | 可公网读取的 MP4/MOV URL；`role:"reference_video"`。每段 2–30 秒、总计 ≤30 秒，总下载 ≤64 MiB。按秒计费需核验时长，暂不接受 `asset://` 视频 |
+| `content[].audio_url.url` | URL、供应商支持的 Base64/素材 ID；`role:"reference_audio"`，不额外按视频输入秒价收费 |
+| `duration` | 整数 4–30，或 `-1` 自动时长；默认 -1，预留30秒，完成按上游回报的 `duration` 整数秒结算 |
+| `resolution` | `480p/720p/1080p`，默认720p；不支持4K |
+| `ratio` | `16:9/4:3/1:1/3:4/9:16/21:9/adaptive`，默认遵循上游 |
+| `omni_reference_task_type` | `auto/reference/edit/extend`；edit/extend 必须含参考视频并用 adaptive；edit 必须 -1，待编辑视频至少4秒 |
+| `output_format` | `mp4/mov`，默认mp4；MOV可能需要专业播放器 |
+| `generate_audio` | boolean，默认true；显式false保留 |
+| `watermark` | boolean，默认false |
+| `seed` | integer，默认-1；显式0保留 |
+| `return_last_frame` | boolean，默认false |
+| `service_tier`、`callback_url`、`execution_expires_after`、`priority`、`safety_identifier` | 按Ark定义透传；回调为供应商行为，任务状态仍以KUNPO查询为准 |
+
+`frames` 不适用于2.5。固定首尾帧与全模态参考不能混用；首帧/首尾帧模式使用 `ratio:adaptive`，按首帧比例生成。`draft`、`camera_fixed`、`tools` 会保留供上游校验，但不表示2.5已开放这些能力。真人素材需满足供应商授权规则。
+
+## 价格与结算
+
+美元标准价，不随限时活动自动变化。秒价按 [BytePlus 官网价格](https://docs.byteplus.com/en/docs/modelark/1544106) 的 USD/百万token标价及16:9标准像素公式确定；对外按以下固定秒价收取，同档不同宽高比使用同一秒价。
+
+| 输出分辨率 | 无参考视频，输出USD/秒 | 有参考视频，输入及输出各USD/秒 |
+| --- | ---: | ---: |
+| 480p | 0.10280025 | 0.061488 |
+| 720p | 0.23112 | 0.13824 |
+| 1080p | 0.56862 | 0.3402 |
+
+无参考视频：输出秒数×单价。有参考视频：（核验输入秒数＋输出秒数）×参考视频档单价。输入秒数按文件时间表核验、保留至毫秒；输出使用火山回报的 `duration` 整数秒（可能小于文件实际小数秒）。适用账户分组倍率。
+
+提交前预扣，自动时长预留30秒；余额不足不提交。失败退还预扣；成功按冻结单价和实际用量退补。原始token保留作核对，不参与本模型对外结算。参考视频固定副本与主视频归档KUNPO CDN；额外尾帧仍可能为上游临时地址。

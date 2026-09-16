@@ -35,6 +35,7 @@
                   "api-reference/image-generation/models/gpt-image-2.5",
                   "api-reference/image-generation/models/qwen-image-3-pro",
                   "api-reference/image-generation/models/image-si",
+                  "api-reference/image-generation/models/seedream-50-pro",
                   "api-reference/image-generation/models/midjourney",
                   "api-reference/image-generation/synchronous",
                   "api-reference/image-generation/asynchronous"
@@ -42,6 +43,7 @@
               },
               "api-reference/seed-audio",
               "api-reference/doubao-video",
+              "api-reference/seedance-25",
               "api-reference/video-se",
               "api-reference/video-vs25",
               "api-reference/tripo-3d"

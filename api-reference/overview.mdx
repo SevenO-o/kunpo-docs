@@ -36,6 +36,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 豆包 Seed Audio | `POST` | `/v1/audio/speech` | 生成音频，直接返回音频二进制 |
 | 豆包 / SE 视频（提交） | `POST` | `/v1/video/generations` | 返回 `task_id` |
 | 豆包 / SE 视频（查询） | `GET` | `/v1/video/generations/:task_id` | 查询任务状态与视频 URL |
+| Seedance 2.5 原生 | `POST` / `GET` | `/doubao/api/v3/contents/generations/tasks`<br />`/doubao/api/v3/contents/generations/tasks/:task_id` | 另支持 Videos / Responses；见[火山接入](/api-reference/seedance-25) |
 | VS 2.5 Videos | `POST` / `GET` | `/v1/videos`<br />`/v1/videos/:task_id` | 提交、查询，成功结果在 `url` |
 | VS 2.5 视频内容 | `GET` / `HEAD` | `/v1/videos/:task_id/content` | 下载或获取视频内容头 |
 | VS 2.5 Responses | `POST` / `GET` | `/v1/responses`<br />`/v1/responses/:response_id` | 后台、同步或流式响应 |

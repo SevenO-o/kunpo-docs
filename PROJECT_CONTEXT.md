@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-09-16（新增 VS 2.5 接口契约、USD 秒价与 AI 读者约定）
+> 最后更新：2026-09-16（新增火山 Seedance 2.5 / Seedream 5.0 Pro，保留 VS 2.5 接口契约与 AI 读者约定）
 
 ---
 
@@ -39,6 +39,7 @@ docs/
 │   ├── text-chat.mdx                          # 文本对话 (Chat Completions)
 │   ├── claude-messages.mdx                    # Claude Messages API (Anthropic 原生)
 │   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
+│   ├── seedance-25.mdx                        # 火山 2.5 参数、轮询与 USD 秒价
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
 │   ├── video-se.mdx                           # 腾讯 SE 视频生成 (混元生视频)
 │   ├── video-vs25.mdx                         # VS 2.5 三种协议、素材、CDN、USD 按秒计费
@@ -51,6 +52,7 @@ docs/
 │           ├── nano-banana-2.mdx
 │           ├── gpt-image-2.mdx
 │           ├── qwen-image-3-pro.mdx
+│           ├── seedream-50-pro.mdx            # 火山图片、图层与 USD 按张计费
 │           ├── image-si.mdx                    # Seedream 5.0 Pro：URL 参考图、分辨率档位与比例
 │           └── midjourney.mdx
 ├── snippets/image-generation/

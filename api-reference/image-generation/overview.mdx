@@ -37,6 +37,7 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
 | [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5) | `gpt-image-2.5-flare` / `gpt-image-2.5-sunburst` | 支持 | 支持 | 支持 | 不支持 | 同步 |
 | [Qwen Image 3.0 Pro](/api-reference/image-generation/models/qwen-image-3-pro) | `qwen-image-3.0-pro` | 支持 | 多模态输入 | 支持 | 不支持 | 同步 |
 | [Seedream 5.0 Pro](/api-reference/image-generation/models/image-si) | `Image-SI` | 支持 | 支持 | 支持 | 不支持 | 同步 |
+| [Seedream 5.0 Pro（火山）](/api-reference/image-generation/models/seedream-50-pro) | `doubao-seedream-5-0-pro-260628` | 支持 | 支持 | 支持 | 不支持 | 同步 |
 | [Midjourney](/api-reference/image-generation/models/midjourney) | `Image-MI` | 支持 | 不支持 | 支持 | 支持 | 同步 |
 
 ### 选择建议
@@ -67,6 +68,8 @@ description: "选择图像生成模型，按需求找到示例，并查看同步
 | `qwen-image-3.0-pro` | $0.069 | ≈ ¥0.5 | 固定按次 |
 
 Seedream 5.0 Pro 与 GPT Images 2.5 的动态计费请以[模型广场](https://llm.ziy.cc/pricing)和实际调用账单为准，不能将某次测试扣费当作固定单价。GPT Images 2.5 按 token 计费，分辨率、`quality`、`n` 和参考图都会影响用量，详见[模型页](/api-reference/image-generation/models/gpt-image-2.5#计费)。
+
+火山直连 Seedream 5.0 Pro 按实际张数和尺寸计费，图层逐张结算，详细价格见[火山模型页](/api-reference/image-generation/models/seedream-50-pro#按张计费)。
 
 <Tip>
   以上价格仅供参考，实际计费请以控制台模型市场中的实时价格为准。

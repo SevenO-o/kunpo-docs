@@ -1,9 +1,9 @@
 ---
 title: "3D 模型生成（Tripo）"
-description: "基于 Tripo API v3 的三维模型生成，支持文生 3D、图生 3D、多视角生 3D 与单图出四视角，输出 GLB 模型和渲染预览图。"
+description: "基于 Tripo API v3 的三维模型生成，支持文生 3D、图生 3D、多视角生 3D、自动骨骼绑定和动画重定向，输出 GLB / FBX 模型。"
 ---
 
-3D 生成是异步任务：先提交任务拿到 `task_id`，轮询到完成后再取产物。出模任务的产物有两个——GLB 模型文件和一张渲染预览图。
+3D 生成是异步任务：先提交任务拿到 `task_id`，轮询到完成后再取产物。生成模型后可继续做绑定检查、自动骨骼绑定和动画重定向。生成任务输出 GLB 和预览图，绑定及动画输出新的 GLB / FBX，检查任务只返回检查结果。
 
 接口路径与 Tripo 官方 v3 保持一致，只需把域名换成 `llm.ziy.cc`、密钥换成 KUNPO 的 `sk-` 密钥。
 
@@ -14,6 +14,9 @@ POST https://llm.ziy.cc/tripo/v3/generation/text-to-model        # 文生 3D
 POST https://llm.ziy.cc/tripo/v3/generation/image-to-model       # 图生 3D（单图）
 POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model   # 多视角生 3D（多图参考）
 POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview   # 单图出四视角图
+POST https://llm.ziy.cc/tripo/v3/animations/rig-check           # 绑定检查
+POST https://llm.ziy.cc/tripo/v3/animations/rig                 # 自动骨骼绑定
+POST https://llm.ziy.cc/tripo/v3/animations/retarget            # 动画重定向
 GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}                 # 查询任务
 GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 ```
@@ -296,6 +299,145 @@ curl https://llm.ziy.cc/v1/tasks/{task_id}/artifacts -H "Authorization: Bearer s
 
 ---
 
+## 自动绑定与动画
+
+使用 KUNPO API 密钥直接调用。若密钥开启模型限制，需放行 `v1.0-20240301` 或 `v2.5-20260210`，并保留原始生成模型权限。
+
+```text
+POST https://llm.ziy.cc/tripo/v3/animations/rig-check
+POST https://llm.ziy.cc/tripo/v3/animations/rig
+POST https://llm.ziy.cc/tripo/v3/animations/retarget
+```
+
+三个接口均使用 `Authorization: Bearer sk-你的密钥`、`Content-Type: application/json`，返回
+`{"code":0,"data":{"task_id":"task_..."}}`。用本文的 `GET /tripo/v3/tasks/{task_id}` 轮询，每 5–10 秒一次。
+`queued`、`pending`、`running` 为非终态；`success` 成功，`failed`、`cancelled` 结束并退款。
+POST 没有幂等保证：网络超时后不要盲目重复提交；已拿到任务 ID 时继续查询原任务。
+
+顺序为：生成 3D → `rig-check` → `rig` → `retarget`。每一步均等到 `success` 才继续。
+**`rig` 的 `input` 使用原始生成任务 ID；`retarget` 的 `input` 使用绑定任务 ID。不要传检查任务 ID。**
+`rig-check` 成功只代表检查完成，还必须判断 `data.output.riggable` 是否为 `true`；`false` 是正常检查结果，不是接口失败。
+
+### 绑定模型与公共输入
+
+| 参数 | JSON 类型 | 规则 |
+| --- | --- | --- |
+| `model` | string | 三个端点默认 `v1.0-20240301`；也可用 `v2.5-20260210`。不要填生成模型 `v3.1-20260211` 或 `P2-20260801` |
+| `input` | string，必填 | `rig-check` / `rig`：已成功生成 3D 的 KUNPO `task_id`、上游 `file_token` 或公网模型直链；`retarget`：仅已成功的 KUNPO `rig` 任务 ID |
+
+`model` 在 `rig` 中选择实际绑定版本；在 `rig-check` / `retarget` 中用于 KUNPO 路由和计费，不发送给上游。
+引用 KUNPO 任务时，网关验证归属并固定原渠道，再替换为上游任务 ID。跨用户、失效渠道、未成功或类型不符的任务不能串接。
+`file_token` 必须属于上游对应账号，本次不提供文件上传端点；一般优先使用 KUNPO 任务 ID。
+供应商规定 `rig-check` 直接文件输入为 GLB；`rig` 接受 GLB / GLTF / FBX / OBJ / STL，文件上限 150 MB。
+
+### 绑定检查
+
+```json
+{"input":"task_原始生成任务ID"}
+```
+
+查询成功后读取：
+
+```json
+{"code":0,"data":{"task_id":"task_检查任务ID","status":"success","output":{"riggable":true,"rig_type":"biped"},"credits_consumed":0}}
+```
+
+检查不产生模型文件，产物列表为空。先根据 `riggable` 与建议 `rig_type` 决定是否继续。
+
+### 骨骼绑定
+
+| 参数 | JSON 类型 | 默认值及约束 |
+| --- | --- | --- |
+| `rig_type` | string | `biped`；可选 `quadruped`、`hexapod`、`octopod`、`avian`、`serpentine`、`aquatic`。`v1.0-20240301` 只接受 `biped`，非人形选择 `v2.5-20260210` |
+| `spec` | string | `tripo` 或 `mixamo`，默认 `tripo`；`mixamo` 使用 Mixamo 兼容骨骼命名，但不能交给 Tripo 的 `retarget`；需要内置动画时用 `tripo` |
+| `out_format` | string | `glb` 或 `fbx`，默认 `glb` |
+
+```json
+{"input":"task_原始生成任务ID","model":"v1.0-20240301","rig_type":"biped","spec":"tripo","out_format":"glb"}
+```
+
+<Warning>
+  Tripo 动画接口拒绝 Mixamo 骨骼。`spec: "mixamo"` 仅用于导出后在外部工具绑定动作；如果下一步调用 `retarget`，必须使用 `spec: "tripo"` 生成绑定模型。网关会拒绝已知的 Mixamo 绑定任务。
+</Warning>
+
+### 动画重定向
+
+| 参数 | JSON 类型 | 默认值及约束 |
+| --- | --- | --- |
+| `animation` | string | 单个 `preset:` 动作标识，与 `animations` 二选一且必填其一 |
+| `animations` | string[] | 多动作；网关限制 1–100 项，每项为 `preset:` 标识；按提交项数预估费用 |
+| `out_format` | string | `glb` 或 `fbx`，默认 `glb` |
+| `bake_animation` | boolean | 默认 `true`，只对 GLB 有效；显式 `false` 保留 |
+| `export_with_geometry` | boolean | 默认 `true`；需要完整带网格模型时保持开启 |
+| `animate_in_place` | boolean | 默认 `false`；设为 `true` 让角色原地播放动作 |
+
+```json
+{"input":"task_绑定任务ID","animation":"preset:walk","out_format":"glb","bake_animation":true,"export_with_geometry":true,"animate_in_place":true}
+```
+
+多动作改传 `"animations":["preset:walk","preset:run"]` 并删除 `animation`。
+动作与绑定版本、骨骼类型必须兼容；上游校验具体预设是否适用，失败时读取 `data.error_message`。
+新版支持的示例包括人形 `preset:idle` / `preset:walk` / `preset:run`，四足 `preset:quadruped:walk`。
+完整清单见 [Tripo 动画预设](https://developers.tripo3d.ai/en/docs/animations-retarget)。
+
+绑定和动画完成后均从 `data.output.model_url` 或产物 `model` 下载新文件，保留原始生成模型。
+GLB 使用 `model/gltf-binary`；FBX 使用 `application/octet-stream`。上游链接可能到期，及时保存产物。
+绑定和动画的主模型产物会归档到 KUNPO CDN；建议通过产物接口读取。原始上游链接的有效期不会因此延长，额外预览仍需及时保存。
+
+### 可执行串接示例
+
+先设置 `KUNPO_API_KEY` 和 `KUNPO_MODEL_TASK_ID`（已成功的原始 3D 生成任务 ID），安装 `requests`：
+
+```python Python
+import os
+import time
+import requests
+
+base = "https://llm.ziy.cc"
+headers = {"Authorization": "Bearer " + os.environ["KUNPO_API_KEY"]}
+source_id = os.environ["KUNPO_MODEL_TASK_ID"]
+
+def submit_and_wait(action, body):
+    response = requests.post(base + "/tripo/v3/animations/" + action,
+                             headers=headers, json=body, timeout=60)
+    response.raise_for_status()
+    envelope = response.json()
+    if envelope.get("code") != 0:
+        raise RuntimeError(envelope)
+    task_id = envelope["data"]["task_id"]
+    print(action, task_id, flush=True)  # 保存 ID；超时后继续查询此任务
+    deadline = time.monotonic() + 1800
+    while time.monotonic() < deadline:
+        response = requests.get(base + "/tripo/v3/tasks/" + task_id,
+                                headers=headers, timeout=60)
+        response.raise_for_status()
+        envelope = response.json()
+        if envelope.get("code") != 0:
+            raise RuntimeError(envelope)
+        data = envelope["data"]
+        if data["status"] == "success":
+            return task_id, data["output"]
+        if data["status"] in ("failed", "cancelled"):
+            raise RuntimeError(data)
+        time.sleep(8)
+    raise TimeoutError("继续查询原任务，勿重新提交: " + task_id)
+
+_, check = submit_and_wait("rig-check", {"input": source_id})
+if not check["riggable"] or check["rig_type"] != "biped":
+    raise RuntimeError("此示例需要可绑定的人形模型: " + str(check))
+rig_id, _ = submit_and_wait("rig", {
+    "input": source_id, "model": "v1.0-20240301",
+    "rig_type": "biped", "spec": "tripo", "out_format": "glb",
+})
+animated_id, output = submit_and_wait("retarget", {
+    "input": rig_id, "animation": "preset:walk", "out_format": "glb",
+    "bake_animation": True, "export_with_geometry": True, "animate_in_place": True,
+})
+print(animated_id, output["model_url"])
+```
+
+---
+
 ## 查询任务
 
 ```bash
@@ -332,14 +474,14 @@ curl https://llm.ziy.cc/tripo/v3/tasks/{task_id} \
 
 | 状态 | 说明 |
 |------|------|
-| `queued` | 排队中 |
+| `queued` / `pending` | 排队中 |
 | `running` | 生成中，可读 `data.progress`（0–100 的数字，不是百分号字符串） |
 | `success` | 完成，产物在 `data.output` |
-| `failed` | 失败，原因见 `data.error_message` 与 `data.error_code` |
+| `failed` / `cancelled` | 任务失败或取消，原因见 `data.error_message` 与 `data.error_code` |
 
 <Tip>
   建议每 5～10 秒轮询一次。实测无贴图的模型 2～4 分钟出结果，开贴图更久。
-  只把 `success` 和 `failed` 当终态，其余一律继续等待。
+  `success`、`failed`、`cancelled` 是终态，其余继续等待；查询超时或临时 429/5xx 时，保留任务 ID 并稍后重试查询。
 </Tip>
 
 <Note>
@@ -351,7 +493,7 @@ curl https://llm.ziy.cc/tripo/v3/tasks/{task_id} \
 
 ## 获取产物
 
-`data.output` 里的地址是上游签名链接，**约 24 小时后失效**。推荐改用 KUNPO 的产物接口，由网关代取，不必自己处理上游签名：
+`data.output` 可能保留上游签名链接，通常约 24 小时后失效。KUNPO 会归档主模型文件；产物接口优先读取已归档的文件。额外预览等未归档产物仍受上游有效期限制，请及时保存：
 
 ```bash
 # 1. 列出产物
@@ -388,7 +530,7 @@ curl -L -o model.glb \
 
 | 产物 key | 出现在 | 内容 |
 |----------|--------|------|
-| `model` | 三个出模接口 | GLB 模型（glTF 2.0 二进制），开贴图后体积可达数十 MB |
+| `model` | 三个生成接口、`rig`、`retarget` | 生成接口输出 GLB；绑定及动画按 `out_format` 输出 GLB / FBX，体积可达数十 MB |
 | `preview` | 三个出模接口 | 512×512 的渲染预览图 |
 | `front` / `left` / `back` / `right` | `image-to-multiview` | 四张 1024×1024 JPEG 视角图 |
 
@@ -424,7 +566,7 @@ def generate_3d(prompt, interval=8, timeout=900):
         status = data["status"]
         if status == "success":
             break
-        if status == "failed":
+        if status in ("failed", "cancelled"):
             raise RuntimeError(f"生成失败: {data.get('error_message')}")
         print(f"状态: {status} {data.get('progress', 0)}%")
         time.sleep(interval)
@@ -560,6 +702,7 @@ def generate_3d(prompt, interval=8, timeout=900):
 
 - **`multiview-to-model` 与 `image-to-model` 同价**，视角数量不影响价格——传 2 张和传 4 张一样贵
 - **`image-to-multiview` 固定 10 credits**，与模型、参数都无关
+- **绑定与动画接口**：`rig-check` 预估 0 credits；`rig` 25 credits；`retarget` 每个动作 10 credits。最终以 `data.credits_consumed` 结算，明确的 0 用量保留。按模型配置的美元积分单价 × credits × 用户分组倍率扣费；失败退款。KUNPO 当前单价为 USD 0.01/credit：倍率 1 时检查免费、绑定 $0.25、每个动画 $0.10；后续价格以模型广场为准（[官方价格](https://developers.tripo3d.ai/en/pricing)）
 
 单价见 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a>。
 

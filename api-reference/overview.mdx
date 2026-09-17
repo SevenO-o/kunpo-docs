@@ -42,6 +42,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | VS 2.5 Responses | `POST` / `GET` | `/v1/responses`<br />`/v1/responses/:response_id` | 后台、同步或流式响应 |
 | VS 2.5 插件接口 | `POST` / `GET` | `/tencent-vod/v1/videos`<br />`/tencent-vod/v1/videos/:task_id` | `Response` 外层结构；见[完整契约](/api-reference/video-vs25) |
 | 3D 生成（文生 / 图生） | `POST` | `/tripo/v3/generation/text-to-model`<br />`/tripo/v3/generation/image-to-model` | 返回 `task_id` |
+| 3D 绑定与动画 | `POST` | `/tripo/v3/animations/rig-check`<br />`/tripo/v3/animations/rig`<br />`/tripo/v3/animations/retarget` | 返回 `task_id`；[参数与串接](/api-reference/tripo-3d#自动绑定与动画) |
 | 3D 生成（查询） | `GET` | `/tripo/v3/tasks/:task_id` | 查询任务状态 |
 | 3D 产物（列出 / 下载） | `GET` | `/v1/tasks/:task_id/artifacts` | 取 GLB 模型与预览图 |
 
@@ -79,7 +80,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
   </Card>
 
   <Card title="3D 模型生成" icon="cube" href="/api-reference/tripo-3d">
-    基于 Tripo API v3，文生 3D 与图生 3D，输出 GLB 模型与渲染预览图。
+    基于 Tripo API v3，支持 3D 生成、自动骨骼绑定与动画重定向。
   </Card>
 </CardGroup>
 

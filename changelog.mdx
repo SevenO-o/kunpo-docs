@@ -9,6 +9,16 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-23" tags={["GPT-6", "Opus 5.5"]}>
+
+## GPT-6 Luna / Sol 与 Claude Opus 5.5
+
+已开放 `gpt-6-luna`、`gpt-6-sol` 和 `claude-opus-5-5`。GPT 模型使用 AF OpenAI 渠道，Opus 5.5 使用 AF Claude 原生渠道；可沿用现有密钥，开启模型限制时需放行对应完整模型 ID。
+
+GPT 的 Chat 请求兼容推理与工具调用，也可直接使用 Responses。Opus 5.5 推荐 Messages 接口，其思考始终开启、强制工具选择等行为与旧版有区别。接入与定价见 [GPT-6](/api-reference/gpt-6)、[Opus 5.5](/api-reference/claude-opus-55)。
+
+</Update>
+
 <Update label="2026-09-23" tags={["v9.14", "MiniMax H3"]}>
 
 ## 腾讯 TokenHub MiniMax H3 视频

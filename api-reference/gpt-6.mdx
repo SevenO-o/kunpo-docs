@@ -1,0 +1,65 @@
+---
+title: "GPT-6 Luna / Sol"
+description: "GPT-6 Luna、Sol 的模型 ID、OpenAI 接口、推理与美元定价。"
+---
+
+## 模型与接口
+
+| 项目 | 值 |
+|---|---|
+| 调用名 | `gpt-6-luna`、`gpt-6-sol`，不加供应商前缀 |
+| 根地址 | `https://llm.ziy.cc` |
+| OpenAI SDK Base URL | `https://llm.ziy.cc/v1` |
+| 接口 | `POST /v1/responses`、`POST /v1/chat/completions` |
+| 鉴权 | `Authorization: Bearer sk-你的密钥` |
+| 请求类型 | `Content-Type: application/json` |
+| 输入 / 输出 | 文本及图片输入，文本输出 |
+| 上下文 / 最大输出 | 1,050,000 / 128,000 tokens |
+
+这两个模型使用 AF OpenAI 渠道。Claude Opus 5.5 使用另一条 [Claude 原生接入](/api-reference/claude-opus-55)。密钥开启模型限制时，需要放行对应完整模型 ID。
+
+## Responses 示例
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/v1/responses \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "gpt-6-luna",
+    "input": "用三句话解释数据库索引。",
+    "reasoning": {"effort": "low"},
+    "max_output_tokens": 1024
+  }'
+```
+
+将 `model` 改为 `gpt-6-sol` 即可使用 Sol。读取 `output[]` 中 `type="message"` 项的 `content[]`，拼接 `type="output_text"` 的 `text`；不能假定第一项一定是文本，输出也可能包含推理或函数调用。
+
+`input` 必填，可用文本或兼容的消息数组；输出预算 `max_output_tokens` 包含推理与可见回答。`stream` 默认 `false`；设置为 `true` 时返回 Responses SSE 事件，按 `response.output_text.delta` 增量读取文本，按最终响应事件处理完成状态。流式与非流式返回结构不同。
+
+## Chat Completions 与推理
+
+Chat 格式沿用 [文本对话](/api-reference/text-chat)，使用 `messages`、`max_completion_tokens` 和 `reasoning_effort`。Responses 使用 `input`、`max_output_tokens` 和 `reasoning.effort`，不要混用字段。
+
+两种格式的推理档位均为 `none`、`low`、`medium`、`high`、`xhigh`、`max`，供应商默认 `medium`。KUNPO 已为这两个模型配置 Chat → Responses 转换，客户端仍收到 Chat 格式的 `choices[]` 或 Chat SSE，可继续使用工具调用。
+
+AF 渠道会去除 `top_p`；默认或开启推理时会去除 `temperature`，显式 `none` 时保留温度。需要控制推理成本时使用推理档位，不以温度代替。返回工具调用时，按所选协议提交工具结果，不能把函数参数当作模型最终回答。
+
+鉴权或模型权限错误先检查密钥、分组和模型限制；参数错误修正后重试。遇到 429 按退避重试。连接超时不能证明供应商未执行，请勿立即无限重发收费请求。
+
+## 计费
+
+以下为 USD / 百万 tokens 的 Standard 价格，不含用户分组倍率：
+
+| 模型 | 输入上下文 | 普通输入 | 输出 | 缓存读取 | 缓存写入 |
+|---|---|---:|---:|---:|---:|
+| Luna | ≤ 272,000 | 0.10 | 0.50 | 0.01 | 0.125 |
+| Luna | > 272,000 | 0.20 | 0.75 | 0.02 | 0.25 |
+| Sol | ≤ 272,000 | 2.00 | 10.00 | 0.20 | 2.50 |
+| Sol | > 272,000 | 4.00 | 15.00 | 0.40 | 5.00 |
+
+按完整输入长度选择档位，长档单价适用于整次请求；独立报告的缓存用量从普通输入中分离，避免重复计费。输出包含推理 tokens。网关按上游返回的用量结算，并应用实际用户分组倍率；表格不代表缓存一定命中或上游一定返回缓存写入明细。
+
+本次按 Standard 配置，未开放依靠 `service_tier` 切换 Batch/Flex/Fast 计费。实时价格见[模型广场](https://llm.ziy.cc/pricing)。
+
+规格与价格来源（2026-09-23）：[OpenAI GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna)、[GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)。

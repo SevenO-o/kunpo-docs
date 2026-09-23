@@ -1,0 +1,102 @@
+---
+title: "Jev 结构化决策"
+description: "Jev Latest 的专用决策接口、分类与评分参数、返回结构和美元定价。"
+---
+
+Jev 是 TypeSafe 的结构化决策模型：输入待判断的文本或 JSON，以及选择标准，返回选择、评分或布尔概率。适用于分类、工单分流和业务规则判断，不生成聊天回复、代码、图片或视频。
+
+## 接口与模型
+
+| 项目 | 值 |
+|---|---|
+| 接口 | `POST https://llm.ziy.cc/v1/decisions` |
+| 模型 ID | `~typesafe/jev-latest` |
+| 兼容别名 | `jev-latest`，映射到同一最新版本别名 |
+| 鉴权 | `Authorization: Bearer sk-你的密钥` |
+| 请求类型 | `Content-Type: application/json` |
+| 返回方式 | 同步 JSON，不支持流式或后台提交 |
+| 输入上下文 | 32,000 tokens |
+
+Jev 使用独立的 OpenRouter 决策渠道。可沿用现有 KUNPO 密钥；密钥开启模型限制时须放行实际请求使用的完整模型 ID。不能向 Chat Completions 或 Responses 接口提交这个模型，也不能使用聊天客户端的 `messages` 请求格式。
+
+`latest` 由上游维护，2026-09-23 对应 Jev 1.13；未来可能变更目标版本。响应 `model` 表示实际处理请求的上游版本，不保证与请求别名相同。
+
+## 最小调用
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/v1/decisions \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "~typesafe/jev-latest",
+    "state": {"ticket": "付款后被重复扣款，需要退款。"},
+    "questions": {
+      "team": {
+        "type": "choice",
+        "instructions": "这张工单应该交给哪个团队？",
+        "criteria": {
+          "billing": "扣款、付款和退款问题",
+          "account": "登录、权限和账号问题"
+        }
+      }
+    }
+  }'
+```
+
+读取 `answers.team.choice`，以及 `answers.team.confidence` 和 `answers.team.probabilities`。实际值由模型判断，置信度不应当作经过业务校准的准确率。
+
+## 请求字段
+
+| 字段 | 类型 / 必填 | 规则 |
+|---|---|---|
+| `model` | string / 是 | 使用上表两个完整模型 ID 之一 |
+| `state` | string、object 或 array / 是 | 要判断的内容或上下文；不能是 null、number 或 boolean |
+| `questions` | object / 是 | 非空，以调用方自定义问题名为键、下表的问题对象为值 |
+| `session_id` | string / 否 | 最多 256 个字符，用于上游可观测性分组；无默认值 |
+| `user` | string / 否 | 最多 256 个字符的调用方用户标识；无默认值，避免传敏感信息 |
+
+当前接口只接受这些顶层字段。`provider`、`trace`、`stream`、`background`、`messages`、客户端自报的 `usage` 或 `cost` 均不接受。参数不能由客户端覆盖渠道凭据或计费事实。
+
+每个问题只接受 `type`、`instructions`、`criteria`。`instructions` 必填，可为 string、object 或 array；其中的内容描述判断标准。以下“指导内容”同样指 string、object 或 array：
+
+| `type` | `criteria` | 主要答案字段 |
+|---|---|---|
+| `choice` | 必填，非空 object；键是可选答案，值是对应的指导内容 | `choice`、`confidence`、`probabilities` |
+| `score` | 必填，非空 array；各项为按顺序排列的指导内容 | `score`、`confidence`、`probabilities`、`legend` |
+| `noul` | 可省略；提供时必须是仅含 `true`、`false` 两项指导内容的 object | `noul`，0–1 的真值概率 |
+
+`score` 的数值与标准数组的索引对应，可能是小数，不是任意业务单位。`noul` 返回概率，不是 JSON 布尔值；调用方需根据自身需求选择阈值。可以在同一 `questions` 中混合三种问题。
+
+## 响应与错误
+
+成功返回 JSON：
+
+| 字段 | 含义 |
+|---|---|
+| `id` | KUNPO 记录 ID；保留用于排查或查询，不是上游生成 ID |
+| `model` | 实际上游版本 |
+| `provider` | 上游提供时返回供应商名称 |
+| `answers.<问题名>` | 对应问题的带类型决策；按请求的问题名读取 |
+| `usage.input_tokens` | 上游报告的实际输入 tokens |
+| `usage.output_tokens` | 上游报告的实际输出 tokens，即使不收费也保留 |
+
+接口在结果完成后返回，无需轮询。已取得 `id` 时可使用同一密钥调用 `GET /v1/tasks/{id}` 查看所属账号记录；该接口返回通用任务结构，决策结果位于 `data`，与上述直接响应不同。
+
+输入错误应修正参数后再提交；鉴权、模型权限或余额错误应先修正对应配置。上游限流或暂时故障可退避重试。POST 没有客户端幂等保证，连接超时后上游可能已经执行，不能靠重复提交获取原结果。失败按网关退款流程处理，保留返回的请求标识供排查。
+
+## 价格与结算
+
+两个模型名采用同一价格，单位为 **USD / 百万 tokens**，不含用户分组倍率：
+
+| 输入 | 输出 |
+|---:|---:|
+| 0.042 | 0 |
+
+费用为 `实际输入 tokens ÷ 1,000,000 × 0.042 × 分组倍率`，按网关额度精度结算。输出免费不代表整次请求免费。未单独设置缓存折扣。
+
+提交时按 32,000 输入 tokens 预留额度，分组倍率为 1 时为 $0.001344；完成后根据上游实际用量结算并退回差额。客户端不能提交用量来减免费用。响应仅返回 token 用量，不把上游的美元成本当作 KUNPO 的实际账单金额。
+
+价格维护日期为 2026-09-23，最新配置见[模型广场](https://llm.ziy.cc/pricing)。`latest` 版本切换不等于本站价格自动同步。
+
+来源：[OpenRouter Jev Latest](https://openrouter.ai/~typesafe/jev-latest)、[Jev 1.13 规格与价格](https://openrouter.ai/typesafe/jev-1.13)、[上游 Decisions 协议](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request)。上游路径为 `/api/alpha/decisions`；KUNPO 使用本页的 `/v1/decisions`。

@@ -33,6 +33,12 @@
                 ]
               },
               {
+                "group": "结构化决策",
+                "pages": [
+                  "api-reference/jev"
+                ]
+              },
+              {
                 "group": "图像生成",
                 "pages": [
                   "api-reference/image-generation/overview",

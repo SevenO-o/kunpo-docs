@@ -75,7 +75,7 @@ docs/
 | 分组 | 页面 |
 |------|------|
 | 开始 | index, quick-start |
-| API 接口 | overview → 文本生成（text-chat、claude-messages、gpt-6、claude-opus-55）→ 图像生成 → seed-audio → 视频生成（doubao-video、seedance-25、video-se、video-vs25、minimax-h3）→ tripo-3d |
+| API 接口 | overview → 文本生成（text-chat、claude-messages、gpt-6、claude-opus-55）→ 结构化决策（jev）→ 图像生成 → seed-audio → 视频生成（doubao-video、seedance-25、video-se、video-vs25、minimax-h3）→ tripo-3d |
 | 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
 图像生成子组直接展示“概览与模型选择 → 六个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。

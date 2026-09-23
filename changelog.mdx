@@ -9,6 +9,16 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-23" tags={["Jev", "结构化决策"]}>
+
+## Jev 独立决策接口
+
+新增 TypeSafe Jev 专用决策渠道和 `/v1/decisions` 接口，支持分类选择、评分和布尔概率判断。保留 `~typesafe/jev-latest` 与 `jev-latest` 两个模型名，补齐厂家、模型说明和按实际输入 token 结算的价格。
+
+使用现有 KUNPO 密钥提交 `state` 与 `questions`，同步读取 `answers`。该模型不使用聊天接口。完整字段和定价见 [Jev 结构化决策](/api-reference/jev)。
+
+</Update>
+
 <Update label="2026-09-23" tags={["GPT-6", "Opus 5.5"]}>
 
 ## GPT-6 Luna / Sol 与 Claude Opus 5.5

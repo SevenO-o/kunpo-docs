@@ -1,0 +1,60 @@
+---
+title: "Claude Opus 5.5"
+description: "Claude Opus 5.5 的原生 Messages 接入、思考与工具约束、缓存定价。"
+---
+
+## 模型与接口
+
+| 项目 | 值 |
+|---|---|
+| 调用名 | `claude-opus-5-5`，不加 `anthropic/` 前缀 |
+| 根地址 / Anthropic SDK Base URL | `https://llm.ziy.cc`，不加 `/v1` |
+| 推荐接口 | `POST /v1/messages` |
+| 鉴权 | `Authorization: Bearer sk-你的密钥`，Anthropic SDK 也可使用 `x-api-key` |
+| 必要请求头 | `Content-Type: application/json`、`anthropic-version: 2023-06-01` |
+| 输入 / 输出 | 文本及图片输入，文本输出 |
+| 上下文 / 最大输出 | 1,000,000 / 128,000 tokens |
+
+本模型使用 AF Claude 原生渠道；[GPT-6 Luna / Sol](/api-reference/gpt-6) 使用 AF OpenAI 渠道。使用现有 KUNPO API Key；开启模型限制时须放行 `claude-opus-5-5`。原有 Opus 模型和兼容调用名保留，不会自动指向新版。
+
+## 最小请求
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/v1/messages \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'anthropic-version: 2023-06-01' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "claude-opus-5-5",
+    "max_tokens": 1024,
+    "output_config": {"effort": "low"},
+    "messages": [{"role": "user", "content": "用三句话解释数据库索引。"}]
+  }'
+```
+
+`messages` 是非空消息数组，`max_tokens` 是正整数输出预算，包含思考消耗。非流式响应中，读取 `content[]` 里所有 `type="text"` 的 `text`；不要直接读取第一块，因为内容可包含 `thinking` 或 `tool_use`。`stop_reason="tool_use"` 时执行工具并提交对应 `tool_result`；`max_tokens` 表示预算耗尽，不能当作完整回答。
+
+`stream` 默认 `false`；开启后按 Anthropic SSE 的内容块增量和 `message_stop` 处理完成，不能用 OpenAI 的 `choices[].delta` 解析。公共请求、流式与鉴权说明见 [Claude Messages](/api-reference/claude-messages)。
+
+## Opus 5.5 注意事项
+
+- 自适应思考始终开启。建议省略 `thinking`，通过 `output_config.effort` 控制深度；示例使用 `low`，供应商默认 `medium`。不要设置 `thinking.type="disabled"`。
+- 旧客户端的 `thinking.type="enabled"` 在当前 AF Claude 渠道会按既有规则转换为 `adaptive` 并移除 `budget_tokens`；该兼容路径未指定 effort 时沿用渠道的 `high` 默认。新客户端应使用上方示例并显式选择 effort。
+- 强制 `tool_choice.type="any"` 或 `"tool"` 不受支持。使用 `auto`；对参数结构有要求时可使用供应商支持的严格工具定义，不要通过关掉思考实现强制调用。
+- 在同一会话中保留返回的思考块及签名。修改历史消息、系统提示词或工具定义后，不要直接重放旧思考块。
+- 如果需要显示工具调用之间的文字，按供应商规则显式设置 `thinking.display`；默认返回的思考块可能不包含可展示文字。图形电脑工具的新旧协议存在差异，本次不承诺全部工具类型兼容。
+
+参数错误先修正请求，不要原样循环重试；429 使用退避。鉴权或模型不可用时检查密钥权限、分组和完整模型 ID。连接超时不表示请求未计费。
+
+## 计费
+
+USD / 百万 tokens，Standard 档，不含用户分组倍率：
+
+| 普通输入 | 输出 | 缓存读取 | 5 分钟缓存写入 | 1 小时缓存写入 |
+|---:|---:|---:|---:|---:|
+| 4.00 | 20.00 | 0.20 | 5.00 | 8.00 |
+
+按供应商返回的普通输入、输出、缓存读取与不同 TTL 缓存写入分别结算，避免重复计数；输出包括思考消耗，再乘实际分组倍率。本次配置 Standard 价格，不按请求中的 Fast/Batch 参数另行切换收费。实时价格见[模型广场](https://llm.ziy.cc/pricing)。
+
+规格与价格来源（2026-09-23）：[Anthropic Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview)、[迁移说明](https://platform.claude.com/docs/en/models/opus-5-5/migration-guide)。

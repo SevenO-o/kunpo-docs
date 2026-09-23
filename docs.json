@@ -27,7 +27,9 @@
                 "group": "文本生成",
                 "pages": [
                   "api-reference/text-chat",
-                  "api-reference/claude-messages"
+                  "api-reference/claude-messages",
+                  "api-reference/gpt-6",
+                  "api-reference/claude-opus-55"
                 ]
               },
               {

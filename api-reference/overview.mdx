@@ -13,7 +13,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 |------|------|
 | Base URL | `https://llm.ziy.cc` |
 | 认证方式 | `Authorization: Bearer sk-你的密钥` |
-| 文本协议 | OpenAI Chat Completions / Anthropic Messages |
+| 文本协议 | OpenAI Chat Completions / Responses / Anthropic Messages |
 | 图片协议 | OpenAI Images API（同步 + 异步） |
 | 音频协议 | OpenAI Audio Speech 兼容请求 + 音频二进制响应 |
 | 视频协议 | 异步任务（提交 + 轮询） |
@@ -29,6 +29,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 能力 | 方法 | 路径 | 说明 |
 |------|------|------|------|
 | 文本对话 | `POST` | `/v1/chat/completions` | OpenAI 兼容，支持流式、多模态 |
+| GPT-6 Responses | `POST` | `/v1/responses` | [Luna / Sol](/api-reference/gpt-6) 的 Responses 接入 |
 | Claude 原生 | `POST` | `/v1/messages` | Anthropic Messages API |
 | 图像生成（同步） | `POST` | `/v1/images/generations` | 提交后等待完成，直接返回 URL |
 | 图像生成（异步提交） | `POST` | `/v1/images/tasks` | 返回 `task_id`，适合长耗时模型 |

@@ -11,6 +11,8 @@ POST https://llm.ziy.cc/v1/messages
 
 除了 OpenAI 兼容格式，KUNPO API 同时支持 Anthropic 原生 Messages API，适用于需要使用 Claude 专属功能（如 Extended Thinking）的场景。
 
+[Claude Opus 5.5](/api-reference/claude-opus-55) 使用 `claude-opus-5-5`，自适应思考始终开启；其工具限制、接入示例及缓存价格见模型页。
+
 <Note>
   Anthropic 原生接口的路径是 `/v1/messages`，与 Chat Completions 的 `/v1/chat/completions` 不同，请注意区分。
 </Note>
@@ -94,6 +96,7 @@ Anthropic 原生格式支持以下模型：
 
 | 模型名 | 说明 |
 |--------|------|
+| `claude-opus-5-5` | Claude Opus 5.5，AF Claude 原生渠道 |
 | `Claude-Sonnet-4.6` | Claude Sonnet 4.6，性价比最高 |
 | `claude-opus-4.6` | Claude Opus 4.6，最强推理能力 |
 | `claude-haiku-4.5` | Claude Haiku 4.5，速度最快 |

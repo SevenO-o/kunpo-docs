@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-09-16（新增火山 Seedance 2.5 / Seedream 5.0 Pro，保留 VS 2.5 接口契约与 AI 读者约定）
+> 最后更新：2026-09-23（新增 MiniMax H3 协议、参考素材和按秒计费单一信息源）
 
 ---
 
@@ -43,6 +43,7 @@ docs/
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
 │   ├── video-se.mdx                           # 腾讯 SE 视频生成 (混元生视频)
 │   ├── video-vs25.mdx                         # VS 2.5 三种协议、素材、CDN、USD 按秒计费
+│   ├── minimax-h3.mdx                         # TokenHub H3 协议、素材、CDN 与 USD 秒价
 │   └── image-generation/
 │       ├── overview.mdx                       # 概览与模型选择：需求入口、能力矩阵、计费
 │       ├── synchronous.mdx                    # 同步调用：公共请求、响应和多语言示例
@@ -72,7 +73,7 @@ docs/
 | 分组 | 页面 |
 |------|------|
 | 开始 | index, quick-start |
-| API 接口 | overview, text-chat, claude-messages, image-generation/*, seed-audio, doubao-video, video-se, video-vs25, tripo-3d |
+| API 接口 | overview → 文本生成（text-chat、claude-messages）→ 图像生成 → seed-audio → 视频生成（doubao-video、seedance-25、video-se、video-vs25、minimax-h3）→ tripo-3d |
 | 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
 图像生成子组直接展示“概览与模型选择 → 六个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。

@@ -38,6 +38,7 @@
 | 异步图片提交、查询、状态与恢复流程 | `api-reference/image-generation/asynchronous.mdx` | 模型页保留最小请求和查询入口，不复制完整轮询程序 |
 | 音频生成参数与示例 | `api-reference/seed-audio.mdx` | 不在其他页面重复参考资源、输出配置或响应约定 |
 | VS 2.5 协议、素材、存储与按秒计费 | `api-reference/video-vs25.mdx` | 首页与总览只放摘要和链接，不复制价格矩阵 |
+| MiniMax H3 协议、素材、存储与按秒计费 | `api-reference/minimax-h3.mdx` | 导航与总览只链接，不复制价格矩阵 |
 | 快速开始（第一次调用） | `quick-start.mdx` | 不展开高级参数 |
 | 首页卡片与一句话介绍 | `index.mdx` | 必须与真实模型/能力一致，细节链到子页 |
 | 客户端接入步骤 | `client-integration/*.mdx` | 不在 API 页重复客户端配置 |
@@ -134,7 +135,8 @@
 
 - 新页面**必须**加入 `docs.json` 对应分组，否则 export 不会包含
 - **不要**添加 GitHub 等占位外链（已移除 navbar/footer socials）
-- API 接口分组顺序：`overview` → `text-chat` → `claude-messages` → 图像生成子组 → `seed-audio` → `doubao-video`
+- API 接口分组顺序：`overview` → 文本生成子组 → 图像生成子组 → `seed-audio` → 视频生成子组 → `tripo-3d`
+- 文本生成子组：`text-chat`、`claude-messages`；视频生成子组：`doubao-video`、`seedance-25`、`video-se`、`video-vs25`、`minimax-h3`。按用户要求与图像生成采用同级分组，保留页面 URL
 - 图像生成子组顺序：概览与模型选择 → Nano Banana Pro → Nano Banana 2 → GPT Image 2 → GPT Images 2.5 → Qwen Image 3.0 Pro → Seedream 5.0 Pro → Midjourney → 同步调用 → 异步任务与结果查询
 - 模型页直接放在图像生成子组内，不再嵌套“模型指南”分组
 - 保留现有 `overview`、`synchronous`、`asynchronous` URL；迁移内容时保留旧锚点，并提供指向新章节的短链接说明

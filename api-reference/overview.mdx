@@ -39,6 +39,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | Seedance 2.5 原生 | `POST` / `GET` | `/doubao/api/v3/contents/generations/tasks`<br />`/doubao/api/v3/contents/generations/tasks/:task_id` | 另支持 Videos / Responses；见[火山接入](/api-reference/seedance-25) |
 | VS 2.5 Videos | `POST` / `GET` | `/v1/videos`<br />`/v1/videos/:task_id` | 提交、查询，成功结果在 `url` |
 | VS 2.5 视频内容 | `GET` / `HEAD` | `/v1/videos/:task_id/content` | 下载或获取视频内容头 |
+| MiniMax H3 | `POST` / `GET` | `/v1/videos`<br />`/v1/videos/:task_id` | 另支持 Responses 与插件原生接口；见 [H3 契约与计费](/api-reference/minimax-h3) |
 | VS 2.5 Responses | `POST` / `GET` | `/v1/responses`<br />`/v1/responses/:response_id` | 后台、同步或流式响应 |
 | VS 2.5 插件接口 | `POST` / `GET` | `/tencent-vod/v1/videos`<br />`/tencent-vod/v1/videos/:task_id` | `Response` 外层结构；见[完整契约](/api-reference/video-vs25) |
 | 3D 生成（文生 / 图生） | `POST` | `/tripo/v3/generation/text-to-model`<br />`/tripo/v3/generation/image-to-model` | 返回 `task_id` |

@@ -33,6 +33,7 @@
 | GPT-6 Luna/Sol 专属接口、推理与定价 | `api-reference/gpt-6.mdx` | 公共文本页与更新日志只链接 |
 | Opus 5.5 原生接入、思考约束与定价 | `api-reference/claude-opus-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Jev 独立决策协议、字段和定价 | `api-reference/jev.mdx` | 总览与更新日志只链接 |
+| Jev Router 同步文本、选模场景与动态计费 | `api-reference/jev-router.mdx` | 总览与更新日志只链接，不与 Jev 决策混用 |
 | 图片模型列表、选择建议、计费 | `api-reference/image-generation/overview.mdx` | sync/async 页不重复计费表和模型表 |
 | 图片模型能力、size/quality、专属参数和示例 | `api-reference/image-generation/models/*.mdx` | 概览和协议页直接链接模型章节，不复制完整规则 |
 | GI/GI2 共用比例与分辨率规则 | `snippets/image-generation/nano-banana-parameters.mdx` | 两个模型页导入同一片段，各页均可直接阅读 |

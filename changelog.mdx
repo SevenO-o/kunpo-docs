@@ -9,6 +9,16 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-28" tags={["Jev Router", "文本生成"]}>
+
+## Jev Router 自动选模对话
+
+新增 `typesafe/jev-router` 独立同步文本接口，适合问答、摘要、翻译、文案草稿与代码解释。使用已有 KUNPO 密钥，配置专用 Base URL 并关闭流式，响应会显示实际选中的下游模型。
+
+费用按实际路由消耗与分组倍率结算；此前的 Jev 结构化决策接口继续独立使用。当前支持范围、价格说明和调用示例见 [Jev Router](/api-reference/jev-router)。
+
+</Update>
+
 <Update label="2026-09-28" tags={["v9.15", "上游升级"]}>
 
 ## 网关升级与渠道兼容维护

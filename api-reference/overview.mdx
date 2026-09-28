@@ -29,6 +29,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 | 能力 | 方法 | 路径 | 说明 |
 |------|------|------|------|
 | 文本对话 | `POST` | `/v1/chat/completions` | OpenAI 兼容，支持流式、多模态 |
+| Jev 自动选模对话 | `POST` | `/jev-router/v1/chat/completions` | [专用同步文本接口与动态计费](/api-reference/jev-router) |
 | GPT-6 Responses | `POST` | `/v1/responses` | [Luna / Sol](/api-reference/gpt-6) 的 Responses 接入 |
 | Claude 原生 | `POST` | `/v1/messages` | Anthropic Messages API |
 | 图像生成（同步） | `POST` | `/v1/images/generations` | 提交后等待完成，直接返回 URL |

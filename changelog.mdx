@@ -9,6 +9,18 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-29" tags={["v9.25", "维护", "待发布"]}>
+
+## Seedream 图片接入独立维护
+
+[Seedream 5.0 Pro](/api-reference/image-generation/models/seedream-50-pro) 的参数转换、参考图数量、尺寸分档和图层分解规则迁入独立插件，便于后续单独维护供应商变化。
+
+保留现有模型名称、调用方式、费用规则和图片保存行为。图层分解仍按最大数量预留，完成后按返回尺寸结算；额度不足时不提交生成请求。现有接入无需调整代码。
+
+本次维护待发布。
+
+</Update>
+
 <Update label="2026-09-28" tags={["v9.24", "维护"]}>
 
 ## AIPing 图片接入独立维护

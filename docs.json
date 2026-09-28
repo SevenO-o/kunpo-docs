@@ -29,7 +29,8 @@
                   "api-reference/text-chat",
                   "api-reference/claude-messages",
                   "api-reference/gpt-6",
-                  "api-reference/claude-opus-55"
+                  "api-reference/claude-opus-55",
+                  "api-reference/jev-router"
                 ]
               },
               {

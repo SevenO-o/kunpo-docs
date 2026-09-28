@@ -9,6 +9,18 @@ description: "KUNPO API 的模型上线、接口变更与问题修复记录，�
   标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
 </Note>
 
+<Update label="2026-09-28" tags={["v9.22", "维护", "待发布"]}>
+
+## GPT Images 2.5 接入独立维护
+
+[GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5) 的生成与编辑适配迁入独立插件，便于后续单独更新供应商参数。保留现有模型名称、生成与编辑接口、费用规则、响应扩展字段及 CDN 保存行为，现有接入无需调整代码。
+
+加强文件大小、用量和多值图片数量的校验，避免异常参数影响账单。上游接受请求后发生解析错误时，网关不再自动重复提交生成请求。
+
+待 v9.22 发布。
+
+</Update>
+
 <Update label="2026-09-28" tags={["v9.21", "维护"]}>
 
 ## 腾讯图片接入独立维护

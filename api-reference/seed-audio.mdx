@@ -20,7 +20,7 @@ POST https://llm.ziy.cc/v1/audio/speech
 </Warning>
 
 <Note>
-  最大生成时长为 120 秒。计费为 ¥1/分钟：请求时按最长 120 秒预扣，完成后按上游返回的 `original_duration` 实际时长结算并退回差额。
+  最大生成时长为 120 秒，基础价为 ¥1/分钟，另乘所用分组倍率。按上游 `original_duration` 向上取整到整秒，再将分钟数四舍五入至 0.001 分钟结算。例如 6.1 秒先计为 7 秒，再折算为 0.117 分钟；分组倍率为 1 时费用约 ¥0.117。当前时长计费规则的请求预留为零，完成后扣取实际费用，并非固定预扣 120 秒。
 </Note>
 
 ## 可用模型
@@ -40,7 +40,7 @@ POST https://llm.ziy.cc/v1/audio/speech
 请求会转换为火山 `/api/v3/tts/create` 格式；响应则转换为 OpenAI `/v1/audio/speech` 习惯的音频二进制：Base64 音频会被解码，临时 URL 音频会被下载后返回。因此上游 JSON 中的 `duration`、`original_duration`、`url`、`subtitle` 不会直接返回给客户端，但 `original_duration` 会在网关内部用于计费。
 
 <Warning>
-  成功响应不能调用 `response.json()`。请读取二进制内容，例如 Python 的 `response.content`。
+  成功响应不能调用 `response.json()`。请读取二进制内容，例如 Python 的 `response.content`。请求使用非流式方式；`stream_format: "sse"` 不会开启实时音频流。
 </Warning>
 
 ## 顶层请求参数

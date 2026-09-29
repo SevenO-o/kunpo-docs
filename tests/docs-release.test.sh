@@ -116,6 +116,9 @@ make_export() {
     printf '<html><head><script src="/kunpo-search/search.js"></script></head><body>%s</body></html>\n' "$page" > "$export_dir/$page"
   done
   mkdir -p "$export_dir/pagefind" "$export_dir/kunpo-search"
+  mkdir -p "$export_dir/api-reference"
+  printf "# Public docs\n" > "$export_dir/llms.txt"
+  printf "# VS 2.5\n" > "$export_dir/api-reference/video-vs25.md"
   for page in pagefind/pagefind.js pagefind/pagefind-entry.json kunpo-search/search.js kunpo-search/search.css kunpo-search/matching.js kunpo-search/manifest.json; do
     printf 'fixture\n' > "$export_dir/$page"
   done

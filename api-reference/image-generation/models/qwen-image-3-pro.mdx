@@ -10,7 +10,7 @@ description: "使用 qwen-image-3.0-pro 生成图片：文生图、多模态参�
 **调用方式**：仅支持[同步调用](/api-reference/image-generation/synchronous)，不支持 `/v1/images/tasks` 异步接口。
 
 <Note>
-  单张通常约需 50–60 秒；上游限制为 **1 RPM**，请将请求频率控制在每分钟最多 1 次。
+  请求频率限制为 **1 RPM**，请将请求频率控制在每分钟最多 1 次。
 </Note>
 
 ## 最小示例
@@ -126,7 +126,7 @@ curl -X POST https://llm.ziy.cc/v1/images/generations \
 
 `quality` 不受支持，不会影响本模型的生图质量或输出分辨率，建议不要传入。
 
-多模态示例中的 `parameters` 使用 `prompt_extend: false`、`n: 1`、`watermark: false` 和 `size`。这些示例值不代表其他取值均已验证。
+多模态示例中的 `parameters` 使用 `prompt_extend: false`、`n: 1`、`watermark: false` 和 `size`。请按本页参数范围填写。
 
 ## 常见问题
 

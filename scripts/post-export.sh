@@ -33,4 +33,6 @@ if [[ -f "$EXPORT/Start Docs.bat" ]]; then
   fi
 fi
 
+node "$SCRIPT_DIR/check-public-content.mjs" "$EXPORT"
+
 echo "Post-export search and launcher setup complete (auto port from 5500)."

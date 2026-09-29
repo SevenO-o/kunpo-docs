@@ -1,9 +1,9 @@
 ---
-title: "Seedream 5.0 Pro（火山）"
-description: "火山方舟直连 Seedream 5.0 Pro：同步生图、图层拆分和按张计费。"
+title: "Seedream 5.0 Pro（完整参数）"
+description: "Seedream 5.0 Pro：同步生图、图层拆分和按张计费。"
 ---
 
-调用模型：`doubao-seedream-5-0-pro-260628`；保留 `Seedream-5.0-pro` 兼容别名。火山直连，与腾讯云 `Image-SI` 是独立接入。
+调用模型：`doubao-seedream-5-0-pro-260628`；保留 `Seedream-5.0-pro` 兼容别名。与 `Image-SI` 的参数和计费不同，请使用本页对应的模型 ID 与规则。
 
 ## 接口
 
@@ -15,7 +15,7 @@ curl https://llm.ziy.cc/v1/images/generations \
   -d '{"model":"doubao-seedream-5-0-pro-260628","prompt":"红色陶瓷茶壶产品照片","size":"1.5K","output_format":"png","watermark":false,"optimize_prompt_options":{"mode":"fast"}}'
 ```
 
-响应 `data[]` 中读取 KUNPO CDN `url`（请求 `b64_json` 也会转存并返回 URL）；`size` 为真实宽×高。图层模式还返回 `z_index`、`bounding_box.absolute/normalized`、`name`、`description`，这些字段完整保留。HTTP错误读取 `error`；网络超时不能证明供应商未生成，不应盲目重试。
+响应 `data[]` 中读取 KUNPO CDN `url`（请求 `b64_json` 也会转存并返回 URL）；`size` 为真实宽×高。图层模式还返回 `z_index`、`bounding_box.absolute/normalized`、`name`、`description`，这些字段完整保留。HTTP错误读取 `error`；网络超时不能证明请求未生成，不应盲目重试。
 
 ## 参数
 
@@ -46,7 +46,7 @@ jq -n --arg image "$REFERENCE_IMAGE_URL" '{model:"doubao-seedream-5-0-pro-260628
 
 ## 按张计费
 
-标准美元价来源：[BytePlus 官方价表](https://docs.byteplus.com/en/docs/modelark/1544106)。每张按真实输出像素判断，261万像素为分界，不根据总token平均分档。
+以下为 KUNPO 标准美元价格。每张按真实输出像素判断，261万像素为分界，不根据总token平均分档。
 
 | 项目 | ≤261万像素 USD/张 | >261万像素 USD/张 |
 | --- | ---: | ---: |
@@ -55,4 +55,4 @@ jq -n --arg image "$REFERENCE_IMAGE_URL" '{model:"doubao-seedream-5-0-pro-260628
 
 输入参考图首张免费，第2张起每张$0.003。图片数按`image`数组的实际长度计算。图层可混合大小，逐张计价后相加，再应用账户分组倍率。例如1张大底图＋1张小图层：$0.045＋$0.0225＝$0.0675。
 
-提交前预扣；图层拆分按最多17张高档预留$0.765（分组倍率前），成功按真实图层数/尺寸退差，失败退款。余额不足不发起上游生成；拆分后的图片不再当成一次请求只收费一张。
+提交前预扣；图层拆分按最多17张高档预留$0.765（分组倍率前），成功按真实图层数/尺寸退差，失败退款。余额不足不发起生成；拆分后的图片不再当成一次请求只收费一张。

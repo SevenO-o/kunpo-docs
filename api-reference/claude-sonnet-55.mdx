@@ -9,7 +9,7 @@ Claude Sonnet 5.5 适合日常编程、代码审查、文档分析和写作。�
 
 | 项目 | 值 |
 |---|---|
-| API 调用名 | `claude-sonnet-5-5`，不加供应商前缀 |
+| API 调用名 | `claude-sonnet-5-5`，按原样填写 |
 | 推荐接口 | `POST https://llm.ziy.cc/v1/messages` |
 | Anthropic SDK Base URL | `https://llm.ziy.cc`，不加 `/v1` |
 | 兼容接口 | `POST https://llm.ziy.cc/v1/chat/completions` |
@@ -18,7 +18,7 @@ Claude Sonnet 5.5 适合日常编程、代码审查、文档分析和写作。�
 | 输入 / 输出 | 文本及图片输入，文本输出 |
 | 上下文 / 最大输出 | 1,000,000 / 128,000 tokens |
 
-该调用名使用 AF Claude 原生渠道。旧 `claude-sonnet-5` 不会自动切换到新版；如果密钥开启了模型白名单，需加入 `claude-sonnet-5-5`。不要把 AF 上游密钥填到 KUNPO 客户端。
+使用 KUNPO API Key。旧 `claude-sonnet-5` 不会自动切换到新版；如果密钥开启了模型白名单，需加入 `claude-sonnet-5-5`。
 
 ## 最小 Messages 请求
 
@@ -54,10 +54,10 @@ Standard 档，单位 **USD / 百万 tokens**，以下为乘用户分组倍率�
 |---:|---:|---:|---:|---:|
 | 2.00 | 10.00 | 0.20 | 2.50 | 4.00 |
 
-整个支持的上下文窗口使用同一单价。按实际普通输入、输出、缓存读取及不同 TTL 缓存写入分别结算，再乘实际分组倍率；缓存 Token 不与普通输入重复收费，输出包含思考消耗。预扣与最终结算沿用平台规则，历史账单不重算。
+整个支持的上下文窗口使用同一单价。按实际普通输入、输出、缓存读取及不同 TTL 缓存写入分别结算，再乘实际分组倍率；缓存 Token 不与普通输入重复收费，输出包含思考消耗。预扣与最终结算沿用平台规则。
 
-本配置提供 Standard 价格；传入 Fast、Batch 等字段不会自动切换价格档。实时价格见[模型广场](https://llm.ziy.cc/pricing)。规格与美元来源（2026-09-29）：[AF 模型目录](https://www.agentsflare.com/models)、[Anthropic 价格表](https://platform.claude.com/docs/en/about-claude/pricing)。
+本配置提供 Standard 价格；传入 Fast、Batch 等字段不会自动切换价格档。实时价格见[模型广场](https://llm.ziy.cc/pricing)。
 
 ## 请求失败时
 
-鉴权失败先检查 KUNPO 密钥；模型不可用时检查完整模型 ID、密钥白名单和可用分组。参数错误先修正请求，429 使用退避；连接超时不表示上游没有处理或计费，不要无界重复提交。
+鉴权失败先检查 KUNPO 密钥；模型不可用时检查完整模型 ID、密钥白名单和可用分组。参数错误先修正请求，429 使用退避；连接超时不表示请求没有处理或计费，不要无界重复提交。

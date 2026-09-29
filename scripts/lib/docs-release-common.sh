@@ -78,6 +78,7 @@ validate_export() {
   [ -f "$export_dir/index.html" ] || release_fail '导出产物缺少 index 页面' || return 1
   [ -f "$export_dir/quick-start/index.html" ] || release_fail '导出产物缺少 quick-start 页面' || return 1
   [ -f "$export_dir/api-reference/overview/index.html" ] || release_fail '导出产物缺少 api-reference/overview 页面' || return 1
+  node "$RELEASE_REPO_ROOT/scripts/check-public-content.mjs" "$export_dir" || return 1
   local asset
   for asset in pagefind/pagefind.js pagefind/pagefind-entry.json kunpo-search/search.js kunpo-search/search.css kunpo-search/matching.js kunpo-search/manifest.json; do
     [ -s "$export_dir/$asset" ] || release_fail "导出产物缺少搜索资源：${asset}；请运行 scripts/post-export.sh" || return 1
@@ -88,6 +89,7 @@ validate_export() {
 }
 
 build_site() {
+  node "$RELEASE_REPO_ROOT/scripts/check-public-content.mjs" || return 1
   local work_dir
   work_dir="$(mktemp -d /tmp/docs-release-build.XXXXXX)"
   local zip_path="$work_dir/export.zip"
@@ -110,7 +112,7 @@ archive_export_dir() {
   EXPORT_ARCHIVE="$archive_dir/docs.zip"
   (
     cd "$export_dir"
-    zip -qr "$EXPORT_ARCHIVE" .
+    zip -qr "$EXPORT_ARCHIVE" . -x "serve.js" "Start Docs.command" "Start Docs.bat"
   ) || return 1
   unzip -tq "$EXPORT_ARCHIVE" >/dev/null || return 1
 }

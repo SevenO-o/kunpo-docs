@@ -69,7 +69,7 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 
 <Warning>
   **`image-to-model` 不支持多图参考，五个模型一个都不例外。** 无论把多张图放进 `input`、`images`、`files`
-  还是 `inputs` 数组，上游都会返回 400 `file is required for image_to_model`。这是接口本身的限制，与模型无关，
+  还是 `inputs` 数组，接口都会返回 400 `file is required for image_to_model`。这是接口本身的限制，与模型无关，
   **`P2-20260801` 同样不支持**。要用多张图请走 `multiview-to-model`，见
   [哪些模型支持多图参考](#哪些模型支持多图参考)。
 </Warning>
@@ -102,7 +102,7 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 包括 `P2-20260801`——它并不因为单价更高就多一项多图能力。
 
 <Note>
-  `image-to-multiview` 也要求填写上表中的合法模型 ID（网关会校验），但**上游忽略该接口的模型选择**，
+  `image-to-multiview` 也要求填写上表中的合法模型 ID（网关会校验），但**该接口不使用请求指定的生成版本**，
   实际总是用它自己的默认版本（任务回显 `model_version: "default"`）。所以这个接口填哪个模型都一样。
 </Note>
 
@@ -184,19 +184,19 @@ curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-model \
 ```
 
 <Note>
-  **传 Base64 时网关会自动把图片转存到 KUNPO 图床**，再把公网地址交给上游，你不需要自己找地方放图。`data:image/jpeg;base64,...` 这种 data URL 同样可以。
+  **传 Base64 时网关会自动把图片转存到 KUNPO 图床**，无需自行准备图片外链。`data:image/jpeg;base64,...` 这种 data URL 同样可以。
 
   转存只对真实图片生效（PNG / JPEG / WebP / GIF），非图片内容会原样透传。
 </Note>
 
-也可以直接传 URL，此时不经过转存，**上游必须能直接抓到这个地址**：
+也可以直接传 URL，此时不经过转存，**地址必须能从公网直接访问**：
 
 ```json
 { "input": "https://kunpoapiimg.ziy.cc/images/output/Image-GI/20260909/xxxx.png" }
 ```
 
 <Warning>
-  自带 URL 时注意：带防盗链的图床（例如 Pexels）会被上游判为「无法访问」，任务提交成功但随后失败（`error_code: 2020`）。拿不准就改传 Base64，让网关转存。
+  自带 URL 时注意：带防盗链的图床（例如 Pexels）会被判为「无法访问」，任务提交成功但随后失败（`error_code: 2020`）。拿不准就改传 Base64，让网关转存。
 </Warning>
 
 图生 3D 不吃 `prompt` / `negative_prompt` / `image_seed`，传了会被忽略。
@@ -228,7 +228,7 @@ curl -X POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model \
   }"
 ```
 
-规则（都是上游硬校验，网关会提前拦下并给出同样语义的报错）：
+参数规则：
 
 | 规则 | 说明 |
 |------|------|
@@ -285,7 +285,7 @@ curl https://llm.ziy.cc/v1/tasks/{task_id}/artifacts -H "Authorization: Bearer s
 }
 ```
 
-填的就是 `image-to-multiview` 返回的那个 `task_` 开头的 ID，网关会自动换成上游认的引用。计费与图生 3D 相同。
+填的就是 `image-to-multiview` 返回的那个 `task_` 开头的 ID，可直接复用该任务结果。计费与图生 3D 相同。
 
 <Note>
   `inputs` 里带 `task_id` 时只允许这一个元素，不能和视角图混着传。
@@ -294,7 +294,7 @@ curl https://llm.ziy.cc/v1/tasks/{task_id}/artifacts -H "Authorization: Bearer s
 
 <Warning>
   这个接口只接受 `model` 和 `input` 两个字段，`texture`、`face_limit` 之类的 3D 参数传了也没用——
-  它出的是图，不是模型。上游甚至会忽略 `model`，按自己的默认版本生成。
+  该接口输出四视角图片，使用默认生成版本；`model` 不影响输出版本。
 </Warning>
 
 ---
@@ -323,12 +323,12 @@ POST 没有幂等保证：网络超时后不要盲目重复提交；已拿到任
 | 参数 | JSON 类型 | 规则 |
 | --- | --- | --- |
 | `model` | string | 三个端点默认 `v1.0-20240301`；也可用 `v2.5-20260210`。不要填生成模型 `v3.1-20260211` 或 `P2-20260801` |
-| `input` | string，必填 | `rig-check` / `rig`：已成功生成 3D 的 KUNPO `task_id`、上游 `file_token` 或公网模型直链；`retarget`：仅已成功的 KUNPO `rig` 任务 ID |
+| `input` | string，必填 | `rig-check` / `rig`：已成功生成 3D 的 KUNPO `task_id`、已有的 `file_token` 或公网模型直链；`retarget`：仅已成功的 KUNPO `rig` 任务 ID |
 
-`model` 在 `rig` 中选择实际绑定版本；在 `rig-check` / `retarget` 中用于 KUNPO 路由和计费，不发送给上游。
-引用 KUNPO 任务时，网关验证归属并固定原渠道，再替换为上游任务 ID。跨用户、失效渠道、未成功或类型不符的任务不能串接。
-`file_token` 必须属于上游对应账号，本次不提供文件上传端点；一般优先使用 KUNPO 任务 ID。
-供应商规定 `rig-check` 直接文件输入为 GLB；`rig` 接受 GLB / GLTF / FBX / OBJ / STL，文件上限 150 MB。
+`model` 在 `rig` 中选择绑定版本；在 `rig-check` / `retarget` 中用于权限检查与计费。
+引用 KUNPO 任务时，须属于同一用户、已完成且类型符合当前接口要求。
+建议使用 KUNPO 任务 ID 或公网模型直链。当前没有公开文件上传端点，无法通过本接口创建新的 `file_token`。
+`rig-check` 直接文件输入为 GLB；`rig` 接受 GLB / GLTF / FBX / OBJ / STL，文件上限 150 MB。
 
 ### 绑定检查
 
@@ -376,13 +376,13 @@ POST 没有幂等保证：网络超时后不要盲目重复提交；已拿到任
 ```
 
 多动作改传 `"animations":["preset:walk","preset:run"]` 并删除 `animation`。
-动作与绑定版本、骨骼类型必须兼容；上游校验具体预设是否适用，失败时读取 `data.error_message`。
+动作与绑定版本、骨骼类型必须兼容；具体预设的适用性会在生成时校验，失败时读取 `data.error_message`。
 新版支持的示例包括人形 `preset:idle` / `preset:walk` / `preset:run`，四足 `preset:quadruped:walk`。
 完整清单见 [Tripo 动画预设](https://developers.tripo3d.ai/en/docs/animations-retarget)。
 
 绑定和动画完成后均从 `data.output.model_url` 或产物 `model` 下载新文件，保留原始生成模型。
-GLB 使用 `model/gltf-binary`；FBX 使用 `application/octet-stream`。上游链接可能到期，及时保存产物。
-绑定和动画的主模型产物会归档到 KUNPO CDN；建议通过产物接口读取。原始上游链接的有效期不会因此延长，额外预览仍需及时保存。
+GLB 使用 `model/gltf-binary`；FBX 使用 `application/octet-stream`。临时链接可能到期，及时保存产物。
+绑定和动画的主模型产物会归档到 KUNPO CDN；建议通过产物接口读取。原始链接的有效期不会因此延长，额外预览仍需及时保存。
 
 ### 可执行串接示例
 
@@ -461,8 +461,8 @@ curl https://llm.ziy.cc/tripo/v3/tasks/{task_id} \
     "completed_at": "2026-09-09T04:37:12.707544Z",
     "input": { "model_version": "v3.1-20260211", "texture": false, "pbr": false },
     "output": {
-      "model_url": "https://tripo-data.rg1.data.tripo3d.com/...glb?Policy=...",
-      "rendered_image_url": "https://tripo-data.rg1.data.tripo3d.com/...webp?Policy=..."
+      "model_url": "模型文件的临时下载URL",
+      "rendered_image_url": "预览图片的临时下载URL"
     }
   }
 }
@@ -470,7 +470,7 @@ curl https://llm.ziy.cc/tripo/v3/tasks/{task_id} \
 
 ### 任务状态
 
-`data.status` 沿用上游的小写取值：
+`data.status` 使用以下小写取值：
 
 | 状态 | 说明 |
 |------|------|
@@ -480,20 +480,20 @@ curl https://llm.ziy.cc/tripo/v3/tasks/{task_id} \
 | `failed` / `cancelled` | 任务失败或取消，原因见 `data.error_message` 与 `data.error_code` |
 
 <Tip>
-  建议每 5～10 秒轮询一次。实测无贴图的模型 2～4 分钟出结果，开贴图更久。
+  建议每 5～10 秒轮询一次。生成可能需要数分钟，开启贴图时耗时更长。
   `success`、`failed`、`cancelled` 是终态，其余继续等待；查询超时或临时 429/5xx 时，保留任务 ID 并稍后重试查询。
 </Tip>
 
 <Note>
   请求里写的是 `model`，但任务回显里这个字段叫 `input.model_version`；`task_id` 由 KUNPO 签发（`task_` 前缀），
-  与上游内部 ID 不同，查询和取产物都用 KUNPO 返回的这个。
+  查询和读取产物均使用 KUNPO 返回的 `task_id`。
 </Note>
 
 ---
 
 ## 获取产物
 
-`data.output` 可能保留上游签名链接，通常约 24 小时后失效。KUNPO 会归档主模型文件；产物接口优先读取已归档的文件。额外预览等未归档产物仍受上游有效期限制，请及时保存：
+`data.output` 可能保留临时签名链接，通常约 24 小时后失效。KUNPO 会归档主模型文件；产物接口优先读取已归档的文件。额外预览等未归档产物仍受链接有效期限制，请及时保存：
 
 ```bash
 # 1. 列出产物
@@ -686,23 +686,22 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <Note>
-  上游对部分参数的校验比文档宽松：非法的 `orientation` / `texture_alignment` / `compress` 取值不会报错，
-  而是被静默忽略并按默认值生成（**仍然计费**）。网关只对 `texture_quality`、`geometry_quality`、
-  `export_orientation` 和模型名做了严格校验，其余字段请自行核对拼写。
+  请按参数表填写：非法的 `orientation` / `texture_alignment` / `compress` 取值不会报错，
+  而是被静默忽略并按默认值生成（**仍然计费**）。请自行核对所有参数的拼写和枚举值。
 </Note>
 
 ---
 
 ## 计费
 
-按上游实际消耗的 credits 结算：提交时按参数预估并冻结额度，任务完成后用上游返回的真实用量多退少补。
+按实际消耗的 credits 结算：提交时按参数预估并冻结额度，任务完成后用返回的真实用量多退少补。
 影响单价的主要是模型、是否开贴图、贴图与几何质量档位。**任务失败会全额退回**。
 
 关于多视角的两点：
 
 - **`multiview-to-model` 与 `image-to-model` 同价**，视角数量不影响价格——传 2 张和传 4 张一样贵
 - **`image-to-multiview` 固定 10 credits**，与模型、参数都无关
-- **绑定与动画接口**：`rig-check` 预估 0 credits；`rig` 25 credits；`retarget` 每个动作 10 credits。最终以 `data.credits_consumed` 结算，明确的 0 用量保留。按模型配置的美元积分单价 × credits × 用户分组倍率扣费；失败退款。KUNPO 当前单价为 USD 0.01/credit：倍率 1 时检查免费、绑定 $0.25、每个动画 $0.10；后续价格以模型广场为准（[官方价格](https://developers.tripo3d.ai/en/pricing)）
+- **绑定与动画接口**：`rig-check` 预估 0 credits；`rig` 25 credits；`retarget` 每个动作 10 credits。最终以 `data.credits_consumed` 结算，明确的 0 用量保留。按模型配置的美元积分单价 × credits × 用户分组倍率扣费；失败退款。KUNPO 当前单价为 USD 0.01/credit：倍率 1 时检查免费、绑定 $0.25、每个动画 $0.10；后续价格以模型广场为准
 
 单价见 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a>。
 
@@ -714,21 +713,21 @@ def generate_3d(prompt, interval=8, timeout=900):
 |------|------|------|
 | `unsupported model "..."` | 模型名写了简写 | 用带日期后缀的完整 ID |
 | 提交返回 HTML 而不是 JSON | 路径写错 | 核对本页的四个地址 |
-| 任务 `failed`，`error_code: 2020` | 上游抓不到图片 | 换成 KUNPO 图床或你自己可控的对象存储地址 |
-| 提示 `data:` 不支持 | 传的内容没被识别成图片，原样透传给上游 | 确认是 PNG / JPEG / WebP / GIF 且 Base64 完整 |
+| 任务 `failed`，`error_code: 2020` | 图片地址无法访问 | 换成 KUNPO 图床或你自己可控的对象存储地址 |
+| 提示 `data:` 不支持 | 传的内容没被识别成图片，未被正确识别 | 确认是 PNG / JPEG / WebP / GIF 且 Base64 完整 |
 | `quad` 报 400 | P1 不支持四边面 | 换 `P2-20260801` |
 | `generate_parts` + 贴图报 400 | v3.1 图生 3D 下两者互斥 | 二选一 |
-| 产物链接过期 | 用了 `output` 里的上游签名地址 | 改用 `/v1/tasks/{task_id}/artifacts` |
+| 产物链接过期 | 用了 `output` 里的临时签名地址 | 改用 `/v1/tasks/{task_id}/artifacts` |
 | `file is required for image_to_model` | 往 `image-to-model` 传了多张图 | 该接口只收一张，多图改走 `multiview-to-model` |
 | `unsupported view "top"` | 视角键写错 | 只能用 `front` / `left` / `back` / `right` |
 | `front view is required` | 缺正面视角 | 补一个 `front` |
 | `at least 2 views are required` | 只给了 1 个视角 | 补视角，或改用 `image-to-model` |
 | `origin task is unavailable` | `inputs` 里的 `task_id` 不是你自己的、或任务不存在 | 用自己账号下已成功的四视角任务 ID |
-| `You have exceeded the limit of generation`（429） | 上游有并发生成上限，你的在跑任务太多 | 等前面的任务出结果再提交，别并发压 |
+| `You have exceeded the limit of generation`（429） | 当前生成任务达到并发上限 | 等前面的任务出结果再提交，别并发压 |
 
 <Note>
   当前没有取消任务的接口，提交后只能等它跑完或失败。
-  上游的文件上传接口（`file_token`）未开放代理，但不影响你用本地图片——把 Base64 放进 `input` 即可，网关会代为转存。
+  文件上传接口（`file_token`）未开放，但不影响你用本地图片——把 Base64 放进 `input` 即可，网关会代为转存。
 </Note>
 
 ---

@@ -278,7 +278,7 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
     "status": "SUCCESS",
     "progress": "100%",
     "action": "image_to_video",
-    "result_url": "https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/...mp4?X-Tos-Expires=86400&...",
+    "result_url": "视频文件的临时下载URL",
     "fail_reason": ""
   }
 }
@@ -294,7 +294,7 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
 <Warning>
   字段都在 **`data`** 对象里，视频地址是 **`data.result_url`**。
 
-  豆包视频的 `result_url` 是**火山引擎 TOS 的预签名链接**（带 `X-Tos-Expires`，通常 24 小时后失效），
+  豆包视频的 `result_url` 是**临时下载链接**（通常 24 小时后失效），
   与图片生成不同，**不会转存到 KUNPO CDN**。请在拿到后尽快下载或转存到自己的存储。
 </Warning>
 
@@ -305,7 +305,7 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
 | 状态 | 说明 |
 |------|------|
 | `NOT_START` | 已受理入库，尚未开始生成 |
-| `QUEUED` | 上游排队中 |
+| `QUEUED` | 任务排队中 |
 | `IN_PROGRESS` | 生成中，可读 `data.progress` |
 | `SUCCESS` | 生成完成，可获取 `data.result_url` |
 | `FAILURE` | 生成失败，查看 `data.fail_reason` |

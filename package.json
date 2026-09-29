@@ -4,6 +4,8 @@
   "scripts": {
     "docs:export": "bash scripts/export-docs.sh",
     "docs:preview": "node kunpo-api-docs-export/serve.js",
+    "docs:audit": "node scripts/check-public-content.mjs",
+    "test:public-content": "node --test tests/public-content.test.mjs",
     "test:search": "node --test tests/docs-search.test.mjs"
   },
   "devDependencies": {

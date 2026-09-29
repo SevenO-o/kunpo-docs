@@ -1,163 +1,21 @@
 ---
 title: "更新日志"
-description: "KUNPO API 的模型上线、接口变更与问题修复记录，按时间倒序。"
+description: "KUNPO API 的模型上线、接口变化与使用相关的修复记录。"
 ---
 
-这里记录每次版本更新的主要变化：新增模型、接口行为调整、参数支持、问题修复与维护说明。
+这里记录与使用有关的变化。完整参数、计费和调用示例见对应模型页。
 
 <Note>
-  标记为 <Icon icon="triangle-exclamation" /> **行为变更** 的条目可能需要你调整客户端代码，升级前请留意。
+  **行为变更**可能需要调整客户端代码，请留意相关条目。
 </Note>
 
 <Update label="2026-09-29" tags={["模型", "Claude"]}>
 
 ## Claude Sonnet 5.5
 
-[Claude Sonnet 5.5](/api-reference/claude-sonnet-55) 已上线，调用名为 `claude-sonnet-5-5`。支持 Claude Messages 与兼容 Chat Completions，适合日常编程、代码审查、文档分析和写作。
+新增 `claude-sonnet-5-5`，支持 Messages 与 Chat Completions，适合日常编程、代码审查、文档分析和写作。使用现有 KUNPO API Key；开启模型白名单时请加入新模型 ID。
 
-模型广场已补齐价格、用途和发布日期。使用现有 KUNPO API Key；开启模型白名单时请加入新调用名。旧 Sonnet 模型保持原调用方式。
-
-</Update>
-
-<Update label="2026-09-29" tags={["v9.28", "维护", "修复"]}>
-
-## 模型展示独立维护与日期保存修复
-
-导航名称、模型推荐／最新／HOT 标记和发布日期输入改为独立展示配置，后续可单独更新。保留现有中文展示与模型标签规则，并补充其他界面语言的文字。
-
-修复只编辑其他资料时发布日期可能变化的问题：未修改日期时保留原值；明确选择日期后，输入框和模型广场使用同一日历日期。此次更新不会批量调整已有模型资料，也不改变模型调用和费用规则。
-
-本次维护已上线。
-
-</Update>
-
-<Update label="2026-09-29" tags={["v9.27", "维护"]}>
-
-## AIPing 文本与音频接入独立维护
-
-AIPing 原生文本与音频接入的请求策略改为独立配置插件，便于单独维护供应商差异。保留现有模型名、渠道状态、参数规则、流式返回和费用规则，与已经独立维护的图片接入配合使用。
-
-现有接入无需调整代码。本次维护已上线。
-
-</Update>
-
-<Update label="2026-09-29" tags={["v9.26", "维护"]}>
-
-## Gemini 图片接入独立维护
-
-Gemini 原生图片生成的参数和返回格式转换迁入独立插件，方便单独维护供应商接入。保留模型名、渠道启用状态、API 版本配置、请求张数与 token 计费规则和图片保存方式；现有文本调用不受影响。
-
-同时修正 Seedream 图层请求在管理员参数覆盖后，对错误 `size` 类型的校验。正常图片调用和费用规则不变，现有接入无需调整代码。
-
-本次维护已上线。
-
-</Update>
-
-<Update label="2026-09-29" tags={["v9.25", "维护"]}>
-
-## Seedream 图片接入独立维护
-
-[Seedream 5.0 Pro](/api-reference/image-generation/models/seedream-50-pro) 的参数转换、参考图数量、尺寸分档和图层分解规则迁入独立插件，便于后续单独维护供应商变化。
-
-保留现有模型名称、调用方式、费用规则和图片保存行为。图层分解仍按最大数量预留，完成后按返回尺寸结算；额度不足时不提交生成请求。现有接入无需调整代码。
-
-已随 v9.25 上线。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.24", "维护"]}>
-
-## AIPing 图片接入独立维护
-
-AIPing 图片参数转换迁入独立插件，保留现有模型名称、图片接口、费用规则和渠道启用状态，方便后续单独维护供应商参数。
-
-参考图 URL 下载增加公网地址、图片内容、大小与时间限制。仍优先使用直接传入的 `image`，否则仅尝试第一条 `reference_images`；下载失败沿用忽略该参考图的行为，请使用可访问的公网图片。请求取消后停止后续生成。
-
-已随 v9.24 上线。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.23", "维护"]}>
-
-## Seed Audio 接入独立维护
-
-[Seed Audio](/api-reference/seed-audio) 的请求转换和时长换算迁入独立插件，便于后续单独维护供应商参数。保留现有模型名、音频接口、二进制返回格式和费用规则，现有接入无需调整代码。
-
-补充音频大小和用量校验；上游已接受请求后发生解析或下载失败时，不再自动重复生成。同步更正计费说明中的旧预扣描述，实际结算规则保持不变。
-
-已随 v9.23 上线。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.22", "维护"]}>
-
-## GPT Images 2.5 接入独立维护
-
-[GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5) 的生成与编辑适配迁入独立插件，便于后续单独更新供应商参数。保留现有模型名称、生成与编辑接口、费用规则、响应扩展字段及 CDN 保存行为，现有接入无需调整代码。
-
-加强文件大小、用量和多值图片数量的校验，避免异常参数影响账单。上游接受请求后发生解析错误时，网关不再自动重复提交生成请求。
-
-已随 v9.22 上线。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.21", "维护"]}>
-
-## 腾讯图片接入独立维护
-
-腾讯图片的同步生成适配迁入独立插件，后续调整参数和供应商协议时可单独更新。保留现有模型名称、调用方式、费用规则、多图结果及 CDN 保存行为，现有接入无需调整代码。
-
-已随 v9.21 上线。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.20", "维护"]}>
-
-## 参考图片处理独立维护
-
-豆包、SE、H3、VS 与 Tripo 的参考图片字段由各自插件维护，减少后续更新时对网关代码的重复修改。保留现有图片转存、首尾帧和多视角信息，改善豆包参考图别名与 SE 大小写兼容字段的处理。
-
-已随 v9.20 上线。模型名称、调用路径、价格、分组及历史任务查询方式保持不变，现有接入无需调整代码。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.19", "维护"]}>
-
-## 模型说明与标签独立维护
-
-模型说明、厂家信息与展示标签纳入独立配置维护，保存时可检查数据版本，避免覆盖期间发生的修改。「最新」标记改由模型标签管理，原有标记继续保留，后续无需按月份修改代码。
-
-现有模型名称、调用方式、价格和分组保持不变，调用方无需调整接入代码。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.18", "维护"]}>
-
-## 腾讯接入维护
-
-统一腾讯渠道的请求签名，并明确插件需要的网关能力，减少后续升级中的重复维护。保留现有模型名、调用路径、区域与子应用配置、价格和历史任务查询方式。
-
-已随 v9.18 上线，现有接入无需调整代码。H3 价格继续使用独立配置维护，收费规则保持不变。
-
-</Update>
-
-<Update label="2026-09-28" tags={["配置维护"]}>
-
-## 模型价格配置独立维护
-
-将 H3、Jev 两种接口及 AF 三个新文本模型的现有价格纳入独立配置维护，减少后续升级时的重复修改。本次费用、分组倍率、模型名和调用方式保持不变，已有接入无需调整。
-
-已完成配置发布，网关版本仍为 v9.17。各模型的价格规则继续以对应接入文档和模型广场为准。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.17", "维护"]}>
-
-## 参考视频处理维护
-
-统一参考视频的下载、时长校验和固定副本处理，让相关供应商插件可独立维护。保留现有调用方式、模型价格和历史任务查询；重试时继续检查当前模型的素材限制。
-
-已随 v9.17 上线。现有接入无需调整参数；模型的输入要求和价格仍以对应接入页为准。
+调用方法、上下文与缓存价格见 [Claude Sonnet 5.5](/api-reference/claude-sonnet-55)。
 
 </Update>
 
@@ -165,49 +23,19 @@ AIPing 图片参数转换迁入独立插件，保留现有模型名称、图片�
 
 ## Jev Router 自动选模对话
 
-新增 `typesafe/jev-router` 独立同步文本接口，适合问答、摘要、翻译、文案草稿与代码解释。使用已有 KUNPO 密钥，配置专用 Base URL 并关闭流式，响应会显示实际选中的下游模型。
+新增 `typesafe/jev-router`，可根据任务自动选择模型，适合问答、摘要、翻译、文案草稿与代码解释。使用专用 Base URL，并关闭流式输出；费用随实际选中的模型与用量变化。
 
-费用按实际路由消耗与分组倍率结算；此前的 Jev 结构化决策接口继续独立使用。当前支持范围、价格说明和调用示例见 [Jev Router](/api-reference/jev-router)。
-
-</Update>
-
-<Update label="2026-09-28" tags={["插件维护"]}>
-
-## 供应商插件独立更新
-
-完成首批供应商插件的独立版本维护，后续相关接入更新可单独发布。此次保留现有模型名称、调用路径、密钥、价格和分组，已有接入代码无需调整。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.16", "维护"]}>
-
-## 供应商插件维护升级
-
-将已独立维护的供应商插件与网关镜像分离，减少后续升级时的重复维护。现有模型名、调用地址、密钥、价格和历史任务查询方式保持兼容，调用方无需调整接入代码。
-
-已随 v9.16 上线。已有供应商插件版本和独立模型接入继续保留。
-
-</Update>
-
-<Update label="2026-09-28" tags={["v9.15", "上游升级"]}>
-
-## 网关升级与渠道兼容维护
-
-合入 new-api 官方 `v1.0.0-rc.40`，更新请求策略管理、Responses WebSocket 支持、任务插件提交兼容性，以及图片数量结算和可视化定价编辑。
-
-自定义腾讯与 AIPing 渠道使用独立类型编号，减少后续上游升级冲突。已有渠道、模型调用名、密钥、价格和分组保留，文本、图片、视频与 Jev 的现有接入代码无需因编号调整而修改。AF 的 OpenAI 与 Claude 渠道继续分别处理请求。
-
-已随 v9.15 上线。已有自定义插件配置继续保留；模型能力与参数以对应接入页和模型广场为准。
+接入示例与费用说明见 [Jev Router](/api-reference/jev-router)。
 
 </Update>
 
 <Update label="2026-09-23" tags={["Jev", "结构化决策"]}>
 
-## Jev 独立决策接口
+## Jev 结构化决策
 
-新增 TypeSafe Jev 专用决策渠道和 `/v1/decisions` 接口，支持分类选择、评分和布尔概率判断。保留 `~typesafe/jev-latest` 与 `jev-latest` 两个模型名，补齐厂家、模型说明和按实际输入 token 结算的价格。
+新增 `~typesafe/jev-latest` 与兼容别名 `jev-latest`，适合分类、工单分流、评分和布尔概率判断。使用 `/v1/decisions` 提交 `state` 与 `questions`，同步读取 `answers`；不使用聊天接口。
 
-使用现有 KUNPO 密钥提交 `state` 与 `questions`，同步读取 `answers`。该模型不使用聊天接口。完整字段和定价见 [Jev 结构化决策](/api-reference/jev)。
+完整字段和定价见 [Jev 结构化决策](/api-reference/jev)。
 
 </Update>
 
@@ -215,298 +43,160 @@ AIPing 图片参数转换迁入独立插件，保留现有模型名称、图片�
 
 ## GPT-6 Luna / Sol 与 Claude Opus 5.5
 
-已开放 `gpt-6-luna`、`gpt-6-sol` 和 `claude-opus-5-5`。GPT 模型使用 AF OpenAI 渠道，Opus 5.5 使用 AF Claude 原生渠道；可沿用现有密钥，开启模型限制时需放行对应完整模型 ID。
+新增 `gpt-6-luna`、`gpt-6-sol` 和 `claude-opus-5-5`。沿用现有 KUNPO API Key；开启模型限制时需加入对应完整 ID。
 
-GPT 的 Chat 请求兼容推理与工具调用，也可直接使用 Responses。Opus 5.5 推荐 Messages 接口，其思考始终开启、强制工具选择等行为与旧版有区别。接入与定价见 [GPT-6](/api-reference/gpt-6)、[Opus 5.5](/api-reference/claude-opus-55)。
-
-</Update>
-
-<Update label="2026-09-23" tags={["v9.14", "MiniMax H3"]}>
-
-## 腾讯 TokenHub MiniMax H3 视频
-
-新增 `minimax-video-h3`，支持 4–15 秒、768P / 2K、首尾帧及多模态参考，可使用 Videos、Responses 或插件原生接口。参考视频由网关测量时长并保存固定副本，生成视频自动归档 CDN；费用按输入与输出秒数、额外参考图片数计算。
-
-使用现有 KUNPO 密钥，开启模型限制时需放行新模型。调用示例、素材限制与价表见 [MiniMax H3](/api-reference/minimax-h3)。原有 [SE 2.0](/api-reference/video-se) 渠道继续使用现有模型名。
-
-已随 v9.14 上线。API 文档按「文本生成」「图像生成」「视频生成」分组，原有页面链接保持可用。
+GPT-6 支持 Chat Completions 与 Responses；Opus 5.5 推荐 Messages。Opus 的思考与工具选择规则与旧版不同，接入前请阅读 [GPT-6](/api-reference/gpt-6) 和 [Opus 5.5](/api-reference/claude-opus-55)。
 
 </Update>
 
-<Update label="2026-09-17" tags={["v9.13", "Tripo"]}>
+<Update label="2026-09-23" tags={["MiniMax H3", "视频"]}>
+
+## MiniMax H3 视频
+
+新增 `minimax-video-h3`，支持 4–15 秒、768P / 2K、首尾帧及图片、视频、音频参考，适合短视频创作和多素材参考生成。可使用 Videos、Responses 或兼容任务接口。
+
+调用示例、素材限制和按秒价格见 [MiniMax H3](/api-reference/minimax-h3)。
+
+</Update>
+
+<Update label="2026-09-17" tags={["Tripo", "3D"]}>
 
 ## 3D 模型自动绑定与动画
 
-补充绑定检查、自动骨骼绑定和动画重定向接口，可将生成的 3D 模型串接为带骨骼、带动作的 GLB / FBX。检查结果为不可绑定时正常返回结果；支持多动作及原地播放。Mixamo 骨骼可单独导出；调用 Tripo 内置动画需使用 Tripo 骨骼，网关会提前提示不兼容的组合。
+新增绑定检查、自动骨骼绑定和动画重定向，可将已生成的 3D 模型制作成带骨骼、带动作的 GLB / FBX。支持多动作及原地播放；开启模型限制时需加入绑定模型 ID。
 
-原有生成接口保持兼容。已随 v9.13 上线。使用现有 KUNPO 密钥即可调用；开启模型限制的密钥需放行绑定模型。调用参数及串接示例见 [Tripo 接入文档](/api-reference/tripo-3d#自动绑定与动画)。
-
-</Update>
-
-<Update label="2026-09-16" tags={["v9.12", "定价展示"]}>
-
-## 图片与音频可视化定价
-
-Seedream 5.0 Pro（含兼容调用名）、Image-SI 和 Seed Audio 的模型卡片与详情按实际计费单位展示价表，后台可直接编辑对应单价。图片列出尺寸档、图层拆分及额外参考图费用；音频按分钟展示；分组详情使用各组倍率计算价格。
-
-本次仅改善定价查看和编辑，保留现有单价、计费条件、预扣与结算规则。调用方无需修改请求参数，GPT Images 2.5 的现有计费口径保持不变。
-
-已随 v9.12 上线。打开旧页面的用户请刷新后查看新价表。
+参数与串接示例见 [Tripo 自动绑定与动画](/api-reference/tripo-3d#自动绑定与动画)。
 
 </Update>
 
-<Update label="2026-09-16" tags={["Seedance 2.5", "定价展示"]}>
+<Update label="2026-09-16" tags={["价格展示"]}>
 
-## Seedance 2.5 可视化秒价
+## 按实际计费单位查看价格
 
-Seedance 2.5 现可按“有／无参考视频 × 输出分辨率”查看和编辑美元秒价，分别列出参考视频与生成视频费用。原有价格、预扣、结算和分组倍率保持不变，调用方不需要新增参数。完整价表见 [Seedance 2.5 接入文档](/api-reference/seedance-25)。
+模型广场支持查看图片按尺寸和张数、音频按分钟、视频按输入与输出秒数的价格。现有计费规则不变，调用方无需修改请求参数。
 
-同时补充 [GPT Images 2.5 计费口径](/api-reference/image-generation/models/gpt-image-2.5#计费)：区分原始模态 token 与当前渠道折算用量，避免把其他供应商的数字直接用于估算本站账单。
-
-</Update>
-
-<Update label="2026-09-16" tags={["VS 2.5", "定价展示"]}>
-
-## VS 2.5 可视化秒价
-
-VS 2.5 定价支持按“有／无参考视频 × 输出分辨率”查看和编辑，分别显示参考视频输入与输出视频的美元秒价。各档单价、预扣和结算规则保持不变；图片及音频参考不属于参考视频档。调用方无需新增参数或修改代码，网关根据实际素材识别计费档位。
-
-模型广场保留 `tencent-vod-vs-2.5`，`VS-2.5` 作为兼容调用名继续可用。完整价表见 [VS 2.5 接入文档](/api-reference/video-vs25)。
+各模型的具体单位、分档和费用计算方式见对应模型页及[模型广场](https://llm.ziy.cc/pricing)。
 
 </Update>
 
-<Update label="2026-09-16" tags={["v9.11", "火山引擎"]}>
+<Update label="2026-09-16" tags={["Seedance 2.5", "Seedream 5.0 Pro"]}>
 
 ## Seedance 2.5 与 Seedream 5.0 Pro
 
-火山方舟接入新增 [Seedance 2.5](/api-reference/seedance-25) 视频和 [Seedream 5.0 Pro](/api-reference/image-generation/models/seedream-50-pro) 图片。视频按输出秒数及参考视频秒数计费，图片按尺寸档和实际输出张数计费，图层拆分逐张结算。
+新增 [Seedance 2.5](/api-reference/seedance-25) 视频与 [Seedream 5.0 Pro 完整参数接口](/api-reference/image-generation/models/seedream-50-pro)。支持视频自动时长、参考视频编辑与延长，以及图片提示词优化和图层拆分。
 
-支持自动视频时长、参考视频编辑与延长、MP4/MOV，以及图片提示词优化和图层拆分。原有 Seedance 2.0、Seedream 兼容别名和腾讯云模型保留。完整参数、价格和网关约束见模型页。
-
-已随 v9.11 上线，模型广场已开放真实 ID，兼容别名继续可用。
+视频按输入与输出秒数计费；图片按输出尺寸与张数计费，图层逐张结算。已有模型的调用方式保留。
 
 </Update>
 
 <Update label="2026-09-16" tags={["VS 2.5", "视频"]}>
 
-## 腾讯云点播 VS 2.5
+## VS 2.5 视频
 
-VS 2.5 接入支持 Videos、Responses 和云点播插件接口，覆盖图片、视频和音频参考、首尾帧、480P 至 4K 输出及按秒计费。调用名、完整参数、请求和响应、轮询状态与 USD 价格统一见 [VS 2.5 接入文档](/api-reference/video-vs25)。
+新增 [VS 2.5](/api-reference/video-vs25)，支持 Videos、Responses 与兼容任务接口，可使用图片、视频、音频参考及首尾帧，输出分辨率覆盖 480P 至 4K。
 
-生成主视频沿用 KUNPO CDN 存储，参考视频在测长预处理时转存。首帧模式需用 `adaptive`，不支持 `-1` 自动时长或媒体文件直传；输出尾帧目前使用腾讯临时地址。
+首帧模式需用 `adaptive`，不支持 `-1` 自动时长或媒体文件直传。完整素材限制、任务查询与价格见模型页。
 
-现已开放调用。文档同时提供供 AI 直接读取的 Markdown 与 [llms.txt](https://docs.ziy.cc/llms.txt) 索引，参数、代码与协议表由同一份页面源码生成。
-
-</Update>
-
-<Update label="2026-09-16" tags={["v9.9", "维护"]}>
-
-## v9.9：平台升级与兼容性维护
-
-本次升级更新渠道配置、计费配置和登录相关组件，修正渠道类型选择与保存的一致性。
-
-原有腾讯图片与视频、GPT Images 2.5、Tripo 3D 和 Gemini 能力继续保留。本次版本升级无需调用方修改 API 地址、模型名称或客户端配置，已有管理员定价配置保留。
-
-已知问题：部分飞书登录在腾讯统一身份授权页可能提示 `invalid redirect_url`，仍在排查处理。
+文档同时提供 [llms.txt](https://docs.ziy.cc/llms.txt) 和各页面的 Markdown，方便 AI 读取接入说明。
 
 </Update>
 
-<Update label="2026-09-11" tags={["新增"]}>
+<Update label="2026-09-11" tags={["图片"]}>
 
-## 新增 GPT Images 2.5
+## GPT Images 2.5
 
-新增两个同步生图 / 修图模型，名称与定位跟 [OpenAI 官网介绍](https://openai.com/zh-Hans-CN/index/introducing-chatgpt-images-2-5/) 一致：
+新增 `gpt-image-2.5-flare` 与 `gpt-image-2.5-sunburst`，支持同步生图和编辑。编辑可传图片 URL 或本地文件，按 token 用量计费。
 
-| API 调用名 | 定位 |
-|------------|------|
-| `gpt-image-2.5-flare` | 日常高质量，更快 |
-| `gpt-image-2.5-sunburst` | 精细编辑，生成更久 |
-
-走标准 Images API：
-
-```
-POST https://llm.ziy.cc/v1/images/generations
-POST https://llm.ziy.cc/v1/images/edits
-```
-
-编辑同时支持 JSON（`images` URL 数组）和 OpenAI SDK 默认的 multipart（本地文件字段 `image`）。可用参数包括 `size`、`quality`（含 2.5 新增的 `xhigh` / `max`）、`n`、`background`、`output_format`、`output_compression`。4K 直接传 `size=3840x2160` 或 `2160x3840`，没有单独的 `4k` 档。
-
-按 token 计费，分辨率、画质和是否带参考图都会影响用量。实时单价见[模型广场](https://llm.ziy.cc/pricing)。
-
-完整参数与示例见 [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5)。
+模型选择、参数和示例见 [GPT Images 2.5](/api-reference/image-generation/models/gpt-image-2.5)。
 
 </Update>
 
-<Update label="2026-09-10" tags={["新增"]}>
+<Update label="2026-09-10" tags={["Tripo", "多图参考"]}>
 
-## 3D 生成支持多图参考
+## 3D 生成支持多视角参考
 
-新增两个接口，多张参考图终于能一起用了：
+新增 `multiview-to-model` 多视角生 3D 与 `image-to-multiview` 单图生成四视角图片。可先补齐视角，再复用任务 ID 生成模型。
 
-```
-POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model   # 多视角生 3D
-POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview   # 单图出四视角图
-```
-
-多视角出模把视角图放进 `inputs`，键取 `front` / `left` / `back` / `right`（`front` 必填、至少 2 个视角），
-每个视角同样支持直接传 Base64，网关自动转存图床。也可以传扁平的 `images` 数组，按前左后右顺序映射。
-
-只有一张图时可以先用 `image-to-multiview` 让模型补出四视角（固定 10 credits），
-再把该任务的 `task_id` 填进 `inputs` 复用，不必把图片回传一遍。
-
-计费上 `multiview-to-model` 与图生 3D 同价，**视角数量不影响价格**。
-
-五个模型 `v3.1-20260211`、`v3.0-20250812`、`v2.5-20250123`、`P1-20260311`、`P2-20260801` **走多视角接口都支持多图**。
-
-<Note>
-  原有的 `image-to-model` 始终只接受一张参考图（`input` 是字符串），往它传多张图会返回 400
-  `file is required for image_to_model`——**五个模型一个都不例外，`P2-20260801` 也不支持**。多图请走新接口。
-</Note>
-
-详见 [3D 模型生成（Tripo）](/api-reference/tripo-3d)。
+原有 `image-to-model` 仍只接受一张参考图；需要多图时请使用新接口。用法与价格见 [Tripo](/api-reference/tripo-3d)。
 
 </Update>
 
 <Update label="2026-09-09" tags={["修复"]}>
 
-## 修复异步图生图传 Base64 报 502
+## 异步图生图支持 Base64 参考图
 
-`Image-GI` / `Image-GI2` 通过异步接口 `POST /v1/images/tasks` 传 Base64 参考图时会返回 502，
-上游报「URL 格式不合法」；同一张图走同步接口 `/v1/images/generations` 一直是正常的。
+修复 `Image-GI` / `Image-GI2` 通过 `/v1/images/tasks` 传 Base64 参考图时的 502 错误。同步与异步接口均可在 `images` 中使用 Base64、data URL 或公网 URL。
 
-现在两条接口行为一致：`images` 数组里可以直接放 Base64、`data:` URL 或公网 URL，
-网关会把 Base64 转存到 KUNPO 图床后再交给上游。单图字段 `image` 同样适用。
+参考图格式见[异步图片调用](/api-reference/image-generation/asynchronous)。
 
 </Update>
 
-<Update label="2026-09-09" tags={["新增"]}>
+<Update label="2026-09-09" tags={["Tripo", "3D"]}>
 
-## 新增 3D 模型生成（Tripo）
+## 新增 3D 模型生成
 
-新增五个 3D 生成模型，异步任务模式，输出 GLB 模型文件和渲染预览图：
+新增 Tripo 文本与单图生成 3D 模型，异步获取 GLB 和预览图。图片支持 Base64、data URL 或公网 URL，无需先准备图片外链。
 
-```
-POST https://llm.ziy.cc/tripo/v3/generation/text-to-model    # 文生 3D
-POST https://llm.ziy.cc/tripo/v3/generation/image-to-model   # 图生 3D
-GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}             # 查询任务
-GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts         # 列出并下载产物
-```
-
-可用模型为 `v3.1-20260211`、`v3.0-20250812`、`v2.5-20250123`、`P1-20260311`、`P2-20260801`。
-`model` 必须写完整 ID，简写会返回 400。
-
-计费按上游实际消耗结算：提交时预估冻结，完成后按真实用量多退少补，任务失败全额退回。
-
-图生 3D 的 `input` 可以直接传本地图片的 Base64（或 `data:` URL），网关会自动转存到 KUNPO 图床后再交给上游，
-不需要自己准备图片外链。也支持直接传公网 URL，但带防盗链的图床（例如 Pexels）会被上游判为无法访问。
-
-完整参数、轮询与下载示例见 [3D 模型生成（Tripo）](/api-reference/tripo-3d)。
+参数、轮询和下载方式见 [Tripo](/api-reference/tripo-3d)。
 
 </Update>
 
 <Update label="2026-09-08" tags={["修复"]}>
 
-## 视频结果地址后缀修正
+## 视频结果格式修正
 
-腾讯 SE 视频转存后的 `result_url` 此前带 `.png` 后缀、`Content-Type` 为 `image/png`，
-虽然文件本身是标准 MP4，但部分播放器和浏览器会因此拒绝直接播放。
-
-现已按文件真实格式返回 `.mp4` 与 `Content-Type: video/mp4`。**已生成的旧链接不受影响**，仍可正常下载。
+修复 SE 视频结果地址后缀与内容类型不匹配导致部分播放器无法直接播放的问题。现在按视频格式返回 `.mp4` 与 `video/mp4`，旧链接仍可下载。
 
 </Update>
 
 <Update label="2026-09-07" tags={["行为变更"]}>
 
-## 异步任务提交响应的 status 改为 queued
+## 异步提交状态改为 queued
 
-提交异步任务（生图、视频）后，响应里的 `status` 由 `submitted` 改为 `queued`：
+图片与旧视频异步接口的提交响应 `status` 从 `submitted` 改为 `queued`。若客户端依赖旧值，请更新判断逻辑；结合 HTTP 状态码与 `task_id` 判断是否成功提交。
 
-```json
-{
-  "task_id": "task_xxxxxxxxxxxx",
-  "status": "queued"
-}
-```
-
-<Warning>
-  如果你的代码用 `status == "submitted"` 判断提交是否成功，需要改掉。
-  推荐**只用 HTTP 状态码和 `task_id` 是否存在**来判断提交结果，不要依赖提交时的 `status` 取值。
-</Warning>
-
-轮询接口不受影响，仍是 `data.status` 加大写枚举，终态为 `SUCCESS` / `FAILURE`。
-完整说明见 [异步任务与结果查询](/api-reference/image-generation/asynchronous#任务状态)。
-
-## 文档新增腾讯 SE 视频页
-
-[视频生成（腾讯 SE）](/api-reference/video-se) 补齐了 `Video-SE-2.0` / `Video-SE-2.0-fast` 的
-完整参数、多模态输入与轮询说明。
+轮询接口仍使用 `data.status` 和大写枚举，终态为 `SUCCESS` / `FAILURE`。详见[异步任务状态](/api-reference/image-generation/asynchronous#任务状态)。
 
 </Update>
 
-<Update label="2026-09-03" tags={["新增", "修复"]}>
+<Update label="2026-09-03" tags={["图片", "修复"]}>
 
-## Image-GPT2 异步接口支持透明背景
+## 异步透明背景与登录修复
 
-此前只有同步接口 `/v1/images/generations` 支持透明背景，异步接口会丢弃相关参数。
-现在两条路径行为一致，异步提交也可以拿到带 Alpha 通道的 PNG：
+`Image-GPT2` 异步接口支持透明背景、`quality` 与 `input_fidelity`，可返回带 Alpha 通道的 PNG。用法见 [GPT Image 2](/api-reference/image-generation/models/gpt-image-2#透明背景)。
 
-```json
-{
-  "model": "Image-GPT2",
-  "prompt": "一只柴犬，纯色背景",
-  "background": "transparent",
-  "output_format": "png"
-}
-```
-
-`quality` 与 `input_fidelity` 同样已透传。用法见 [GPT Image 2 透明背景](/api-reference/image-generation/models/gpt-image-2#透明背景)。
-
-## 修复登录偶发失败
-
-使用飞书登录时偶发「无法连接至 OIDC 服务器」，多出现在服务刚发布后的首次登录。已修复。
+修复飞书登录偶发失败的问题。
 
 </Update>
 
-<Update label="2026-08-20" tags={["新增"]}>
+<Update label="2026-08-20" tags={["图片"]}>
 
-## 新增 Image-SI 生图模型
+## 新增 Image-SI
 
-腾讯智能生图，模型名 `Image-SI`，支持文生图与参考图生图，
-通过 `quality` 选择输出分辨率（默认 1K，`medium`/`2k` 为 2K，`hd`/`high` 为 4K 超分）。
-
-入口与其他生图模型一致：同步 `POST /v1/images/generations`，异步 `POST /v1/images/tasks`。
+新增 `Image-SI`，支持文生图、参考图生成及不同分辨率档位，当前调用方式、参数与价格见 [Image-SI](/api-reference/image-generation/models/image-si)。
 
 </Update>
 
-<Update label="2026-08-18" tags={["新增"]}>
+<Update label="2026-08-18" tags={["视频"]}>
 
-## 新增腾讯 SE 视频模型
+## 新增 SE 视频
 
-`Video-SE-2.0` 与 `Video-SE-2.0-fast`，走 `POST /v1/video/generations` 提交，
-查询方式与豆包视频相同。按视频时长结算。
-
-详见 [视频生成（腾讯 SE）](/api-reference/video-se)。
+新增 `Video-SE-2.0` 与 `Video-SE-2.0-fast`，支持异步视频生成并按视频时长计费。调用方法见 [SE 视频](/api-reference/video-se)。
 
 </Update>
 
-<Update label="2026-07-31" tags={["新增"]}>
+<Update label="2026-07-31" tags={["音频"]}>
 
-## 新增豆包音频生成
+## 新增 Seed Audio
 
-`seed-audio-1.0` 与 `seed-audio-1.0-multilingual`，通过 OpenAI 兼容入口
-`POST /v1/audio/speech` 调用，支持纯文本、参考音频和参考图片生成，直接返回音频二进制。
-
-详见 [音频生成（Seed Audio）](/api-reference/seed-audio)。
+新增 `seed-audio-1.0` 与 `seed-audio-1.0-multilingual`，支持文本、参考音频和参考图片生成，直接返回音频文件。用法见 [Seed Audio](/api-reference/seed-audio)。
 
 </Update>
 
 <Update label="2026-06-18" tags={["修复"]}>
 
-## 修复同步生图偶发连接中断
+## 修复同步生图连接中断
 
-启用图片转存的同步生图请求（如 `Image-GPT2` 配 `response_format: url`）在 HTTP/2 下
-偶发 `curl: (92)` 或 `RST_STREAM` 报错——响应内容其实完整正确，但客户端随后报错。
-
-根因是响应头里的 `Content-Length` 与转存后的实际长度不一致，已修复。
+修复同步生图在 HTTP/2 下偶发 `curl: (92)` 或 `RST_STREAM` 的问题，现有调用方式不变。
 
 </Update>

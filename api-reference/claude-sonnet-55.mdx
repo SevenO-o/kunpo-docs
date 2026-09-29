@@ -1,0 +1,63 @@
+---
+title: "Claude Sonnet 5.5"
+description: "Sonnet 5.5 的使用场景、Messages 与 Chat 接入、上下文规格和缓存价格。"
+---
+
+Claude Sonnet 5.5 适合日常编程、代码审查、文档分析和写作。需要在响应速度、质量和成本之间取得平衡时可选用；复杂任务也可按需求选择 [Opus 5.5](/api-reference/claude-opus-55)。
+
+## 模型与接口
+
+| 项目 | 值 |
+|---|---|
+| API 调用名 | `claude-sonnet-5-5`，不加供应商前缀 |
+| 推荐接口 | `POST https://llm.ziy.cc/v1/messages` |
+| Anthropic SDK Base URL | `https://llm.ziy.cc`，不加 `/v1` |
+| 兼容接口 | `POST https://llm.ziy.cc/v1/chat/completions` |
+| OpenAI SDK Base URL | `https://llm.ziy.cc/v1` |
+| 鉴权 | 现有 KUNPO API Key；`Authorization: Bearer sk-你的密钥`，Anthropic SDK 也可使用 `x-api-key` |
+| 输入 / 输出 | 文本及图片输入，文本输出 |
+| 上下文 / 最大输出 | 1,000,000 / 128,000 tokens |
+
+该调用名使用 AF Claude 原生渠道。旧 `claude-sonnet-5` 不会自动切换到新版；如果密钥开启了模型白名单，需加入 `claude-sonnet-5-5`。不要把 AF 上游密钥填到 KUNPO 客户端。
+
+## 最小 Messages 请求
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/v1/messages \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'anthropic-version: 2023-06-01' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "claude-sonnet-5-5",
+    "max_tokens": 1024,
+    "output_config": {"effort": "low"},
+    "messages": [{"role": "user", "content": "用三句话解释数据库索引。"}]
+  }'
+```
+
+`model` 和非空 `messages` 数组必填；Messages 的 `max_tokens` 是正整数输出预算，上限 128,000 tokens，包含思考消耗。示例显式采用 `low` effort。公共字段和内容块格式见 [Claude Messages](/api-reference/claude-messages)。
+
+非流式响应从 `content[]` 中合并所有 `type="text"` 的 `text`，不要假定第一块就是正文。`stop_reason="max_tokens"` 表示预算耗尽；`tool_use` 表示需按工具协议继续会话。
+
+## 使用现有 OpenAI 客户端
+
+保留 Chat Completions 的消息格式，将 `model` 改为 `claude-sonnet-5-5`，Base URL 使用 `https://llm.ziy.cc/v1`。非流式正文读取 `choices[0].message.content`，不要混用 Messages 的 `content[]` 路径。完整字段与调用示例见 [文本对话](/api-reference/text-chat)。
+
+两种接口使用相同模型和价格。需要 Claude 专属内容块或参数时，优先使用 Messages 接口，避免协议转换造成信息损失。
+
+## 计费
+
+Standard 档，单位 **USD / 百万 tokens**，以下为乘用户分组倍率之前的价格：
+
+| 普通输入 | 输出 | 缓存读取 | 5 分钟缓存写入 | 1 小时缓存写入 |
+|---:|---:|---:|---:|---:|
+| 2.00 | 10.00 | 0.20 | 2.50 | 4.00 |
+
+整个支持的上下文窗口使用同一单价。按实际普通输入、输出、缓存读取及不同 TTL 缓存写入分别结算，再乘实际分组倍率；缓存 Token 不与普通输入重复收费，输出包含思考消耗。预扣与最终结算沿用平台规则，历史账单不重算。
+
+本配置提供 Standard 价格；传入 Fast、Batch 等字段不会自动切换价格档。实时价格见[模型广场](https://llm.ziy.cc/pricing)。规格与美元来源（2026-09-29）：[AF 模型目录](https://www.agentsflare.com/models)、[Anthropic 价格表](https://platform.claude.com/docs/en/about-claude/pricing)。
+
+## 请求失败时
+
+鉴权失败先检查 KUNPO 密钥；模型不可用时检查完整模型 ID、密钥白名单和可用分组。参数错误先修正请求，429 使用退避；连接超时不表示上游没有处理或计费，不要无界重复提交。

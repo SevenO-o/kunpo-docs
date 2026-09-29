@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-09-28（新增 Jev Router 专用同步文本接口与动态计费单一信息源）
+> 最后更新：2026-09-29（新增 Claude Sonnet 5.5 接入与缓存定价单一信息源）
 
 ---
 
@@ -40,6 +40,7 @@ docs/
 │   ├── claude-messages.mdx                    # Claude Messages API (Anthropic 原生)
 │   ├── gpt-6.mdx                              # GPT-6 Luna/Sol：OpenAI 接口、推理与定价
 │   ├── claude-opus-55.mdx                      # Opus 5.5：Claude 原生接口与缓存定价
+│   ├── claude-sonnet-55.mdx                    # Sonnet 5.5：场景、双协议接入与缓存定价
 │   ├── jev-router.mdx                          # Jev 自动选模：同步文本专用路径、credit 动态结算
 │   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
 │   ├── seedance-25.mdx                        # 火山 2.5 参数、轮询与 USD 秒价

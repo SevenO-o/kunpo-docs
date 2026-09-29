@@ -32,6 +32,7 @@
 | Claude Messages 完整说明 | `api-reference/claude-messages.mdx` | 不在 text-chat 重复 Messages 示例 |
 | GPT-6 Luna/Sol 专属接口、推理与定价 | `api-reference/gpt-6.mdx` | 公共文本页与更新日志只链接 |
 | Opus 5.5 原生接入、思考约束与定价 | `api-reference/claude-opus-55.mdx` | 公共 Claude 页与更新日志只链接 |
+| Sonnet 5.5 场景、双协议接入与缓存定价 | `api-reference/claude-sonnet-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Jev 独立决策协议、字段和定价 | `api-reference/jev.mdx` | 总览与更新日志只链接 |
 | Jev Router 同步文本、选模场景与动态计费 | `api-reference/jev-router.mdx` | 总览与更新日志只链接，不与 Jev 决策混用 |
 | 图片模型列表、选择建议、计费 | `api-reference/image-generation/overview.mdx` | sync/async 页不重复计费表和模型表 |

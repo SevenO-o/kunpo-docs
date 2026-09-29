@@ -6,7 +6,7 @@ description: "通过异步任务方式生成图片 — 提交任务获取 task_i
 <span id="异步任务与结果查询" />
 <span id="异步图片生成" />
 
-异步接口适用于耗时较长的图像生成任务。提交后立即返回任务 ID，服务端定时轮询上游状态，客户端可随时查询进度和结果。
+异步接口适用于耗时较长的图像生成任务。提交后立即返回任务 ID，客户端可使用该 ID 查询进度和结果。
 
 适用模型及推荐方式见[模型选择表](/api-reference/image-generation/overview#支持模型)。认证方式见[图像生成认证](/api-reference/image-generation/overview#认证)。
 
@@ -146,7 +146,7 @@ GET https://llm.ziy.cc/v1/images/tasks/:task_id
 | 状态 | 说明 |
 |------|------|
 | `NOT_START` | 已受理入库，尚未开始生成 |
-| `QUEUED` | 上游排队中 |
+| `QUEUED` | 任务排队中 |
 | `IN_PROGRESS` | 生成中，可读 `data.progress`（如 `"30%"`） |
 | `SUCCESS` | 完成，`result_url` 可用 |
 | `FAILURE` | 失败，查看 `fail_reason` |

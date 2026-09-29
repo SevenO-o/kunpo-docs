@@ -3,7 +3,7 @@ title: "文本路由（Jev Router）"
 description: "typesafe/jev-router 的自动选模、同步聊天接口、动态计费与使用场景。"
 ---
 
-**调用模型 ID：`typesafe/jev-router`**。Jev Router 根据对话选择下游模型和推理强度，并返回该模型生成的回答。不同请求可能使用不同模型；响应的 `model` 是实际选中的模型。
+**调用模型 ID：`typesafe/jev-router`**。Jev Router 根据对话选择模型和推理强度，并返回该模型生成的回答。不同请求可能使用不同模型；响应的 `model` 是实际选中的模型。
 
 适合统一承接难度不同的文本问答、摘要、翻译、文案草拟和代码解释，减少业务侧手动选模。若需要固定模型输出风格、精确复现、严格的模型白名单或稳定单价，请直接选择指定模型。
 
@@ -20,11 +20,11 @@ POST https://llm.ziy.cc/jev-router/v1/chat/completions
 | 请求类型 | `Content-Type: application/json` |
 | 输入与输出 | 文本消息输入、文本回答输出 |
 | 返回方式 | 同步 JSON，`stream` 省略或设为 `false` |
-| 多轮对话 | 每次发送完整 `messages` 历史；不固定下游模型 |
+| 多轮对话 | 每次发送完整 `messages` 历史；不固定所选模型 |
 | 模型权限 | 密钥开启模型限制时，放行完整 ID `typesafe/jev-router` |
 
 <Warning>
-  此模型使用上面的专用路径。当前接入不开放标准 `/v1/chat/completions`、Responses、Messages、流式、工具调用或多模态输入。OpenRouter 官网展示的能力不等于本接口已开放的能力。客户端必须允许自定义 Base URL，并关闭流式输出。
+  此模型使用上面的专用路径。当前接入不开放标准 `/v1/chat/completions`、Responses、Messages、流式、工具调用或多模态输入。客户端必须允许自定义 Base URL，并关闭流式输出。
 </Warning>
 
 Jev Router 用于自动选模并生成回答；[Jev 结构化决策](/api-reference/jev) 使用 `state` / `questions` 返回分类与评分，两者的模型名、接口和计费规则分别配置。
@@ -68,7 +68,7 @@ print("本次使用的模型：", response.model)
 
 </CodeGroup>
 
-回答位于 `choices[0].message.content`；`model` 为本次下游模型；`usage.prompt_tokens`、`usage.completion_tokens`、`usage.total_tokens` 为实际 token 用量。`choices[0].finish_reason` 为下游结束原因，例如 `stop` 或 `length`。返回的 `id` 是 KUNPO 公开请求结果标识，不用于查询接口。
+回答位于 `choices[0].message.content`；`model` 为本次所选模型；`usage.prompt_tokens`、`usage.completion_tokens`、`usage.total_tokens` 为实际 token 用量。`choices[0].finish_reason` 为回答结束原因，例如 `stop` 或 `length`。返回的 `id` 是 KUNPO 请求结果标识，不用于查询接口。
 
 本接口不保存可重新获取的聊天结果，也不提供任务轮询。请在收到响应时保存需要的内容。POST 不提供幂等保证；超时或断开后先检查用量记录，避免自动重复提交造成重复生成与费用。
 
@@ -83,7 +83,7 @@ print("本次使用的模型：", response.model)
 
 ## 请求参数
 
-以下为允许的全部顶层字段；未知字段会被拒绝。上游选中的模型可能进一步限制参数或上下文长度。
+以下为允许的全部顶层字段；未知字段会被拒绝。实际选中的模型可能进一步限制参数或上下文长度。
 
 | 字段 | 类型 | 规则 |
 | --- | --- | --- |
@@ -98,10 +98,10 @@ print("本次使用的模型：", response.model)
 | `top_p` | number | 可选，0–1 |
 | `frequency_penalty`、`presence_penalty` | number | 可选，-2–2 |
 | `stop` | string / string[] | 可选，单个字符串或 1–4 个字符串 |
-| `seed` | integer | 可选，-2147483648–2147483647；不保证跨不同下游模型复现 |
+| `seed` | integer | 可选，-2147483648–2147483647；不保证跨不同所选模型复现 |
 | `user` | string | 可选，最多 256 个字符，不应包含个人敏感信息 |
 
-未列出的采样参数不由网关添加默认值。OpenRouter 公布的路由上下文上限为 1,000,000 tokens，但实际可用上下文、输出上限及参数行为取决于本次下游模型。插件单次上游结果的 JSON 大小上限为 1 MiB；建议设置合理输出长度，避免超大结果失败。
+未列出的采样参数不由网关添加默认值。实际可用上下文、输出上限及参数行为取决于本次选中的模型。单次结果的 JSON 大小上限为 1 MiB；建议设置合理输出长度，避免超大结果失败。
 
 ## 动态价格与结算
 
@@ -109,21 +109,20 @@ print("本次使用的模型：", response.model)
 
 | 计费项 | 规则 |
 | --- | --- |
-| 数量 | OpenRouter 本次响应报告的实际 credit 消耗 |
-| KUNPO 标准价 | USD 1 / OpenRouter credit；1 credit 对应 USD 1 上游消耗 |
+| 数量 | 本次请求的实际计费 credit 数量 |
+| KUNPO 标准价 | USD 1 / credit |
 | 最终金额 | 实际 credit 数量 × USD 1 × 当前分组倍率，再按 KUNPO 额度精度舍入 |
 | 预留 | 提交前暂按 1 credit 对应金额与分组倍率预留；余额需足够覆盖这笔预留 |
 | 成功结算 | 以实际消耗结算，少用退还差额，多用补足；预留金额不是单次费用上限 |
-| 失败与异常 | 失败请求释放预留；缺失或无效的上游费用不会当成免费成功 |
+| 失败与异常 | 失败请求释放预留；用量或费用异常时返回错误，不视为免费成功 |
 
-例如，上游消耗 `0.01 credit`、分组倍率为 1，则费用为 USD 0.01；这只是计算示例，不是单次固定报价。响应中的 token 数用于了解用量，不能直接乘一套固定单价推算本路由的全部费用。最终扣费以 KUNPO 用量记录为准，当前倍率与售价见[模型广场](https://llm.ziy.cc/pricing)。
+例如，本次使用 `0.01 credit`、分组倍率为 1，则费用为 USD 0.01；这只是计算示例，不是单次固定报价。响应中的 token 数用于了解用量，不能直接乘一套固定单价推算本路由的全部费用。最终扣费以 KUNPO 用量记录为准，当前倍率与售价见[模型广场](https://llm.ziy.cc/pricing)。
 
 ## 错误处理
 
-请求校验失败时检查字段白名单、文本消息和 `stream: false`；余额不足时补足预留所需额度；下游无可用模型、限流或服务故障时按错误响应处理。费用或响应格式异常会作为失败返回，不提供不完整的成功答案。不要对超时的生成请求进行无条件重试。
+请求校验失败时检查字段白名单、文本消息和 `stream: false`；余额不足时补足预留所需额度；无可用模型、限流或服务故障时按错误响应处理。费用或响应格式异常会作为失败返回，不提供不完整的成功答案。不要对超时的生成请求进行无条件重试。
 
 ## 相关文档
 
-- [OpenRouter Jev Router 模型页](https://openrouter.ai/typesafe/jev-router)
 - [固定模型的文本对话](/api-reference/text-chat)
 - [Jev 结构化决策](/api-reference/jev)

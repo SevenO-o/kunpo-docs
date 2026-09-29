@@ -171,13 +171,13 @@ curl -X POST https://llm.ziy.cc/v1/chat/completions \
 ## 可用模型
 
 <Note>
-  请从 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 复制所选模型的完整模型 ID，填写到请求的 `model` 字段。模型 ID 由 KUNPO 中台定义，请保留其前缀、大小写和版本号，不要根据供应商名称自行添加或删除前缀。
+  请从 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 复制所选模型的完整模型 ID，填写到请求的 `model` 字段。模型 ID 由平台定义，请保留其前缀、大小写和版本号，不要自行添加或删除前缀。
 </Note>
 
-<Accordion title="展开供应商与模型示例">
-  KUNPO API 提供 150+ 模型，涵盖以下供应商：
+<Accordion title="展开模型系列与示例">
+  KUNPO API 提供多种模型，以下列出常见系列：
 
-  | 供应商 | 模型示例 |
+  | 模型系列 | 模型示例 |
   |--------|----------|
   | Anthropic | Claude Sonnet 4.6, Claude Opus 4.6 |
   | OpenAI | GPT-5, GPT-5.4 |
@@ -190,5 +190,5 @@ curl -X POST https://llm.ziy.cc/v1/chat/completions \
   | Moonshot | Kimi-K2.5 |
   | MiniMax | MiniMax-M2.7 |
 
-  上表用于浏览供应商与模型示例；请求时请使用模型广场中的完整模型 ID。
+  上表用于浏览模型系列与示例；请求时请使用模型广场中的完整模型 ID。
 </Accordion>

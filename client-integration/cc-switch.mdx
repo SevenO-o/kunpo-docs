@@ -5,64 +5,17 @@ description: "使用 CC Switch 统一管理 Claude Code、Codex、Gemini CLI 等
 
 <span id="cc-switch" />
 
-[CC Switch](https://github.com/farion1231/cc-switch) 是开源跨平台桌面 GUI 工具，统一管理 Claude Code、Codex、Gemini CLI、OpenCode、OpenClaw 的 Provider 配置、API Key 切换、MCP 服务器与用量统计，支持 Windows / macOS / Linux。
+[CC Switch](https://github.com/farion1231/cc-switch) 是开源跨平台桌面 GUI 工具，统一管理 Claude Code、Codex、Gemini CLI、OpenCode、OpenClaw 的 Provider 配置、API Key 切换、连接配置与用量统计，支持 Windows / macOS / Linux。
 
 配合 [KUNPO API](https://llm.ziy.cc) 使用后，你可以在多个 AI 编程工具之间快速切换，无需反复手动编辑 `~/.claude/settings.json` 或环境变量。
 
 ---
 
-## 一、CC Switch 是什么？
+## 适用场景
 
-CC Switch（项目地址：[github.com/farion1231/cc-switch](https://github.com/farion1231/cc-switch)）是由开发者 Jason Young（farion1231）维护的开源桌面应用，专为 AI 编程 CLI 设计的统一管理器。
+适合需要在多个编程工具中切换 KUNPO 模型、集中管理连接配置的同事。准备好 KUNPO API Key，并从模型广场复制完整模型 ID，即可按下方步骤配置。
 
-如果你同时使用多个 AI 编程工具，可能会遇到这些问题：
-
-- 每次切换 Provider，都要手动编辑配置文件或重新设置环境变量
-- 多台设备之间配置无法同步，换机器就要从头配置
-- WSL 与 Windows 各自维护一套配置，管理成本叠加
-
-CC Switch 安装后常驻系统托盘，点击几下即可完成 AI 工具与服务商的切换。基于 Tauri 2 + Rust 构建，安装包轻巧，支持全平台。
-
-### 支持的 CLI 工具
-
-| 工具名称 | 开发方 | 简介 |
-|----------|--------|------|
-| Claude Code | Anthropic | Claude 模型驱动的 AI 编程助手，可在终端中对话、写代码、改 Bug |
-| Codex | OpenAI | OpenAI 代码生成 CLI，支持多语言补全与生成 |
-| Gemini CLI | Google | Google Gemini 模型的命令行版本 |
-| OpenCode | 开源社区 | 开源 AI 编程 CLI，支持接入多种模型 |
-| OpenClaw | 开源社区 | 兼容 OpenAI 接口的开源 CLI，可灵活切换上游 Provider |
-
----
-
-## 二、核心功能
-
-### Provider 管理
-
-- 为每个 CLI 工具创建多个 Provider 配置
-- 拖拽排序，常用配置置顶
-- 一键切换当前激活的 Provider，无需重启 CLI
-- 通过 Shared Config Snippet 切换服务商时保留插件与自定义设置
-
-### MCP 服务器统一管理
-
-在多个 CLI 中共用 MCP 服务器时，CC Switch 提供统一 MCP 管理面板，支持跨应用配置同步。
-
-### 技能（Skills）安装
-
-支持从 GitHub 仓库或 ZIP 文件安装技能包，通过 symlink 挂载，便于团队共享。
-
-### 用量统计
-
-内置使用量看板，可追踪每日/每周消费、请求次数、Token 用量与趋势图。
-
-### 云同步
-
-配置可同步至 Dropbox、OneDrive、iCloud（macOS）或 WebDAV 自建服务器。
-
----
-
-## 三、安装
+## 安装
 
 <Tabs>
   <Tab title="Windows">
@@ -98,11 +51,11 @@ CC Switch 安装后常驻系统托盘，点击几下即可完成 AI 工具与服
 
 ---
 
-## 四、Claude Code 通过 CC Switch 接入 KUNPO API
+## Claude Code 接入 KUNPO API
 
 ### 为什么选择 KUNPO API？
 
-KUNPO API 是统一的大模型网关，兼容 OpenAI 与 Anthropic 接口格式。通过一个 API Key 即可调用 Claude、GPT、Gemini、DeepSeek、GLM 等 150+ 模型，适合在 Claude Code 中灵活切换模型、控制成本。
+KUNPO API 是统一的大模型网关，兼容 OpenAI 与 Anthropic 接口格式。通过一个 API Key 即可调用 Claude、GPT、Gemini、DeepSeek、GLM 等 多种模型，适合在 Claude Code 中灵活切换模型、控制成本。
 
 ### 连接信息
 
@@ -131,18 +84,10 @@ KUNPO API 是统一的大模型网关，兼容 OpenAI 与 Anthropic 接口格式
 <Steps>
   <Step title="步骤 1：打开添加面板">
     打开 CC Switch 主界面，点击右上角橙色 **「+」** 按钮。
-
-    <Frame caption="点击右上角 + 按钮">
-      <img src="/images/cc-switch/1.png" alt="CC Switch 主界面，点击添加按钮" />
-    </Frame>
   </Step>
 
   <Step title="步骤 2：选择自定义配置">
     在「添加新供应商」窗口中，确认位于「Claude 供应商」标签页，选择左上角 **「自定义配置」**。下滑配置参数。
-
-    <Frame caption="选择自定义配置">
-      <img src="/images/cc-switch/2.png" alt="Claude 供应商预设列表，选择自定义配置" />
-    </Frame>
   </Step>
 
   <Step title="步骤 3：填写 API 连接信息">
@@ -168,19 +113,11 @@ KUNPO API 是统一的大模型网关，兼容 OpenAI 与 Anthropic 接口格式
       请求地址填写 `https://llm.ziy.cc`，**不要以斜杠结尾**，**不要**加 `/v1`。若 CC Switch 提供「完整 URL」开关，保持关闭。
     </Note>
 
-    <Frame caption="填写 API Key、请求地址与模型映射">
-      <img src="/images/cc-switch/3.png" alt="填写 KUNPO API Key、请求地址和模型" />
-    </Frame>
-
     确认信息无误后，点击 **「+ 添加」** 保存。
   </Step>
 
   <Step title="步骤 4：启用 Provider">
     返回主界面，在供应商列表中找到新添加的配置，点击 **「启用」** 按钮激活。
-
-    <Frame caption="启用新添加的 Provider">
-      <img src="/images/cc-switch/4.png" alt="启用 KUNPO API" />
-    </Frame>
   </Step>
 
   <Step title="步骤 5：验证连接">
@@ -193,16 +130,12 @@ KUNPO API 是统一的大模型网关，兼容 OpenAI 与 Anthropic 接口格式
     确认 **Anthropic base URL** 为 `https://llm.ziy.cc`，**Model** 为所配置的 KUNPO 模型名（如 `anthropic/claude-sonnet-4.6`）。
 
     也可使用 `/models` 切换其他已映射的模型。
-
-    <Frame caption="在 Claude Code 中执行 /status 验证">
-      <img src="/images/cc-switch/5.png" alt="Claude Code status 显示 KUNPO API 配置" />
-    </Frame>
   </Step>
 </Steps>
 
 ---
 
-## 五、在 VSCode 中使用
+## 在 VSCode 中使用
 
 Claude Code 提供官方 VSCode 扩展，与 CC Switch 完全兼容。
 
@@ -220,13 +153,9 @@ Claude Code 提供官方 VSCode 扩展，与 CC Switch 完全兼容。
   </Step>
 </Steps>
 
-<Frame caption="VSCode 右下角显示 Claude 与 CC Switch 状态">
-  <img src="/images/cc-switch/6.png" alt="VSCode 中 Claude Code 扩展与 CC Switch 配合使用" />
-</Frame>
-
 ---
 
-## 六、其他 CLI 工具 + KUNPO API
+## 其他 CLI 工具接入
 
 Codex、Gemini CLI、OpenCode、OpenClaw 的配置方式与 Claude Code **类似**：在对应应用分区添加 Provider 时，选择 **「自定义配置」**，再填写 KUNPO 的连接信息（请求地址、API Key、模型名）。
 

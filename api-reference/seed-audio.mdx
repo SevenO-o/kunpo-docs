@@ -20,7 +20,7 @@ POST https://llm.ziy.cc/v1/audio/speech
 </Warning>
 
 <Note>
-  最大生成时长为 120 秒，基础价为 ¥1/分钟，另乘所用分组倍率。按上游 `original_duration` 向上取整到整秒，再将分钟数四舍五入至 0.001 分钟结算。例如 6.1 秒先计为 7 秒，再折算为 0.117 分钟；分组倍率为 1 时费用约 ¥0.117。当前时长计费规则的请求预留为零，完成后扣取实际费用，并非固定预扣 120 秒。
+  最大生成时长为 120 秒，基础价为 ¥1/分钟，另乘所用分组倍率。按生成音频的计费时长 向上取整到整秒，再将分钟数四舍五入至 0.001 分钟结算。例如 6.1 秒先计为 7 秒，再折算为 0.117 分钟；分组倍率为 1 时费用约 ¥0.117。当前时长计费规则的请求预留为零，完成后扣取实际费用，并非固定预扣 120 秒。
 </Note>
 
 ## 可用模型
@@ -37,7 +37,7 @@ POST https://llm.ziy.cc/v1/audio/speech
 1. OpenAI 兼容：`input`、`response_format`
 2. 豆包原生：`text_prompt`、`references`、`audio_config`、`watermark`
 
-请求会转换为火山 `/api/v3/tts/create` 格式；响应则转换为 OpenAI `/v1/audio/speech` 习惯的音频二进制：Base64 音频会被解码，临时 URL 音频会被下载后返回。因此上游 JSON 中的 `duration`、`original_duration`、`url`、`subtitle` 不会直接返回给客户端，但 `original_duration` 会在网关内部用于计费。
+成功响应直接返回音频文件的二进制内容，不返回时长、下载地址或字幕 JSON。保存文件后即可播放；计费时长与费用在 KUNPO 用量记录中查看。
 
 <Warning>
   成功响应不能调用 `response.json()`。请读取二进制内容，例如 Python 的 `response.content`。请求使用非流式方式；`stream_format: "sse"` 不会开启实时音频流。
@@ -78,9 +78,9 @@ audio_config.format > response_format > mp3
 |------|------|------|
 | `speaker` | string | 已开通且可用的豆包语音合成 2.0 / 声音复刻音色 ID |
 | `audio_data` | string | 原始音频的 Base64，不要带 `data:audio/...;base64,` 前缀 |
-| `audio_url` | string | 火山服务可以公开访问的音频 URL |
+| `audio_url` | string | 可从公网直接访问的音频 URL |
 | `image_data` | string | 原始图片的 Base64，不要带 Data URI 前缀 |
-| `image_url` | string | 火山服务可以公开访问的图片 URL |
+| `image_url` | string | 可从公网直接访问的图片 URL |
 
 限制与互斥关系：
 
@@ -89,10 +89,10 @@ audio_config.format > response_format > mp3
 - 图片参考和音频参考不能混用。
 - `speaker`、`audio_data`、`audio_url` 三者互斥；`image_data`、`image_url` 二者互斥。
 - 使用多条参考音频时，可在提示词中用 `@音频1`、`@音频2`、`@音频3` 按数组顺序引用。
-- `speaker` 必须是当前火山账号实际开通的音色 ID，否则会被上游拒绝。
+- `speaker` 须使用当前平台可用的音色 ID；需要特定音色时请联系管理员。
 
 <Tip>
-  `references[].image_url` 已通过 Pexels 公网图片实测。使用时提供火山服务可访问的公开图片 URL；它不能与任意音频类型的参考资源同时出现。如果图片站点阻止上游抓取，请改用 `image_data` 传递不带 Data URI 前缀的 Base64。
+  `references[].image_url` 使用可从公网直接访问的图片 URL；它不能与任意音频类型的参考资源同时出现。如果图片站点阻止图片下载，请改用 `image_data` 传递不带 Data URI 前缀的 Base64。
 </Tip>
 
 ## `audio_config` 输出配置
@@ -104,12 +104,12 @@ audio_config.format > response_format > mp3
 | `speech_rate` | int | `0` | `-50`～`100`；`-50`=0.5 倍，`100`=2.0 倍 |
 | `loudness_rate` | int | `0` | `-50`～`100`；`-50`=0.5 倍，`100`=2.0 倍 |
 | `pitch_rate` | int | `0` | `-12`～`12` |
-| `enable_subtitle` | bool | `false` | 是否让火山生成字级时间戳 |
+| `enable_subtitle` | bool | `false` | 是否生成字级时间戳；本接口不返回字幕 JSON |
 
-- 火山文档中的 `sample_rate` 默认值 `40000` 不在官方可选值中；KUNPO 明确使用 `48000`。
-- `enable_subtitle` 会传给火山，但 KUNPO 成功响应只返回音频二进制，不返回字幕 JSON。
-- `response_format: "opus"` 会转换为火山的 `ogg_opus`。
-- `aac`、`flac` 不受火山 Seed Audio 支持，当前会降级为 `mp3`；建议只使用上表四种格式。
+- `sample_rate` 默认值为 `48000`，请使用上表列出的采样率。
+- `enable_subtitle` 不改变二进制响应格式。
+- `response_format: "opus"` 会使用 `ogg_opus` 格式。
+- `aac`、`flac` 不受 Seed Audio 支持，当前会降级为 `mp3`；建议只使用上表四种格式。
 
 ## `watermark` 水印配置
 
@@ -282,24 +282,8 @@ Content-Type: audio/mpeg
 
 | 状态码 | 含义 |
 |:------:|------|
-| `400` | 参数、参考资源、音色 ID 或上游请求错误 |
+| `400` | 参数、参考资源、音色 ID 或请求错误 |
 | `401` | API Key 无效 |
 | `403` | 用户分组或模型权限不足 |
-| `429` | 余额、额度或上游限流 |
-| `502` | 上游响应、音频下载或格式异常 |
-
-## 已验证范围
-
-2026-07-31 已在生产环境完成以下端到端验证：
-
-- `input` → `text_prompt` 映射、官方 `text_prompt` 字段
-- `audio_config.format=wav`、`sample_rate=24000`（实际返回 24 kHz WAV）
-- `pitch_rate`、`speech_rate`、`loudness_rate` 与 `watermark.aigc_watermark=false`
-- `references[].audio_data`
-- `references[].image_url`：通过（Pexels 公网图片实测）
-- `seed-audio-1.0` 与 `seed-audio-1.0-multilingual`
-- MP3、WAV 二进制响应，以及按 `original_duration` 计费
-
-以下参数保持原样透传，但尚未完成真实素材端到端验证：`references[].audio_url`、`references[].image_data`、`watermark.aigc_metadata`。
-
-火山官方说明请参阅 [音频生成模型文档](https://docs.volcengine.com/docs/6561/2550782?lang=zh)。
+| `429` | 余额、额度或请求限流 |
+| `502` | 服务响应、音频下载或格式异常 |

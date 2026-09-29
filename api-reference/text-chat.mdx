@@ -28,7 +28,7 @@ Authorization: Bearer sk-你的密钥
 ### 通用参数
 
 <ParamField path="model" type="string" required>
-  填写 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 中所选模型的完整模型 ID，保留其前缀、大小写和版本号，不要根据供应商名称自行添加或删除前缀。
+  填写 [KUNPO API 模型广场](https://llm.ziy.cc/pricing) 中所选模型的完整模型 ID，保留其前缀、大小写和版本号，不要自行添加或删除前缀。
 </ParamField>
 
 <ParamField path="messages" type="array" required>
@@ -279,7 +279,7 @@ curl -X POST https://llm.ziy.cc/v1/chat/completions \
 | `400` | 请求参数错误 | 检查 JSON 格式和必填字段 |
 | `401` | API Key 无效或过期 | 检查 Authorization 头 |
 | `429` | 请求频率超限 | 降低请求频率，稍后重试 |
-| `500` | 上游服务错误 | 稍后重试或更换模型 |
+| `500` | 模型服务错误 | 稍后重试或更换模型 |
 | `502` / `504` | 网关超时 | 大上下文请求可能需要较长时间，请耐心等待 |
 
 错误响应格式遵循 OpenAI 标准：

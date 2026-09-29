@@ -7,6 +7,7 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 ZIP="$WORK_DIR/export.zip"
 
 cd "$ROOT"
+node "$ROOT/scripts/check-public-content.mjs"
 echo "Exporting Mintlify site..."
 mintlify export --output "$ZIP"
 

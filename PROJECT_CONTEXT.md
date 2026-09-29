@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-09-29（新增 Claude Sonnet 5.5 接入与缓存定价单一信息源）
+> 最后更新：2026-09-29（全站公开内容整理与发布隐私检查）
 
 ---
 
@@ -13,6 +13,10 @@ KUNPO API 是一个统一的大语言模型（LLM）网关服务，用户通过�
 本文档项目是该服务的官方 API 文档站点，主要供 AI 阅读并生成接入代码，同时供开发者查阅。用户已明确要求长期保持 AI 可准确执行的协议契约；入口为 `AGENTS.md`，详细规范为 `DOCS_MAINTENANCE.md`。
 
 ---
+
+## 公开内容维护
+
+全站已按使用场景、KUNPO 接入、参数与计费整理；更新日志不记录内部实施过程。配置教程采用文字步骤，静态产物不包含历史配置截图。`scripts/check-public-content.mjs` 在导出前、后处理和发布校验中运行，扫描导航页、共用片段、文本入口及实际产物。新图片仍须视觉检查。
 
 ## 技术栈
 
@@ -43,11 +47,11 @@ docs/
 │   ├── claude-sonnet-55.mdx                    # Sonnet 5.5：场景、双协议接入与缓存定价
 │   ├── jev-router.mdx                          # Jev 自动选模：同步文本专用路径、credit 动态结算
 │   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
-│   ├── seedance-25.mdx                        # 火山 2.5 参数、轮询与 USD 秒价
+│   ├── seedance-25.mdx                        # Seedance 2.5 参数、轮询与 USD 秒价
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
-│   ├── video-se.mdx                           # 腾讯 SE 视频生成 (混元生视频)
+│   ├── video-se.mdx                           # SE 视频生成
 │   ├── video-vs25.mdx                         # VS 2.5 三种协议、素材、CDN、USD 按秒计费
-│   ├── minimax-h3.mdx                         # TokenHub H3 协议、素材、CDN 与 USD 秒价
+│   ├── minimax-h3.mdx                         # MiniMax H3 协议、素材、CDN 与 USD 秒价
 │   └── image-generation/
 │       ├── overview.mdx                       # 概览与模型选择：需求入口、能力矩阵、计费
 │       ├── synchronous.mdx                    # 同步调用：公共请求、响应和多语言示例
@@ -57,7 +61,7 @@ docs/
 │           ├── nano-banana-2.mdx
 │           ├── gpt-image-2.mdx
 │           ├── qwen-image-3-pro.mdx
-│           ├── seedream-50-pro.mdx            # 火山图片、图层与 USD 按张计费
+│           ├── seedream-50-pro.mdx            # Seedream 图片、图层与 USD 按张计费
 │           ├── image-si.mdx                    # Seedream 5.0 Pro：URL 参考图、分辨率档位与比例
 │           └── midjourney.mdx
 ├── snippets/image-generation/

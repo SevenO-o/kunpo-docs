@@ -1,9 +1,9 @@
 ---
 title: "视频生成（MiniMax H3）"
-description: "腾讯 TokenHub MiniMax H3：异步 Videos、Responses、首尾帧与多模态参考，CDN 保存及美元按秒计费。"
+description: "MiniMax H3：异步 Videos、Responses、首尾帧与多模态参考，CDN 保存及美元按秒计费。"
 ---
 
-MiniMax H3 通过腾讯 TokenHub 接入 KUNPO。API 模型名为 `minimax-video-h3`，支持文本、首尾帧和图片／视频／音频参考。
+MiniMax H3 适合短视频创作、首尾帧过渡和多素材参考生成。API 模型名为 `minimax-video-h3`，支持文本、首尾帧和图片／视频／音频参考。
 
 AI 可读取[本页 Markdown](https://docs.ziy.cc/api-reference/minimax-h3.md)；其他模型见 [llms.txt](https://docs.ziy.cc/llms.txt)。
 
@@ -15,7 +15,7 @@ AI 可读取[本页 Markdown](https://docs.ziy.cc/api-reference/minimax-h3.md)�
 | 默认输出 | 5 秒、768P、无水印；纯文本默认 16:9 |
 | 输出范围 | 整数 4–15 秒，768P 或 2K |
 
-客户端只使用 KUNPO 密钥；腾讯 TokenHub 密钥由网关管理。开启模型限制的密钥须放行 `minimax-video-h3`。
+使用 KUNPO API Key。开启模型限制的密钥须放行 `minimax-video-h3`。
 
 ## 提交、查询与下载
 
@@ -35,7 +35,7 @@ curl --fail-with-body https://llm.ziy.cc/v1/videos \
   }'
 ```
 
-保存响应的 `id`（KUNPO 公开任务 ID）。提交响应包含 `object: "video"`、`status: "queued"`、`progress` 和 `created_at`。
+保存响应的 `id`（KUNPO 任务 ID）。提交响应包含 `object: "video"`、`status: "queued"`、`progress` 和 `created_at`。
 
 ```bash
 curl --fail-with-body https://llm.ziy.cc/v1/videos/task_你的任务ID \
@@ -62,7 +62,7 @@ curl --fail-with-body --location \
 
 ## 参数
 
-以下参数用于 Videos 与插件原生提交。Responses 将提示词放在 `input`，其余参数同样可放在 `metadata`。
+以下参数用于 Videos 与兼容任务接口提交。Responses 将提示词放在 `input`，其余参数同样可放在 `metadata`。
 
 | 字段 | JSON 类型 | 规则 |
 |------|-----------|------|
@@ -77,7 +77,7 @@ curl --fail-with-body --location \
 | `content` | array | 文本与参考素材；顶层优先于 `metadata.content` |
 | `metadata` | object | 可放 `prompt`、`duration`、`resolution`、`size`、比例、水印及 `content` |
 
-768P / 2K 不接受 1080P / 4K 作为别名，避免供应商静默降档。首尾帧模式固定使用 `adaptive`，画幅由图片决定；多模态参考模式默认 `adaptive`，也可显式指定比例。未列出的参数不会转发给供应商。
+768P / 2K 不接受 1080P / 4K 作为别名。首尾帧模式固定使用 `adaptive`，画幅由图片决定；多模态参考模式默认 `adaptive`，也可显式指定比例。请使用本页列出的参数。
 
 ## 首尾帧与多模态参考
 
@@ -100,9 +100,9 @@ curl --fail-with-body --location \
 
 - 首帧和尾帧各最多一张；尾帧必须配首帧。首尾帧不能与任何 `reference_*` 素材混用。
 - 多模态参考最多 9 张图片、3 段视频、3 段音频，素材合计最多 12 项；不能只有音频参考。
-- 图片接受 HTTP(S) URL 或 PNG/JPEG/WebP 的 Base64 data URL。不接受裸 Base64；本插件不支持 multipart 文件直传。multipart 只可传字段，`metadata` / `content` 要编码为 JSON 字符串。
-- 视频须为公开 HTTP(S) 地址、标准非分片且自包含的 MP4/MOV，时长每段 2–15 秒、合计不超过 15 秒。网关限 30 秒内完成下载，所有参考视频合计最多 64 MiB；腾讯另要求每段不超过 50 MB、H.264/H.265 编码。
-- 腾讯图片限制为每张 30 MB、边长 256–5760 像素；音频为 MP3/WAV、每段不超过 15 MB、每段 2–15 秒且合计不超过 15 秒。图片尺寸、编码及音频时长由腾讯进一步校验，失败时查看任务错误。
+- 图片接受 HTTP(S) URL 或 PNG/JPEG/WebP 的 Base64 data URL。不接受裸 Base64；本接口不支持 multipart 文件直传。multipart 只可传字段，`metadata` / `content` 要编码为 JSON 字符串。
+- 视频须为公开 HTTP(S) 地址、标准非分片且自包含的 MP4/MOV，时长每段 2–15 秒、合计不超过 15 秒。网关限 30 秒内完成下载，所有参考视频合计最多 64 MiB；每段不超过 50 MB、H.264/H.265 编码。
+- 图片限制为每张 30 MB、边长 256–5760 像素；音频为 MP3/WAV、每段不超过 15 MB、每段 2–15 秒且合计不超过 15 秒。图片尺寸、编码及音频时长会在生成时校验，失败时查看任务错误。
 
 参考视频示例，在 shell 环境中设置 `REFERENCE_VIDEO_URL`：
 
@@ -135,10 +135,10 @@ print(response.json()["id"])
 | 协议 | 提交 | 查询 | 返回结构 |
 |------|------|------|----------|
 | Videos | `POST /v1/videos` | `GET /v1/videos/:task_id` | `id`、小写 `status`、成功后的 `url` |
-| 插件原生 | `POST /tencent-tokenhub/v1/videos` | `GET /tencent-tokenhub/v1/videos/:task_id` | 提交为 `task_id`、`status`；查询为 `task.id`、大写 `task.status`、`task.content.url` |
+| 兼容任务接口 | `POST /tencent-tokenhub/v1/videos` | `GET /tencent-tokenhub/v1/videos/:task_id` | 提交为 `task_id`、`status`；查询为 `task.id`、大写 `task.status`、`task.content.url` |
 | Responses | `POST /v1/responses` | `GET /v1/responses/:response_id` | `id`、Responses 状态、成功后的 `output[].content[].text` |
 
-原生查询非终态为 `NOT_START` / `SUBMITTED` / `QUEUED` / `IN_PROGRESS`，成功为 `SUCCESS`，失败为 `FAILURE`，状态不明为 `UNKNOWN`。不能混用不同协议的 JSON 字段与状态枚举，也不能用腾讯内部 ID 查询 KUNPO。
+原生查询非终态为 `NOT_START` / `SUBMITTED` / `QUEUED` / `IN_PROGRESS`，成功为 `SUCCESS`，失败为 `FAILURE`，状态不明为 `UNKNOWN`。不能混用不同协议的 JSON 字段与状态枚举；查询时使用提交响应返回的 ID。
 
 Responses 支持 `stream: true`、同步及 `background: true`。后台模式适合长任务：
 
@@ -154,13 +154,13 @@ curl --fail-with-body https://llm.ziy.cc/v1/responses \
   }'
 ```
 
-保存响应 `id`，使用同一 Key 查询 `/v1/responses/:response_id`。`queued` / `in_progress` 继续查询，`completed` 成功，`failed` 停止并读取错误。成功文本包含 `<video>` 标签，其 `src` 为宿主提供的视频产物地址；不要假定 Responses 顶层存在 `url`。`input` 可以为字符串或消息内容数组，不能与 `prompt` 或 `content` 同时提供。
+保存响应 `id`，使用同一 Key 查询 `/v1/responses/:response_id`。`queued` / `in_progress` 继续查询，`completed` 成功，`failed` 停止并读取错误。成功文本包含 `<video>` 标签，其 `src` 为视频产物地址；不要假定 Responses 顶层存在 `url`。`input` 可以为字符串或消息内容数组，不能与 `prompt` 或 `content` 同时提供。
 
 ## 存储与计费
 
-主视频成功后自动保存至 KUNPO CDN；Videos 的 `url` 和原生 `task.content.url` 优先返回归档地址。归档失败时可能返回腾讯临时地址（约 12 小时有效），调用方应及时下载。内联图片会转存并去重；外部图片与音频仍按原地址提交。
+主视频成功后自动保存至 KUNPO CDN；Videos 的 `url` 和原生 `task.content.url` 优先返回归档地址。归档失败时可能返回临时地址（约 12 小时有效），调用方应及时下载。内联图片会转存并去重；外部图片与音频仍按原地址提交。
 
-网关先下载、测量并保存参考视频的固定副本，再提交腾讯。测长发生在预算校验之前，额度不足时也可能已保存输入副本，但不会因此创建上游生成任务。客户端填写的计费秒数不能替代网关测量。
+网关先下载、测量并保存参考视频的固定副本，再开始生成。测长发生在预算校验之前，额度不足时也可能已保存输入副本，但不会因此创建生成任务。客户端填写的计费秒数不能替代网关测量。
 
 标准价格为 USD，不含用户分组倍率：
 
@@ -173,8 +173,8 @@ curl --fail-with-body https://llm.ziy.cc/v1/responses \
 
 `费用 = (输入视频秒数 + 输出视频秒数) × 对应秒价 + max(图片数 − 5, 0) × 0.04`，再乘实际分组倍率。例：768P、4 秒输出、无视频参考和额外图片，标准费用为 0.32 USD；同条件 2K 为 0.52 USD。
 
-预扣使用测得输入总时长向上取整到秒、请求输出时长及实际额外图片数。成功后按腾讯有效的输入／输出秒数结算；缺失或全零用量保留可信测量与请求时长，不按零元处理。任务失败按网关失败结算退回预扣。TokenHub 的折算 token 不参与本模型秒价公式。实际单价与分组倍率以[模型广场](https://llm.ziy.cc/pricing)为准，管理员可调整价格。
+预扣使用测得输入总时长向上取整到秒、请求输出时长及实际额外图片数。成功后按实际输入／输出秒数结算；缺失或全零用量保留可信测量与请求时长，不按零元处理。任务失败按网关失败结算退回预扣。实际单价与分组倍率以[模型广场](https://llm.ziy.cc/pricing)为准。
 
-参数错误通常在提交阶段返回 HTTP 400；权限或余额不足需检查密钥、模型权限与账户额度。查询偶发网络错误时保留 ID 重试查询。参考视频下载失败需检查公网可达性、格式与时长；供应商拒绝或生成失败时查看任务错误信息。
+参数错误通常在提交阶段返回 HTTP 400；权限或余额不足需检查密钥、模型权限与账户额度。查询偶发网络错误时保留 ID 重试查询。参考视频下载失败需检查公网可达性、格式与时长；任务被拒绝或生成失败时查看任务错误信息。
 
-官方能力说明：[腾讯 TokenHub MiniMax](https://cloud.tencent.com/document/product/1823/135737)。同站的 [SE 2.0](/api-reference/video-se) 和 [VS 2.5](/api-reference/video-vs25) 使用各自模型名与参数。
+相关模型： [SE 2.0](/api-reference/video-se) 和 [VS 2.5](/api-reference/video-vs25) 使用各自模型名与参数。

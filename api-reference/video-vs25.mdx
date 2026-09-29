@@ -1,9 +1,9 @@
 ---
 title: "视频生成（VS 2.5）"
-description: "腾讯云点播 VS 2.5：Videos、Responses 与插件接口，参考素材、任务轮询、CDN 存储及按秒计费。"
+description: "VS 2.5：Videos、Responses 与兼容接口，参考素材、任务轮询、CDN 存储及按秒计费。"
 ---
 
-VS 2.5（即梦 2.5）通过腾讯云点播接入 KUNPO，支持文本生成视频、图片参考、首尾帧、视频与音频参考。
+VS 2.5（即梦 2.5）支持文本生成视频、图片参考、首尾帧、视频与音频参考。
 
 AI 可直接读取[本页 Markdown](https://docs.ziy.cc/api-reference/video-vs25.md)，或从 [llms.txt](https://docs.ziy.cc/llms.txt) 查找其他接口。
 
@@ -16,7 +16,7 @@ AI 可直接读取[本页 Markdown](https://docs.ziy.cc/api-reference/video-vs25
 | 默认输出 | `720P`、`5` 秒、无音频；无首帧时比例为 `16:9` |
 | 输出范围 | `480P`、`720P`、`1080P`、`2K`、`4K`；时长 `4` 至 `30` 秒 |
 
-客户端只使用 KUNPO API Key。腾讯云签名、密钥和子应用由服务端管理，请勿在请求中填写腾讯云 `SecretId`、`SecretKey` 或 `SubAppId`。
+使用 KUNPO API Key 进行鉴权。
 
 ## 选择接口 {#protocols}
 
@@ -26,11 +26,11 @@ AI 可直接读取[本页 Markdown](https://docs.ziy.cc/api-reference/video-vs25
 |------|------|------|-------------------|
 | Videos | `POST /v1/videos` | `GET /v1/videos/:task_id` | `id`、`status`、`url` |
 | Responses | `POST /v1/responses` | `GET /v1/responses/:response_id` | `id`、`status`、`output[].content[]` |
-| 云点播插件 | `POST /tencent-vod/v1/videos` | `GET /tencent-vod/v1/videos/:task_id` | `Response.TaskId`、`Response.Status`、`Response.Url` |
+| 兼容任务接口 | `POST /tencent-vod/v1/videos` | `GET /tencent-vod/v1/videos/:task_id` | `Response.TaskId`、`Response.Status`、`Response.Url` |
 
-Videos 还提供 `GET` / `HEAD /v1/videos/:task_id/content`，使用同一 API Key 获取视频内容。路径里的 `:task_id`、`:response_id` 必须替换成对应提交响应中的 ID，不能使用腾讯云内部任务 ID。
+Videos 还提供 `GET` / `HEAD /v1/videos/:task_id/content`，使用同一 API Key 获取视频内容。路径里的 `:task_id`、`:response_id` 必须替换成对应提交响应中的 ID。
 
-请求使用 `Content-Type: application/json`。本页只描述 KUNPO 接口；腾讯云原生 `CreateAigcVideoTask` 请求不能原样发到这些路径。
+请求使用 `Content-Type: application/json`。字段格式以本页对应协议的参数表为准。
 
 ## 最小请求与结果获取 {#quick-start}
 
@@ -143,7 +143,7 @@ else:
 
 ## 请求参数 {#parameters}
 
-Videos 和插件接口使用 `prompt`；Responses 使用 `input`。除 `model` 外，需要非空文本或至少一个参考素材。建议显式传入模型名、时长、分辨率和音频开关。
+Videos 和兼容任务接口使用 `prompt`；Responses 使用 `input`。除 `model` 外，需要非空文本或至少一个参考素材。建议显式传入模型名、时长、分辨率和音频开关。
 
 | 字段 | JSON 类型 | 默认值 | 规则 |
 |------|-----------|--------|------|
@@ -171,7 +171,7 @@ Videos 和插件接口使用 `prompt`；Responses 使用 `input`。除 `model` �
 
 ### 云点播字段兼容
 
-Videos 和插件接口也可使用 `Prompt`、`OutputConfig` 形式；不要与简写重复设置。公共示例统一使用上表字段。
+Videos 和兼容任务接口也可使用 `Prompt`、`OutputConfig` 形式；不要与简写重复设置。公共示例统一使用上表字段。
 
 | 字段 | 类型与枚举 | 默认值或映射 |
 |------|------------|--------------|
@@ -180,8 +180,8 @@ Videos 和插件接口也可使用 `Prompt`、`OutputConfig` 形式；不要与�
 | `OutputConfig.AspectRatio` | string，同 `aspect_ratio` | 首帧 `adaptive`，其他 `16:9` |
 | `OutputConfig.AudioGeneration` | `Enabled` / `Disabled` | `Disabled` |
 | `OutputConfig.LogoAdd` | boolean 或 `Enabled` / `Disabled` | `false`，不开启水印 |
-| `OutputConfig.StorageMode` | `Temporary` / `Permanent` | `Temporary`；指腾讯侧存储，不控制 KUNPO CDN |
-| `EnhancePrompt` | boolean 或 `Enabled` / `Disabled` | 不传，由上游决定 |
+| `OutputConfig.StorageMode` | `Temporary` / `Permanent` | `Temporary`；不控制 KUNPO CDN 保存行为 |
+| `EnhancePrompt` | boolean 或 `Enabled` / `Disabled` | 可省略，建议按需显式设置 |
 | `ExtInfo` | object 或 JSON string | 高级扩展；`AdditionalParameters` 可为 object 或 JSON string |
 
 优先使用 `return_last_frame`、`bitrate_mode`、`omni_reference_task_type` 简写，无需手工双重转义 `ExtInfo`。不可通过 `ExtInfo.AdditionalParameters` 设置模型、时长、分辨率、声音、素材或子应用等核心字段。
@@ -255,15 +255,13 @@ print(response.json()["id"])  # 使用 Videos 查询接口继续轮询
 
 ### 真人素材与 asset 地址 {#real-person}
 
-腾讯云要求现实真人素材先完成活体认证及素材注册。流程为 `CreateAigcLivenessValidate` → `DescribeAigcLivenessValidateResult` → `CreateAigcMaterial` → `DescribeTaskDetail`，取得可用 `AssetId` 后，图片以 `asset://asset-...` 作为 `FileInfos[].Url`，`Type` 仍为 `Url`。虚拟真人形象也可能需要按上游规则创建非真人素材。
+含现实真人的图片需要使用已获授权并登记的素材。请联系管理员取得可用的 `asset://asset-...` 图片地址，作为 `FileInfos[].Url` 传入，`Type` 仍为 `Url`。普通图片 URL 或上传到 CDN 不能替代素材登记。
 
-KUNPO 当前没有对外提供这些认证或素材注册接口，也不会把普通图片 URL 自动注册为真人素材。需要在当前接入渠道所用腾讯子应用中完成注册；其他账号或子应用的素材不能假定可用。素材注册是独立流程，上传到 CDN 不等于通过真人认证。
+当前不开放素材登记接口；`asset://` 视频不能用于参考视频，已登记的 `asset://` 图片可按上述方式使用。
 
-当前 `asset://` **视频**不能用于参考视频：平台无法下载并可信测量其时长，会在提交前拒绝。已注册的 `asset://` **图片**可继续使用。不能以改传普通 URL 的方式绕过上游真人素材要求。
+## 兼容任务接口与 Responses {#other-protocols}
 
-## 插件接口与 Responses {#other-protocols}
-
-### 云点播插件接口
+### 兼容任务接口 {#兼容任务接口接口}
 
 将最小 Videos 示例的地址改为 `/tencent-vod/v1/videos`，其余 JSON 请求保持不变。提交返回：
 
@@ -280,14 +278,14 @@ KUNPO 当前没有对外提供这些认证或素材注册接口，也不会把�
 
 | 字段 | 含义 |
 |------|------|
-| `Response.TaskId` | KUNPO 公开任务 ID |
+| `Response.TaskId` | KUNPO 任务 ID |
 | `Response.Status` | `NOT_START`、`SUBMITTED`、`QUEUED`、`IN_PROGRESS`、`SUCCESS`、`FAILURE` 或 `UNKNOWN` |
 | `Response.Progress` | 字符串进度，例如 `"100%"` |
 | `Response.Url` | 成功后的主视频 URL，优先 KUNPO CDN 地址 |
 | `Response.Message` | 失败原因，无错误时为空字符串 |
-| `Response.Result` | 上游任务详情；尚无详情时可为 `null` |
+| `Response.Result` | 任务扩展详情；尚无详情时可为 `null` |
 
-`SUCCESS` 和 `FAILURE` 是终态。`Response.Result.Status` 属于上游状态，不能替代 `Response.Status`。输出尾帧可在 `Response.Result.Output.FileInfos` 中查找 `UsageType == "last_frame_url"`，读取其 `FileUrl`。其他上游诊断字段可能为空或变化，不要用其决定 KUNPO 任务状态或自行计算账单。
+`SUCCESS` 和 `FAILURE` 是终态。请使用 `Response.Status` 判断任务状态，不要使用 `Response.Result.Status`。输出尾帧可在 `Response.Result.Output.FileInfos` 中查找 `UsageType == "last_frame_url"`，读取其 `FileUrl`。其他扩展字段可能为空或变化；状态以 `Response.Status` 为准，费用以 KUNPO 用量记录为准。
 
 ### Responses 后台模式
 
@@ -320,13 +318,13 @@ Responses 也支持 `stream: true` 的 SSE 和省略 `background`、`stream` 的
 
 | 素材 | KUNPO 行为 | 客户端应做什么 |
 |------|------------|----------------|
-| 图片 data URL | 解码后上传 KUNPO CDN，再传给腾讯云 | 发送完整 data URL，不发送裸 Base64 |
+| 图片 data URL | 解码后上传 KUNPO CDN，用于生成 | 发送完整 data URL，不发送裸 Base64 |
 | 公网图片 / 音频 URL | 使用提供的地址，不自动承诺镜像所有远程素材 | 保证任务期间可从公网直接访问 |
 | 公网参考视频 URL | 测长预处理时保存固定副本到 KUNPO CDN，再提交该副本 | 提供合规格式和大小的视频 URL |
-| 生成主视频 | 成功转存后，Videos `url` / 插件 `Response.Url` 返回 KUNPO CDN 地址 | 使用最终响应地址；需要本地副本时下载保存 |
-| 输出尾帧图片 | 目前保留腾讯临时地址，不随主视频归档 | 需要留存时及时下载或自行保存 |
+| 生成主视频 | 成功转存后，Videos `url` / 兼容接口 `Response.Url` 返回 KUNPO CDN 地址 | 使用最终响应地址；需要本地副本时下载保存 |
+| 输出尾帧图片 | 目前保留临时地址，不随主视频归档 | 需要留存时及时下载或自行保存 |
 
-如果主视频转存失败，结果可能回退到腾讯临时地址。腾讯 `Temporary` 产物通常有效 7 天，具体以输出中的 `ExpireTime` 为准；不要将临时地址当成永久存储。`OutputConfig.StorageMode: "Permanent"` 只影响腾讯侧存储，不能替代 KUNPO CDN 转存或尾帧归档。
+如果主视频转存失败，结果可能回退到临时地址。`Temporary` 产物通常有效 7 天，具体以输出中的 `ExpireTime` 为准；不要将临时地址当成永久存储。`OutputConfig.StorageMode: "Permanent"` 不保证尾帧永久保存；需要留存时及时下载。
 
 ## 按秒计费 {#pricing}
 
@@ -351,9 +349,9 @@ Responses 也支持 `stream: true` 的 SSE 和省略 `background`、`stream` 的
 
 ### 费用预留与结算 {#reservation}
 
-平台先下载、测量并转存参考视频，再根据计算出的预算校验余额、令牌及套餐可用额度并预留费用，最后创建上游生成任务。因此额度不足时，可能已经产生输入视频的 CDN 副本，但不会创建本次上游生成任务。任务失败后退还预留；成功后根据有效用量结算差额。客户端不要提交 `input_video_seconds` 等计费字段，无法通过自报时长降低费用。
+平台先下载、测量并转存参考视频，再根据计算出的预算校验余额、令牌及套餐可用额度并预留费用，最后创建生成任务。因此额度不足时，可能已经产生输入视频的 CDN 副本，但不会创建本次生成任务。任务失败后退还预留；成功后根据有效用量结算差额。客户端不要提交 `input_video_seconds` 等计费字段，无法通过自报时长降低费用。
 
-参考视频由平台下载、校验并测量时长，按每段 `ceil(测量时长上界) + 1` 秒预留输入费用，完成后用腾讯返回的实际总输入视频时长结算差额，输入视频结算不会超过已预留的输入费用。测量上界综合容器和视频时间表，可能略长于播放器展示的时长；预留额不是最终账单。输出预留使用请求时长。上游没有返回有效用量时保留对应预留值；上游 `Usage` 全零占位不表示任务免费。
+参考视频由平台下载、校验并测量时长，按每段 `ceil(测量时长上界) + 1` 秒预留输入费用，完成后用实际总输入视频时长结算差额，输入视频结算不会超过已预留的输入费用。测量上界综合容器和视频时间表，可能略长于播放器展示的时长；预留额不是最终账单。输出预留使用请求时长。未返回有效用量时保留对应预留值；`Usage` 全零占位不表示任务免费。
 
 预处理只接收带有效媒体时间表的标准、非分片 MP4 / MOV 文件；不接收 HLS 播放列表、分片 MP4 或无法可信测长的媒体。单次请求所有参考视频合计下载不超过 64 MiB，预处理限时 30 秒，总输入预留不超过 3600 秒。这些是网关预处理上限，不代表模型允许任意同等长度的输入。无法读取、格式不符或超限会在创建付费任务前报错；应压缩或转换素材后再提交。
 
@@ -374,9 +372,7 @@ Responses 也支持 `stream: true` 的 SSE 和省略 `background`、`stream` 的
 
 ### 并发与请求频率 {#concurrency}
 
-腾讯云 [CreateAigcVideoTask 官方接口文档](https://cloud.tencent.com/document/api/266/126239)给出的通用默认值是：同时处理 **1 个生成任务**，创建请求频率上限 **20 次/秒**。请求频率（QPS）不等于同时生成的视频数；这些通用默认值也不代表当前接入应用的 VS 2.5 已核准配额，实际并发以腾讯侧开通情况为准。
-
-客户端应维护待提交队列，限制正在生成的任务数，并对明确的限流响应退避；提交结果不确定时仍按上表保留和核对任务，不能盲目重发。创建多个 KUNPO API Key 不代表腾讯应用并发额度增加，也不要假定网关提供跨用户的腾讯全局排队保障。
+客户端应维护待提交队列，限制正在生成的任务数，并对明确的限流响应退避。请求频率与同时生成的任务数是不同限制；实际可用额度以账户与错误响应为准。创建多个 API Key 不会自动增加并发额度。提交结果不确定时，先核对原任务，避免重复生成。
 
 ## 相关文档
 
@@ -384,7 +380,7 @@ Responses 也支持 `stream: true` 的 SSE 和省略 `background`、`stream` 的
   <Card title="API 总览" icon="list" href="/api-reference/overview">
     查看基础鉴权和其他能力接口。
   </Card>
-  <Card title="腾讯 SE 视频" icon="video" href="/api-reference/video-se">
+  <Card title="SE 视频" icon="video" href="/api-reference/video-se">
     使用 SE 系列时，参照该系列自己的模型名和旧视频接口。
   </Card>
 </CardGroup>

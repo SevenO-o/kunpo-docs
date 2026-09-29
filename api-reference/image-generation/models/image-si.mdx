@@ -3,7 +3,7 @@ title: "Seedream 5.0 Pro"
 description: "使用 Seedream 5.0 Pro 生成图片：同步调用、多参考图、1K/2K/4K 分辨率与画面比例。"
 ---
 
-通过腾讯云点播 AIGC 接入的豆包 Seedream 5.0 Pro，上游模型标识为 SI 5.0-pro，支持文生图和参考图生成。请求中的 API 模型名为 **`Image-SI`**。
+Seedream 5.0 Pro 支持文生图和参考图生成，适合使用简洁参数进行图片创作。请求中的 API 模型名为 **`Image-SI`**。
 
 **调用方式**：使用[同步调用](/api-reference/image-generation/synchronous) `POST /v1/images/generations`，完成后读取 `data[0].url`。
 
@@ -132,9 +132,4 @@ curl -X POST https://llm.ziy.cc/v1/images/generations \
 
 **参考图没有生效怎么办？** 检查 `images` 是否为字符串数组、图片 URL 是否能公开访问或 data URL 编码是否完整，并明确描述要保留的主体特征和要修改的部分。
 
-**为什么不能直接使用 TokenHub 的参数？** 本页通过 KUNPO 的云点播适配调用模型，参数转换由当前接入决定。腾讯云 [TokenHub 调用指南](https://cloud.tencent.com/document/product/1823/136609)中的分辨率、透明背景和图层拆分字段不能直接用于本接口。
-
-## 相关文档
-
-- [模型选择与计费](/api-reference/image-generation/overview)
-- [同步请求参数与响应](/api-reference/image-generation/synchronous)
+**如何使用更多图片参数？** 图层拆分等用法见 [Seedream 5.0 Pro 完整参数](/api-reference/image-generation/models/seedream-50-pro)。两者的模型 ID、参数和价格不同，请按对应页面调用。

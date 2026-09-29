@@ -1,9 +1,9 @@
 ---
-title: "视频生成（腾讯 SE）"
-description: "基于腾讯混元生视频 SE 的视频生成 API，支持文生视频、图生视频、首尾帧与参考视频。"
+title: "视频生成（SE）"
+description: "SE 系列 的视频生成 API，支持文生视频、图生视频、首尾帧与参考视频。"
 ---
 
-腾讯 SE 视频生成采用异步任务模式：先提交任务获取 `task_id`，再轮询查询结果。
+SE 视频生成采用异步任务模式：先提交任务获取 `task_id`，再轮询查询结果。
 
 对外接口与 [视频生成（Seedance）](/api-reference/doubao-video) 完全相同，把 `model` 换成 SE 模型名即可。两者的差异只有两处：可选参数（见 [请求参数说明](#请求参数说明)）和结果地址的有效期（见 [查询任务结果](#查询任务结果)）。
 
@@ -160,7 +160,7 @@ GET  https://llm.ziy.cc/v1/video/generations/{task_id}  # 查询结果
 </CodeGroup>
 
 <Note>
-  含真实人像的参考图，上游要求先创建角色素材再以 `asset://...` 传入；普通风景或物体的公网图片可以直接传 URL。
+  含真实人像的参考图须使用已获授权并登记的角色素材，以 `asset://...` 传入；请联系管理员获取可用素材。普通风景或物体的公网图片可以直接传 URL。
 </Note>
 
 ---
@@ -209,7 +209,7 @@ curl https://llm.ziy.cc/v1/video/generations/{task_id} \
 | 状态 | 说明 |
 |------|------|
 | `NOT_START` | 已受理入库，尚未开始生成 |
-| `QUEUED` | 上游排队中 |
+| `QUEUED` | 任务排队中 |
 | `IN_PROGRESS` | 生成中，可读 `data.progress` |
 | `SUCCESS` | 生成完成，可获取 `data.result_url` |
 | `FAILURE` | 生成失败，查看 `data.fail_reason` |
@@ -259,7 +259,7 @@ def poll_video(task_id, interval=5, timeout=600):
 </ParamField>
 
 <ParamField path="prompt" type="string" required>
-  视频描述，会作为 `text` 内容发给上游。
+  视频描述，对应 `text` 提示词。
 </ParamField>
 
 <ParamField path="images" type="string[]">
@@ -310,7 +310,7 @@ def poll_video(task_id, interval=5, timeout=600):
 
 ## 计费
 
-按视频时长结算，不是按条固定价。提交时按预估时长预扣，任务完成后依上游实际用量多退少补；
+按视频时长结算，不是按条固定价。提交时按预估时长预扣，任务完成后依实际用量多退少补；
 含参考视频更便宜，`1080p` 更贵。单价见 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a>。
 
 ---
@@ -321,9 +321,9 @@ def poll_video(task_id, interval=5, timeout=600):
 |------|------|------|
 | 提示只支持 `POST /v1/video/generations` | 请求打到了对话接口 | 改用本页两个地址 |
 | `FAILURE` 且原因提到真人 / real person | 参考图含真实人像且未走角色素材 | 换非真人图，或先创建角色素材再传 `asset://` |
-| `1080p` 被上游拒绝 | `Video-SE-2.0-fast` 不支持 `1080p` | 改 `720p`，或换 `Video-SE-2.0` |
+| `1080p` 被接口拒绝 | `Video-SE-2.0-fast` 不支持 `1080p` | 改 `720p`，或换 `Video-SE-2.0` |
 | 音频没生成 | 写成了 `generate_audio` | 改成 `GenerateAudio` |
-| 长时间停在 `QUEUED` / `IN_PROGRESS` | 上游排队 | 继续轮询，`1080p` 更慢 |
+| 长时间停在 `QUEUED` / `IN_PROGRESS` | 任务排队 | 继续轮询，`1080p` 更慢 |
 
 ---
 

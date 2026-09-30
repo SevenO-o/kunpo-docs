@@ -1,11 +1,11 @@
 ---
-title: "3D 模型生成（Tripo）"
-description: "基于 Tripo API v3 的三维模型生成，支持文生 3D、图生 3D、多视角生 3D、自动骨骼绑定和动画重定向，输出 GLB / FBX 模型。"
+title: "3D 生成与模型处理（Tripo）"
+description: "Tripo v3 完整接入：3D 与图像生成、贴图、网格分割与补全、重拓扑、格式转换、动画、文件上传及批量任务查询。"
 ---
 
-3D 生成是异步任务：先提交任务拿到 `task_id`，轮询到完成后再取产物。生成模型后可继续做绑定检查、自动骨骼绑定和动画重定向。生成任务输出 GLB 和预览图，绑定及动画输出新的 GLB / FBX，检查任务只返回检查结果。
+生成与模型处理均为异步任务：先提交拿到 `task_id`，轮询到完成后读取产物。模型可继续贴图、分割、补全、重拓扑、格式转换、骨骼绑定和动画重定向；图像与四视图任务输出图片，绑定检查只返回检查结果。文件上传和预签名上传直接返回文件引用。
 
-接口路径与 Tripo 官方 v3 保持一致，只需把域名换成 `llm.ziy.cc`、密钥换成 KUNPO 的 `sk-` 密钥。
+接口路径与 Tripo 官方 v3 保持一致，使用域名 `llm.ziy.cc` 和 KUNPO 的 `sk-` 密钥；任务与文件引用必须使用 KUNPO 返回的值。公开范围与差异见[开放范围](#开放范围)。
 
 ## 接口地址
 
@@ -17,6 +17,20 @@ POST https://llm.ziy.cc/tripo/v3/generation/image-to-multiview   # 单图出四�
 POST https://llm.ziy.cc/tripo/v3/animations/rig-check           # 绑定检查
 POST https://llm.ziy.cc/tripo/v3/animations/rig                 # 自动骨骼绑定
 POST https://llm.ziy.cc/tripo/v3/animations/retarget            # 动画重定向
+POST https://llm.ziy.cc/tripo/v3/models/texture                # 贴图/重绘材质
+POST https://llm.ziy.cc/tripo/v3/mesh/segment                  # 网格分割
+POST https://llm.ziy.cc/tripo/v3/mesh/smartsegment             # 智能分割
+POST https://llm.ziy.cc/tripo/v3/mesh/complete                 # 网格补全
+POST https://llm.ziy.cc/tripo/v3/mesh/decimate                 # 重拓扑/减面
+POST https://llm.ziy.cc/tripo/v3/models/convert               # 格式转换
+POST https://llm.ziy.cc/tripo/v3/models/import                # 导入模型
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-splat     # Gaussian Splat
+POST https://llm.ziy.cc/tripo/v3/generation/text-to-image     # 文生图
+POST https://llm.ziy.cc/tripo/v3/generation/image-to-image    # 图生图
+POST https://llm.ziy.cc/tripo/v3/generation/edit-multiview    # 编辑多视图
+POST https://llm.ziy.cc/tripo/v3/files                       # 文件上传
+POST https://llm.ziy.cc/tripo/v3/files/presign                # 预签名上传
+POST https://llm.ziy.cc/tripo/v3/tasks/list                   # 批量查询
 GET  https://llm.ziy.cc/tripo/v3/tasks/{task_id}                 # 查询任务
 GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 ```
@@ -68,8 +82,7 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 | 一张图，但想先看四视角 | `image-to-multiview` → `multiview-to-model` | 先由模型补出四视角，再拿 `task_id` 复用出模 |
 
 <Warning>
-  **`image-to-model` 不支持多图参考，五个模型一个都不例外。** 无论把多张图放进 `input`、`images`、`files`
-  还是 `inputs` 数组，接口都会返回 400 `file is required for image_to_model`。这是接口本身的限制，与模型无关，
+  **`image-to-model` 不支持多图参考，五个模型一个都不例外。** 请使用单张图片的 `input`；不要在这个端点传多图数组，数组不会作为多图参考处理，且可能只采用首张图片或报错。这项限制与模型无关，
   **`P2-20260801` 同样不支持**。要用多张图请走 `multiview-to-model`，见
   [哪些模型支持多图参考](#哪些模型支持多图参考)。
 </Warning>
@@ -78,13 +91,15 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 
 ## 可用模型
 
+下表用于三个 3D 生成端点；`model` 省略时默认 `v3.1-20260211`。贴图、网格、动画和图像接口使用各自章节列出的模型与默认值。
+
 | 模型名 | 说明 |
 |--------|------|
 | `v3.1-20260211` | 当前主力版本，几何与贴图质量最好 |
 | `v3.0-20250812` | 上一版，参数与 3.1 相同，几何面数上限更低 |
 | `v2.5-20250123` | 旧版本，仅在需要复现历史结果时使用 |
 | `P1-20260311` | 低模专用，面数可精确控制，适合游戏资产；不支持 `quad` |
-| `P2-20260801` | P1 的升级版，唯一支持四边面输出（`quad`）的版本，单价明显更高 |
+| `P2-20260801` | P1 的升级版，支持四边面输出（`quad`），单价明显更高 |
 
 ### 哪些模型支持多图参考
 
@@ -102,12 +117,12 @@ GET  https://llm.ziy.cc/v1/tasks/{task_id}/artifacts             # 列出产物
 包括 `P2-20260801`——它并不因为单价更高就多一项多图能力。
 
 <Note>
-  `image-to-multiview` 也要求填写上表中的合法模型 ID（网关会校验），但**该接口不使用请求指定的生成版本**，
+  `image-to-multiview` 若填写 `model`，也须使用上表中的合法模型 ID（网关会校验），但**该接口不使用请求指定的生成版本**，
   实际总是用它自己的默认版本（任务回显 `model_version: "default"`）。所以这个接口填哪个模型都一样。
 </Note>
 
 <Warning>
-  `model` 必须写上表中带日期后缀的完整 ID。像 `tripo-v3.1`、`v3.1` 这样的简写会直接返回 400。
+  上述 3D 生成端点若填写 `model`，必须写上表中带日期后缀的完整 ID。像 `tripo-v3.1`、`v3.1` 这样的简写会直接返回 400。
   完整模型 ID 与单价可从 <a href="https://llm.ziy.cc/pricing" target="_blank">模型广场</a> 复制。
 </Warning>
 
@@ -327,7 +342,7 @@ POST 没有幂等保证：网络超时后不要盲目重复提交；已拿到任
 
 `model` 在 `rig` 中选择绑定版本；在 `rig-check` / `retarget` 中用于权限检查与计费。
 引用 KUNPO 任务时，须属于同一用户、已完成且类型符合当前接口要求。
-建议使用 KUNPO 任务 ID 或公网模型直链。当前没有公开文件上传端点，无法通过本接口创建新的 `file_token`。
+可通过[文件上传与导入](#文件上传与导入)获取 `file_token`，或直接使用 KUNPO 模型任务 ID / 公网模型直链。
 `rig-check` 直接文件输入为 GLB；`rig` 接受 GLB / GLTF / FBX / OBJ / STL，文件上限 150 MB。
 
 ### 绑定检查
@@ -532,7 +547,10 @@ curl -L -o model.glb \
 |----------|--------|------|
 | `model` | 三个生成接口、`rig`、`retarget` | 生成接口输出 GLB；绑定及动画按 `out_format` 输出 GLB / FBX，体积可达数十 MB |
 | `preview` | 三个出模接口 | 512×512 的渲染预览图 |
-| `front` / `left` / `back` / `right` | `image-to-multiview` | 四张 1024×1024 JPEG 视角图 |
+| `front` / `left` / `back` / `right` | `image-to-multiview`、`edit-multiview` | 四张视角图 |
+| `model` | 贴图、导入、网格处理、转换、`image-to-splat` | 处理后的模型；格式随操作变化，Splat 输出 `.splat` |
+| `seg_model` / `mask` | `smartsegment` | 分割模型 / 遮罩图，按实际结果提供 |
+| `image` | `text-to-image`、`image-to-image` | 生成图像 |
 
 <Note>
   `image-to-multiview` 的任务在 `data.output` 里把视角地址嵌在 `generate_multiview_image` 下
@@ -586,8 +604,8 @@ def generate_3d(prompt, interval=8, timeout=900):
 
 ## 请求参数说明
 
-<ParamField path="model" type="string" required>
-  见 [可用模型](#可用模型)。必须写完整 ID。
+<ParamField path="model" type="string" default="v3.1-20260211">
+  本节适用于 3D 生成，见 [可用模型](#可用模型)。填写时使用完整 ID。
 </ParamField>
 
 <ParamField path="prompt" type="string">
@@ -622,7 +640,15 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <ParamField path="texture_quality" type="string" default="standard">
-  `standard` / `detailed` / `extreme`。质量越高越贵。传其他值会被网关拒绝。
+  `fast` / `standard` / `detailed` / `extreme`。`fast` 要求 `texture_version: "v3.5-20260815"`。质量越高越贵。传其他值会被网关拒绝。
+</ParamField>
+
+<ParamField path="texture_version" type="string">
+  贴图版本：`v3.0-20250812` / `v3.5-20260815` / `v2.5-20250123`。与独立贴图接口的 `model` 含义相同。
+</ParamField>
+
+<ParamField path="delight" type="boolean" default="true">
+  v3.5 贴图去光照选项。
 </ParamField>
 
 <ParamField path="geometry_quality" type="string" default="standard">
@@ -634,7 +660,7 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <ParamField path="quad" type="boolean" default="false">
-  输出四边面。**仅 `P2-20260801` 支持**，P1 传了会 400。
+  输出四边面。H 系列和 `P2-20260801` 支持；P1 不支持。
 </ParamField>
 
 <ParamField path="smart_low_poly" type="boolean" default="false">
@@ -642,7 +668,7 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <ParamField path="generate_parts" type="boolean" default="false">
-  拆分部件。v3.1 图生 3D 下与 `texture: true` 互斥，同时传会 400。
+  拆分部件。开启时必须显式设置 `texture: false`、`pbr: false`，且不能同时开启 `quad` 或 `smart_low_poly`。
 </ParamField>
 
 <ParamField path="auto_size" type="boolean" default="false">
@@ -657,12 +683,12 @@ def generate_3d(prompt, interval=8, timeout=900):
   导出朝向，取 `+x` / `-x` / `+y` / `-y`。其他值会被网关拒绝。
 </ParamField>
 
-<ParamField path="orientation" type="string">
-  模型朝向策略。
+<ParamField path="orientation" type="string" default="default">
+  `default` 自动朝向；`align_image` 对齐输入图片视角。仅在 `texture: true` 时生效。
 </ParamField>
 
-<ParamField path="texture_alignment" type="string">
-  贴图对齐策略。
+<ParamField path="texture_alignment" type="string" default="original_image">
+  `original_image` 优先匹配输入图片颜色；`geometry` 优先匹配几何形状。其他值会被网关拒绝。
 </ParamField>
 
 <ParamField path="compress" type="string">
@@ -686,7 +712,7 @@ def generate_3d(prompt, interval=8, timeout=900):
 </ParamField>
 
 <Note>
-  请按参数表填写：非法的 `orientation` / `texture_alignment` / `compress` 取值不会报错，
+  请按参数表填写：3D 生成中非法的 `orientation` / `compress` 取值可能不会报错，
   而是被静默忽略并按默认值生成（**仍然计费**）。请自行核对所有参数的拼写和枚举值。
 </Note>
 
@@ -712,11 +738,11 @@ def generate_3d(prompt, interval=8, timeout=900):
 | 现象 | 原因 | 处理 |
 |------|------|------|
 | `unsupported model "..."` | 模型名写了简写 | 用带日期后缀的完整 ID |
-| 提交返回 HTML 而不是 JSON | 路径写错 | 核对本页的四个地址 |
+| 提交返回 HTML 而不是 JSON | 路径写错 | 核对本页接口地址 |
 | 任务 `failed`，`error_code: 2020` | 图片地址无法访问 | 换成 KUNPO 图床或你自己可控的对象存储地址 |
 | 提示 `data:` 不支持 | 传的内容没被识别成图片，未被正确识别 | 确认是 PNG / JPEG / WebP / GIF 且 Base64 完整 |
-| `quad` 报 400 | P1 不支持四边面 | 换 `P2-20260801` |
-| `generate_parts` + 贴图报 400 | v3.1 图生 3D 下两者互斥 | 二选一 |
+| `quad` 报 400 | P1 不支持四边面 | 改用 H 系列或 `P2-20260801` |
+| `generate_parts` + 贴图报 400 | 拆分部件与贴图互斥 | 开启拆分时显式设置 `texture: false`、`pbr: false`，并关闭 `quad` / `smart_low_poly` |
 | 产物链接过期 | 用了 `output` 里的临时签名地址 | 改用 `/v1/tasks/{task_id}/artifacts` |
 | `file is required for image_to_model` | 往 `image-to-model` 传了多张图 | 该接口只收一张，多图改走 `multiview-to-model` |
 | `unsupported view "top"` | 视角键写错 | 只能用 `front` / `left` / `back` / `right` |
@@ -727,10 +753,263 @@ def generate_3d(prompt, interval=8, timeout=900):
 
 <Note>
   当前没有取消任务的接口，提交后只能等它跑完或失败。
-  文件上传接口（`file_token`）未开放，但不影响你用本地图片——把 Base64 放进 `input` 即可，网关会代为转存。
+  文件上传和预签名上传均已开放，见下文；本地图片也可以 Base64 放进 `input`。
 </Note>
 
 ---
+
+## 文件上传与导入
+
+所有 KUNPO 请求使用 `Authorization: Bearer $KUNPO_API_KEY`。除 `/files` 为 multipart 外，POST 正文均为 JSON，设置 `Content-Type: application/json`。任务创建成功返回 `{"code":0,"data":{"task_id":"task_..."}}`；文件接口直接返回文件引用。
+
+### 小文件上传
+
+`POST /tripo/v3/files`：只接受一个名为 `file` 的文件字段。JPEG/PNG 图片不超过 20 MiB；GLB/GLTF/FBX/OBJ/STL 模型不超过 64 MiB（含 multipart 封装的请求还受网关总大小限制，超过 60 MiB 建议预签名上传）。
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/tripo/v3/files \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -F 'file=@model.glb'
+```
+
+返回 `{"code":0,"data":{"file_token":"file_task_example"}}`。文件引用为不透明字符串，完整保存，不要拆解或换成内部任务编号。仅同一 KUNPO 用户可复用。
+
+### 预签名上传
+
+`POST /tripo/v3/files/presign` 接受必填 `format: string`，枚举 `jpeg`、`jpg`、`png`、`webp`、`bmp`、`tiff`、`glb`、`gltf`、`fbx`、`obj`、`stl`、`3mf`、`usdz`，不带点。
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/tripo/v3/files/presign \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' -d '{"format":"glb"}'
+```
+
+返回 `code: 0`，`data` 包含 `presigned_url: string`、`file_token: string`、`expires_in: integer`（秒，通常 1800）。再执行：
+
+```bash
+curl --fail-with-body -X PUT "$PRESIGNED_URL" \
+  -H 'Content-Type: application/octet-stream' -T model.glb
+```
+
+PUT 成功后才可使用 `file_token`；PUT **不附带 KUNPO 密钥**。上传链接属于敏感临时凭据，不公开分享。预签名支持的扩展名不代表所有处理接口均接受该格式；模型后处理通常限 GLB/GLTF/FBX/OBJ/STL、最大 150 MB。
+
+### 导入已有模型
+
+`POST /tripo/v3/models/import`，正文 `{"input":"file_task_example"}`。`input: string` 必填，可用上传文件引用或公开模型直链；不需要 `model`。异步完成后返回 `output.model_url` 等模型产物，可继续贴图、重拓扑、绑定和转换。
+
+## 模型贴图
+
+`POST /tripo/v3/models/texture` 为已有模型生成或重绘材质。`input` 接受本账号已成功的模型 `task_id`、上传文件引用或公开模型直链。
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/tripo/v3/models/texture \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"input":"task_model_example","model":"v3.5-20260815","texture_prompt":{"text":"蓝色陶瓷，带细小裂纹"},"texture_quality":"detailed","pbr":true}'
+```
+
+| 字段 | 类型 | 默认值与约束 |
+|---|---|---|
+| `input` | string，必填 | 模型引用；GLB/GLTF/FBX/OBJ/STL，最大 150 MB |
+| `model` | string | `v3.0-20250812`；可选 `v3.5-20260815`、`v2.5-20250123` |
+| `texture_prompt` | object | Tripo 生成的模型可省略；外部模型应提供；提供时必须且只能包含一种模式：`text: string`、`image` 或 `images` |
+| `texture_prompt.text` | string | 非空贴图描述 |
+| `texture_prompt.image` | string 或 object | 图片 URL/文件引用，或 `{"url":"..."}` / `{"file_token":"..."}`，后两者互斥 |
+| `texture_prompt.images` | array | 恰好四张，按 front、left、back、right 排列；每项格式同 `image` |
+| `texture_prompt.style_image` | string 或 object | 可选风格参考图，仅允许与 `text` 模式组合 |
+| `pbr` | boolean | `true`，生成 PBR 材质 |
+| `texture_quality` | string | `standard`；`fast` / `standard` / `detailed` / `extreme`；`fast` 要求 v3.5 |
+| `texture_alignment` | string | `original_image`（默认）或 `geometry` |
+| `texture_seed` | integer | 可选，0–2147483647 |
+| `bake` | boolean | `true`，烘焙贴图 |
+| `delight` | boolean | v3.5 的去光照选项，默认 `true` |
+| `part_names` | string[] | 可选，只对指定部件贴图；网关接受 1–128 个非空名称、每个最多 256 字符 |
+| `compress` | string | 可选 `geometry` |
+
+输出是新的模型任务，完成后从 `data.output.model_url` 或产物接口读取。原模型任务保留。
+
+## 网格处理与格式转换
+
+除补全要求分割任务外，`input: string` 必填，接受本账号已成功模型任务、文件引用或公开模型 URL。所有下列操作均为异步，轮询方式与 3D 生成一致。
+
+### 网格分割
+
+`POST /tripo/v3/mesh/segment`：`{"input":"task_model_example","model":"v2.0-20260430","segmentation_granularity":"balanced","split_by_connectivity":true}`。
+
+| 字段 | 类型 | 默认值与约束 |
+|---|---|---|
+| `model` | string | `v1.0-20250506`；可选 `v2.0-20260430`（beta） |
+| `segmentation_granularity` | string | v2 专用，默认 `balanced`；`simple` / `balanced` / `detailed` |
+| `split_by_connectivity` | boolean | v2 专用，默认 `true` |
+| `ref_image` | string | v2 专用的分割参考图；提供后前两个分割选项不生效 |
+
+分割后可使用返回的部件信息选择 `part_names`，继续补全、贴图或重拓扑。
+
+### 智能分割
+
+`POST /tripo/v3/mesh/smartsegment` 接受 `input: string`、必填 `seg_type: "image" | "model"`、可选 `granularity: "coarse" | "medium" | "fine"`（默认 `medium`）、可选 `hint: string`。`seg_type=model` 输入须为 GLB，另需 `transform: number[]`：恰好 16 个有限数值（绝对值不超过 10⁹）、列主序矩阵；图片模式输入图片引用。
+
+```json
+{"input":"file_task_example","seg_type":"model","granularity":"medium","transform":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}
+```
+
+成功结果可能含 `seg_model_url`、`mask_url`、`prompt`、`seg_task_id`、`model_task_id`。KUNPO 返回的后两个字段是可继续传给 `input` 的派生引用，请原样使用；不能单独通过任务查询获取派生引用，查询原始智能分割任务即可。
+
+### 网格补全
+
+`POST /tripo/v3/mesh/complete`：`{"input":"task_segment_example","completion_mode":"quick_cap","part_names":["handle"]}`。
+
+`model: string` 默认且仅支持 `v1.0-20250506`；`completion_mode: string` 为 `ai_completion`（默认）或 `quick_cap`；`part_names: string[]` 可选。`input` 必须为本账号已成功分割任务或智能分割返回的分割引用，不能直接放任意模型 URL。
+
+### 重拓扑与减面
+
+`POST /tripo/v3/mesh/decimate`：`{"input":"task_model_example","model":"v2.0","face_limit":5000,"quad":false,"bake":true}`。
+
+| 字段 | v2.0（默认） | v1.0 |
+|---|---|---|
+| `face_limit: integer` | 可选；三角面 500–20000，四边面 500–10000；省略自适应 | 必填，网关范围 1–2000000（三角面）或 1–150000（四边面） |
+| `quad: boolean` | 默认 false | 默认 false |
+| `bake: boolean` | 默认 true | 不接受 |
+| `part_names: string[]` | 可选部件范围 | 不接受 |
+| `format: string` | 不接受，输出 GLB | 可选格式字符串，具体支持由模型处理 |
+
+### 格式转换
+
+`POST /tripo/v3/models/convert`：`{"input":"task_model_example","format":"FBX","fbx_preset":"blender","with_animation":true}`。
+
+| 字段 | 类型 | 默认值与约束 |
+|---|---|---|
+| `format` | string，必填 | `GLTF` / `FBX` / `USDZ` / `OBJ` / `STL` / `3MF`，大写 |
+| `quad` | boolean | false；true 时输出强制为 FBX |
+| `force_symmetry` | boolean | 可选，对称处理 |
+| `face_limit` | integer | 可选，网关范围 1–2000000 |
+| `flatten_bottom` | boolean | false |
+| `flatten_bottom_threshold` | number | 0.01，范围 0–1 |
+| `texture_size` | integer | 4096，网关范围 128–8192 |
+| `texture_format` | string | `JPEG`；可选 `PNG` / `WEBP` / `BMP` / `DPX` / `HDR` / `OPEN_EXR` / `TARGA` / `TIFF` |
+| `bake` | boolean | true |
+| `pack_uv` | boolean | false |
+| `export_vertex_colors` | boolean | false，仅 OBJ/GLTF |
+| `pivot_to_center_bottom` | boolean | false |
+| `scale_factor` | number | 1，网关范围 0.000001–1000000 |
+| `with_animation` | boolean | true |
+| `animate_in_place` | boolean | false |
+| `part_names` | string[] | 可选，处理指定部件 |
+| `export_orientation` | string | `+x`；可选 `-x` / `+y` / `-y` |
+| `fbx_preset` | string | 可选 `blender` / `3dsmax` / `mixamo` / `bake_scale` |
+
+## Splat 与图像生成
+
+### 图片生成 Gaussian Splat
+
+`POST /tripo/v3/generation/image-to-splat`：`{"input":"file_task_example","model_seed":42}`。`input: string` 必填，单张图片引用；`model_seed: integer` 可选，0–2147483647。不传 `model`。完成后 `output.model_url` 指向 `.splat`，不是 GLB。
+
+### 文生图与图生图
+
+使用 `POST /tripo/v3/generation/text-to-image` 或 `POST /tripo/v3/generation/image-to-image`，均为异步任务，不按 OpenAI Images 同步返回。
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/tripo/v3/generation/text-to-image \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"seedream_v5","prompt":"白底产品图，一把蓝色陶瓷茶壶","size":"2K"}'
+```
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `model` | string | 文生图默认 `seedream_v4`，图生图默认 `seedream_v5`；可选版本见下表 |
+| `prompt` | string | 文生图必填；图生图仅使用 `template` 时可省略；最多 20000 字符 |
+| `input` | string | 图生图单张参考，与 `inputs` 二选一 |
+| `inputs` | string[] | 图生图多参考，与 `input` 二选一；Seedream 最多 4 张，Banana 最多 10 张，Chat Image 最多 16 张 |
+| `size` | string | 按模型选择 `auto`、`0.5K` / `1K` / `2K` / `3K` / `4K` 或 `宽x高`；并非每个模型支持所有值，见下表 |
+| `quality` | string | 仅 Chat Image 2/2.5；默认 `low`，可选 `medium` / `high`；2.5 另支持 `xhigh` / `max` |
+| `background` | string | 仅 Chat Image 2.5 生效：`auto` / `opaque` / `transparent`；省略由模型决定，其他模型忽略。透明背景使用 PNG，不能与 jpeg 组合 |
+| `aspect_ratio` | string | 仅 Banana；`size` 和 `aspect_ratio` 均省略时为 `1:1`；`1:1` / `2:3` / `3:2` / `3:4` / `4:3` / `4:5` / `5:4` / `9:16` / `16:9` / `21:9`；banana2 另有 `1:8` / `1:4` / `4:1` / `8:1` |
+| `output_format` | string | `png`（默认）或 `jpeg` |
+| `watermark` | boolean | 文生图 Seedream 专用，默认 false |
+| `template` | string | 公共 `character_completion` / `t_pose` / `variants` / `figure`；文生图另有 `asset_extraction`，图生图另有 `3d_enhance` |
+
+| 模型 ID | 可用接口 | 说明 |
+|---|---|---|
+| `seedream_v4` | 文生图 | Seedream 4 |
+| `seedream_v5` | 文生图、图生图 | Seedream 5 |
+| `banana` / `banana2` / `banana_pro` | 两者 | Banana 系列，尺寸与比例限制按版本区分 |
+| `chat_image_1` | 两者 | 计划 2026-10-23 下线 |
+| `chat_image_1.5` | 两者 | 计划 2026-12-01 下线 |
+| `chat_image_2` | 两者 | 三档质量 |
+| `chat_image_2.5_flare` / `chat_image_2.5_sunburst` | 两者 | 五档质量及透明 PNG |
+
+尺寸限制：
+
+- `seedream_v5`：`2K` / `3K`，或自定义宽高（总像素 3.69–10.40 MP，宽高比 1:16–16:1）。`seedream_v4` 为 `2K` / `4K`，自定义约 3.69–16.78 MP，同宽高比限制；默认 2048x2048。
+- `banana` 固定像素：1024x1024、832x1248、1248x832、864x1184、1184x864、896x1152、1152x896、768x1344、1344x768、1536x672。`banana_pro` 接受 `1K` / `2K` / `4K` 或精确宽高。`banana2` 仅 `0.5K` / `1K` / `2K` / `4K`；banana2 / banana_pro 默认 2K。
+- `chat_image_1` / `chat_image_1.5`：1024x1024、1024x1536、1536x1024、`auto`（默认）。
+- `chat_image_2` / 2.5：默认 2048x2048；预设还有 1024x1024、1536x1024、1024x1536、2048x1152、3840x2160、2160x3840、`auto`。自定义宽高要求每边是 16 的倍数且不超过 3840、长宽比不超过 3:1、总像素 655360–8294400。模型仍会校验组合有效性。
+
+成功图像位于 `data.output.generated_image_url`；也可经产物接口获取。参考图可以是公开 URL 或上传文件引用。
+
+### 编辑多视图
+
+`POST /tripo/v3/generation/edit-multiview`：必填 `input: string` 为本账号已成功的四视图任务引用、已上传的多视图图片文件引用或公开多视图图片 URL；`prompts` 为 1–4 项数组，每项含非空 `prompt: string` 和 `view: "front" | "left" | "back" | "right"`，同一视角不能重复。
+
+```json
+{"input":"task_multiview_example","prompts":[{"view":"front","prompt":"把正面改成深蓝色"},{"view":"back","prompt":"背面增加一个圆形徽标"}]}
+```
+
+完成后返回四视角产物，可以继续传给 `multiview-to-model`。每个修改视角预估 5 credits。
+
+## 批量查询与任务串接
+
+`POST /tripo/v3/tasks/list`，正文 `{"task_ids":["task_example1","task_example2"]}`；`task_ids` 必须为 1–100 个 KUNPO 任务 ID。
+
+```json
+{"code":0,"data":{"tasks":{"task_example1":{"task_id":"task_example1","status":"success","progress":100}},"missed":["task_example2"]}}
+```
+
+`tasks` 是以任务 ID 为键的对象；不存在、无权限或不属于此接口的任务统一进入 `missed`。只查询本账号任务，不会泄露其他用户任务是否存在。单任务仍使用 `GET /tripo/v3/tasks/{task_id}`。
+
+输入任务必须成功且属于同一 KUNPO 用户；模型任务、图像任务和分割任务按接口选择，不可互换。跨接口复用时使用 KUNPO 返回的引用原文。不得提交其他用户 ID 或拼接猜测文件编号。
+
+所有付费 POST 都可能创建新任务：**提交超时不等于未创建，不要自动重试**。先核对任务列表/消费记录，再决定是否重新提交；查询 GET 和批量查询可以安全重试。HTTP 400 检查参数，401 检查密钥，403/404 检查权限和任务归属，429 降低并发并退避。任务完成或失败后停止轮询。
+
+## 新增操作计费
+
+以下是提交时预估积分，成功后按返回的实际 `credits_consumed` 结算；失败退款。USD 0.01/credit，再乘账号分组倍率，实际生效价以模型广场为准。
+
+| 操作 | 预估 credits |
+|---|---:|
+| 贴图 fast / standard | 10 |
+| 贴图 detailed / extreme | 20 / 30 |
+| 网格分割 | 40 |
+| 智能分割 image / model | 85 / 55 |
+| 补全 ai_completion / quick_cap | 50 / 30 |
+| 重拓扑 v2.0 / v1.0 | 30 / 10 |
+| 转换基础 / 高级选项 | 5 / 10 |
+| 图片生成 Splat | 30 |
+| 编辑多视图 | 每个视角 5 |
+| 上传、预签名、导入 | 预估 0，导入完成仍以实际用量结算 |
+| Seedream、banana、chat_image_1 | 5 |
+| banana2 | 10；4K 15 |
+| banana_pro | 15；4K 20 |
+| chat_image_1.5 | 10 |
+
+转换的高级选项指 `quad`、`face_limit`、`flatten_bottom`、`flatten_bottom_threshold`、`texture_size`、`texture_format`、`pivot_to_center_bottom`、`scale_factor` 中至少一个值偏离默认值。
+
+Chat Image 2/2.5 按质量和尺寸计费：
+
+| quality | 1K | 2K | 4K |
+|---|---:|---:|---:|
+| low / medium | 10 | 10 | 15 |
+| high | 20 | 25 | 40 |
+| xhigh（2.5） | 25 | 30 | 45 |
+| max（2.5） | 30 | 50 | 50 |
+
+`auto` 预估按 2K；自定义宽高按像素数分档，最终按实际用量结算。
+
+## 开放范围
+
+上述 22 个原生端点覆盖生成、模型处理、动画、文件和任务查询。KUNPO 账户余额和消费记录在控制台查看；`/tripo/v3/account/balance`、`/account/usage` 不开放，也不返回其他账户的余额。当前使用轮询获取任务状态，未开放 Tripo Webhook 配置；没有取消任务接口。
+
 
 ## 相关文档
 

@@ -9,6 +9,16 @@ description: "KUNPO API 的模型上线、接口变化与使用相关的修复�
   **行为变更**可能需要调整客户端代码，请留意相关条目。
 </Note>
 
+<Update label="2026-10-09" tags={["kunpo-v9.31", "计费"]}>
+
+## 模型价格信息同步
+
+同步 Gemini 3.1 Flash-Lite 与 Grok 4.6 的文本对话计价说明。Claude Sonnet 5.5 的缓存读取价格修正为 USD 0.10 / 百万 tokens；其余输入、输出及缓存写入单价不变。Claude Messages usage 仅提供汇总缓存写入量时，按 5 分钟缓存写入单价结算；提供具体 TTL 分项时按对应单价结算。Grok 4.6 的完整输入长度达到 200,000 tokens（含）时，全请求按长上下文档计费。费用按实际用户分组倍率结算，调用参数无需调整。
+
+详见[文本对话计费说明](/api-reference/text-chat)与 [Claude Sonnet 5.5](/api-reference/claude-sonnet-55)。
+
+</Update>
+
 <Update label="2026-10-09" tags={["kunpo-v9.30", "安全"]}>
 
 ## GPT-6.1 Sol、个人访问令牌与安全更新

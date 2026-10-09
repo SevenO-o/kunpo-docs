@@ -199,9 +199,7 @@ curl -X POST https://llm.ziy.cc/tripo/v3/generation/image-to-model \
 ```
 
 <Note>
-  **传 Base64 时网关会自动把图片转存到 KUNPO 图床**，无需自行准备图片外链。`data:image/jpeg;base64,...` 这种 data URL 同样可以。
-
-  转存只对真实图片生效（PNG / JPEG / WebP / GIF），非图片内容会原样透传。
+  Base64 和 `data:image/jpeg;base64,...` 等 data URL 都可直接提交。KUNPO 会将支持的参考图片自动转为可供任务使用的 URL；如果图片无法转存，接口会返回明确错误，不会继续提交原始图片内容。
 </Note>
 
 也可以直接传 URL，此时不经过转存，**地址必须能从公网直接访问**：
@@ -253,7 +251,7 @@ curl -X POST https://llm.ziy.cc/tripo/v3/generation/multiview-to-model \
 | 最多 4 个视角 | 同一视角不能重复 |
 | 顺序 | 与数组顺序无关，只看键名 |
 
-每个视角的值和 `input` 一样，可传 Base64 / data URL（网关自动转存图床）或公网 URL，两者可以混用。
+每个视角的值和 `input` 一样，可传 Base64、data URL 或公网 URL；这些格式可以混用。Base64 和 data URL 图片会自动转为任务可用的 URL；转存失败时请求会返回明确错误。
 
 <Tip>
   嫌 `inputs` 写起来麻烦，也可以传扁平的 `images` 数组，网关按 **`[front, left, back, right]`** 的顺序映射：
@@ -825,6 +823,8 @@ curl --fail-with-body https://llm.ziy.cc/tripo/v3/models/texture \
 | `delight` | boolean | v3.5 的去光照选项，默认 `true` |
 | `part_names` | string[] | 可选，只对指定部件贴图；网关接受 1–128 个非空名称、每个最多 256 字符 |
 | `compress` | string | 可选 `geometry` |
+
+`texture_prompt.image`、`texture_prompt.images` 和 `texture_prompt.style_image` 中的参考图片可使用 Base64、data URL 或图片 URL。Base64 和 data URL 图片会自动转为任务可用的 URL；转存失败时请求会返回明确错误。
 
 输出是新的模型任务，完成后从 `data.output.model_url` 或产物接口读取。原模型任务保留。
 

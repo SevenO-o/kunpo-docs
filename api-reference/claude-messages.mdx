@@ -94,6 +94,12 @@ anthropic-version: 2023-06-01
 }
 ```
 
+### Claude 缓存用量与结算
+
+Claude 缓存读取量见 `usage.cache_read_input_tokens`，缓存写入总量见 `usage.cache_creation_input_tokens`。写入 TTL 明细可见 `usage.cache_creation.ephemeral_5m_input_tokens` 和 `usage.cache_creation.ephemeral_1h_input_tokens`，单位均为 tokens；这些字段是否返回取决于实际缓存用量。
+
+KUNPO 按 TTL 明细分别结算，汇总写入量中未被明细覆盖的余量按 5 分钟缓存写入单价结算；不会将已分类写入量重复计费。普通输入、缓存读取和缓存写入分别计价；有长度阶梯的模型按包含缓存的完整输入长度选档。具体单价见所选模型页。
+
 ## 可用模型
 
 Anthropic 原生格式支持以下模型：

@@ -30,7 +30,7 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 |------|------|------|------|
 | 文本对话 | `POST` | `/v1/chat/completions` | OpenAI 兼容，支持流式、多模态 |
 | Jev 自动选模对话 | `POST` | `/jev-router/v1/chat/completions` | [专用同步文本接口与动态计费](/api-reference/jev-router) |
-| GPT-6 Responses | `POST` | `/v1/responses` | [Luna / Sol](/api-reference/gpt-6) 的 Responses 接入 |
+| GPT Responses | `POST` | `/v1/responses` | [GPT-6 Luna / Sol](/api-reference/gpt-6) 与 [GPT-6.1 Sol](/api-reference/gpt-6-1-sol) 的 Responses 接入 |
 | Claude 原生 | `POST` | `/v1/messages` | Anthropic Messages API |
 | 图像生成（同步） | `POST` | `/v1/images/generations` | 提交后等待完成，直接返回 URL |
 | 图像生成（异步提交） | `POST` | `/v1/images/tasks` | 返回 `task_id`，适合长耗时模型 |
@@ -66,6 +66,10 @@ KUNPO API 基于统一网关 `https://llm.ziy.cc`，兼容 OpenAI 与 Anthropic 
 
   <Card title="Claude Haiku 5.5" icon="microchip" href="/api-reference/claude-haiku-55">
     查看 Haiku 5.5 的接入方式、自适应思考限制和分档价格。
+  </Card>
+
+  <Card title="GPT-6.1 Sol" icon="microchip" href="/api-reference/gpt-6-1-sol">
+    查看 Chat Completions 与 Responses 示例、响应读取和分档价格。
   </Card>
 
   <Card title="图像生成" icon="image" href="/api-reference/image-generation/overview">
@@ -142,6 +146,7 @@ VS 2.5 的 Videos、Responses 和兼容任务接口各自使用不同 ID、状�
 | 接口 | 模型 ID 示例 |
 |------|--------------|
 | [Chat Completions](/api-reference/text-chat) | `google/gemini-3.1-flash-lite`、`openai/gpt-5.4`、`DeepSeek-R1-0528`、`Qwen3`、`GLM-4` |
+| [GPT-6.1 Sol](/api-reference/gpt-6-1-sol) | `gpt-6.1-sol` |
 | [Claude Messages](/api-reference/claude-messages) | `Claude-Sonnet-4.6` |
 | [Claude Haiku 5.5](/api-reference/claude-haiku-55) | `claude-haiku-5-5` |
 | [DeepSeek Claude 兼容](/api-reference/claude-messages#deepseek-compatible-models) | `c/deepseek-v4-pro` |

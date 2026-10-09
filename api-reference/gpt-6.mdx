@@ -35,7 +35,9 @@ curl --fail-with-body https://llm.ziy.cc/v1/responses \
 
 将 `model` 改为 `gpt-6-sol` 即可使用 Sol。读取 `output[]` 中 `type="message"` 项的 `content[]`，拼接 `type="output_text"` 的 `text`；不能假定第一项一定是文本，输出也可能包含推理或函数调用。
 
-`input` 必填，可用文本或兼容的消息数组；输出预算 `max_output_tokens` 包含推理与可见回答。`stream` 默认 `false`；设置为 `true` 时返回 Responses SSE 事件，按 `response.output_text.delta` 增量读取文本，按最终响应事件处理完成状态。流式与非流式返回结构不同。
+`input` 必填，可用文本或兼容的消息数组；输出预算 `max_output_tokens` 包含推理与可见回答。`stream` 默认 `false`；设置为 `true` 时返回 Responses SSE 事件，按 `response.output_text.delta` 增量读取文本。以 `response.completed` 作为成功终态；`response.failed`、`response.incomplete` 或错误事件 表示非成功终态，检查事件中的错误或状态字段后再决定是否重试。流式与非流式返回结构不同。
+
+Chat Completions 流式响应逐条读取 `choices[].delta`，在 `choices[].finish_reason` 非空时结束该 choice，并以 `data: [DONE]` 作为流结束标记；`finish_reason` 本身不等同于整个 HTTP 请求成功的唯一判据。
 
 ## Chat Completions 与推理
 
@@ -58,6 +60,6 @@ Chat 格式沿用 [文本对话](/api-reference/text-chat)，使用 `messages`�
 | Sol | ≤ 272,000 | 2.00 | 10.00 | 0.20 | 2.50 |
 | Sol | > 272,000 | 4.00 | 15.00 | 0.40 | 5.00 |
 
-按完整输入长度选择档位，长档单价适用于整次请求；独立报告的缓存用量从普通输入中分离，避免重复计费。输出包含推理 tokens。网关按返回的用量结算，并应用实际用户分组倍率；表格不代表缓存一定命中或一定返回缓存写入明细。
+按完整输入长度选择档位，长档单价适用于整次请求；独立报告的缓存用量从普通输入中分离，避免重复计费。令 `P`、`C`、`CR`、`CC` 分别为普通输入、输出、缓存读取、缓存写入 token 数，`len` 为整次请求输入 token 数：`基础费用（USD） = (P × 输入单价 + C × 输出单价 + CR × 缓存读取单价 + CC × 缓存写入单价) ÷ 1,000,000`；`账户费用 = 基础费用 × 实际用户分组倍率`。输出包含推理 tokens；表格不代表缓存一定命中或一定返回缓存写入明细。
 
 本次按 Standard 配置，未开放依靠 `service_tier` 切换 Batch/Flex/Fast 计费。实时价格见[模型广场](https://llm.ziy.cc/pricing)。

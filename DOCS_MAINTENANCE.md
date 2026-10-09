@@ -40,8 +40,10 @@
 | 文本对话完整参数 | `api-reference/text-chat.mdx` | quick-start 只保留最小示例 |
 | Claude Messages 完整说明 | `api-reference/claude-messages.mdx` | 不在 text-chat 重复 Messages 示例 |
 | GPT-6 Luna/Sol 专属接口、推理与定价 | `api-reference/gpt-6.mdx` | 公共文本页与更新日志只链接 |
+| GPT-6.1 Sol 双协议接入、响应读取与分档定价 | `api-reference/gpt-6-1-sol.mdx` | 总览、文本对话与更新日志只链接 |
 | Opus 5.5 原生接入、思考约束与定价 | `api-reference/claude-opus-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Sonnet 5.5 场景、双协议接入与缓存定价 | `api-reference/claude-sonnet-55.mdx` | 公共 Claude 页与更新日志只链接 |
+| Haiku 5.5 双协议接入、自适应思考限制与分档定价 | `api-reference/claude-haiku-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Jev 独立决策协议、字段和定价 | `api-reference/jev.mdx` | 总览与更新日志只链接 |
 | Jev Router 同步文本、选模场景与动态计费 | `api-reference/jev-router.mdx` | 总览与更新日志只链接，不与 Jev 决策混用 |
 | 图片模型列表、选择建议、计费 | `api-reference/image-generation/overview.mdx` | sync/async 页不重复计费表和模型表 |
@@ -94,6 +96,8 @@
 | 用途 | 模型名 |
 |------|--------|
 | Claude 原生 | `Claude-Sonnet-4.6`（无 `anthropic/` 前缀） |
+| Sonnet 5.5 | `claude-sonnet-5-5` |
+| Haiku 5.5 | `claude-haiku-5-5` |
 | DeepSeek 兼容 | `c/deepseek-v4-pro` |
 
 ### Chat Completions 中 Claude 模型
@@ -101,6 +105,8 @@
 | 格式 | 模型名 |
 |------|--------|
 | OpenAI 兼容 | `anthropic/claude-sonnet-4.6`（小写 + 前缀） |
+| Sonnet 5.5 | `claude-sonnet-5-5` |
+| Haiku 5.5 | `claude-haiku-5-5` |
 
 ### 图片生成（API 调用代号 vs 首页展示名）
 

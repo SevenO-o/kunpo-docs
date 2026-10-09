@@ -9,6 +9,26 @@ description: "KUNPO API 的模型上线、接口变化与使用相关的修复�
   **行为变更**可能需要调整客户端代码，请留意相关条目。
 </Note>
 
+<Update label="2026-10-09" tags={["kunpo-v9.30", "安全"]}>
+
+## GPT-6.1 Sol、个人访问令牌与安全更新
+
+`gpt-6.1-sol` 已开放，可通过 Chat Completions 与 Responses 调用该模型，提供 1,050,000-token 上下文和最高 128,000-token 输出。Responses 支持推理档位和函数工具流程。模型固定按 Standard 计费；缓存读取按完整输入长度分档，≤272,000 tokens 为 USD 0.10 / 百万 tokens，超出时为 USD 0.20 / 百万 tokens。字段、工具流程和完整价格见 [GPT-6.1 Sol](/api-reference/gpt-6-1-sol)。
+
+个人访问令牌（PAT）可按权限范围管理，并可单独查看和撤销。新建令牌的明文仅在创建时显示；令牌管理操作需要安全验证。旧版管理 `access token` 自 v9.30 上线起有 30 天过渡期，期满停用，请迁移使用 PAT；普通 `sk-` 模型调用 API Key 不受影响。PAT 不能替代网页登录会话；浏览器登录绑定、用量授权和图片资产管理仍需网站会话及相应安全验证。升级后请重新登录；此前复制的产物链接若失效，可从任务详情重新获取。
+
+</Update>
+
+<Update label="2026-10-09" tags={["Claude", "文本生成"]}>
+
+## Claude Haiku 5.5
+
+新增 `claude-haiku-5-5`，适合高频分类、信息提取和摘要任务，支持 Claude Messages 与 Chat Completions。使用现有 KUNPO API Key；开启模型白名单时请加入新模型 ID。该模型按输入长度分档计费。
+
+调用方法、思考限制和价格见 [Claude Haiku 5.5](/api-reference/claude-haiku-55)。
+
+</Update>
+
 <Update label="2026-09-30" tags={["Tripo", "3D", "kunpo-v9.29"]}>
 
 ## Tripo 贴图与模型处理接口

@@ -1,0 +1,155 @@
+---
+title: "GPT-6.1 Sol"
+description: "GPT-6.1 Sol 的模型 ID、Chat Completions 与 Responses 接入、响应读取和分档计费。"
+---
+
+GPT-6.1 Sol 面向文本生成与推理任务。普通文本对话可使用 Chat Completions；需要选择推理档位或执行工具调用时，优先使用 Responses。
+
+## 模型与接口
+
+| 项目 | 值 |
+|---|---|
+| API 模型 ID | `gpt-6.1-sol`，按原样填写 |
+| OpenAI SDK Base URL | `https://llm.ziy.cc/v1` |
+| Chat Completions | `POST https://llm.ziy.cc/v1/chat/completions` |
+| Responses | `POST https://llm.ziy.cc/v1/responses` |
+| 鉴权 | `Authorization: Bearer sk-你的密钥` |
+| 请求类型 | `Content-Type: application/json` |
+| 上下文 / 最大输出 | 1,050,000 / 128,000 tokens |
+
+使用现有 KUNPO API Key。若密钥启用了模型白名单，请加入完整 ID `gpt-6.1-sol`。
+
+## 请求参数
+
+| 参数 | 类型 / 必填 | 默认值与约束 |
+|---|---|---|
+| `model` | string，必填 | 固定使用 `gpt-6.1-sol`。 |
+| `messages`（Chat） | array，必填 | 非空；每项为包含 `role`、`content` 的消息对象。 |
+| `input`（Responses） | string 或 array，必填 | 本页按无状态请求传入本轮 user 输入；多轮请求需带上所需历史项。 |
+| `reasoning_effort`（Chat） | string，可选 | `low`、`medium`、`high`、`xhigh`、`max`；默认 `medium`。 |
+| `reasoning.effort`（Responses） | string，可选 | `low`、`medium`、`high`、`xhigh`、`max`；默认 `medium`。不要传 `none` 或 `minimal`；`none` 返回 HTTP 400。不要混用两种协议的字段。 |
+| `max_completion_tokens`（Chat） | integer，可选 | 正整数，最大 `128000`；未传时无 KUNPO 固定默认值。预算包含推理与可见回答。 |
+| `max_output_tokens`（Responses） | integer，可选 | 正整数，最大 `128000`；未传时无 KUNPO 固定默认值。预算包含推理与可见回答。 |
+| `stream` | boolean，可选 | 默认 `false`；设为 `true` 时使用 SSE。 |
+| `tools`（Responses） | array，可选 | 默认不传工具；传入函数工具定义数组时见下方示例。 |
+| `tool_choice`（Responses） | string 或 object，可选 | 工具调用示例显式使用 `auto` 或指定函数的 object。 |
+| `service_tier` | string，可选 | 不会切换价格档；本模型始终按 Standard 价格计费。 |
+
+Chat Completions 使用 `messages`、`reasoning_effort`、`max_completion_tokens`；Responses 使用 `input`、`reasoning.effort`、`max_output_tokens`。高级推理控制和函数工具调用优先使用 Responses。采样参数 `temperature`、`top_p` 建议省略。
+
+## Chat Completions
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/v1/chat/completions \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "gpt-6.1-sol",
+    "messages": [{"role": "user", "content": "用三句话解释数据库索引。"}],
+    "reasoning_effort": "low",
+    "max_completion_tokens": 1024
+  }'
+```
+
+读取 `choices[0].message.content` 获取回答；`usage.prompt_tokens` 和 `usage.completion_tokens` 分别是输入与输出用量。`max_completion_tokens` 输出预算包含推理与可见回答。此示例使用 `reasoning_effort: "low"`。Chat Completions 的通用消息字段见[文本对话](/api-reference/text-chat)。
+
+## Responses
+
+```bash
+curl --fail-with-body https://llm.ziy.cc/v1/responses \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "gpt-6.1-sol",
+    "input": "用三句话解释数据库索引。",
+    "reasoning": {"effort": "low"},
+    "max_output_tokens": 1024
+  }'
+```
+
+非流式 Responses 先检查 `status`：仅 `completed` 表示完整完成；`incomplete` 不应当作完整回答。确认完成后，再读取 `output[]` 中 `type="message"` 项的 `content[]`，拼接 `type="output_text"` 项的 `text`；不要假定第一项一定是正文。用量字段位于 `usage.input_tokens` 和 `usage.output_tokens`。`max_output_tokens` 输出预算包含推理与可见回答。`input` 可使用文本字符串；此页只列出文本输入示例。
+
+设置 `stream: true` 可使用 Responses SSE；按 `response.output_text.delta` 读取增量文本，以 `response.completed` 作为成功终态，并从终态 `response` 对象的 `usage.input_tokens`、`usage.output_tokens` 读取用量。`response.failed`、`response.incomplete`、`response.error` 或错误事件均为非成功终态；若连接在 `response.completed` 前中断，也将结果视为未完整，不能把已收到的部分文本当作完整回答。流式与非流式响应结构不同。
+
+工具调用时，Responses 的 `output[]` 可能包含 `type="function_call"` 项；读取其 `name`、`arguments` 和 `call_id`，由应用执行函数，再以 `type="function_call_output"` 和相同 `call_id` 提交结果。工具调用两轮示例见下方。
+
+### Responses 函数工具两轮调用
+
+第一轮可指定函数工具并强制选择 `echo`：
+
+```json
+{
+  "model": "gpt-6.1-sol",
+  "input": [{"role": "user", "content": "Call echo with value OK. After its result, reply exactly OK."}],
+  "tools": [{
+    "type": "function",
+    "name": "echo",
+    "description": "Return the supplied value.",
+    "parameters": {
+      "type": "object",
+      "properties": {"value": {"type": "string"}},
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "strict": true
+  }],
+  "tool_choice": {"type": "function", "name": "echo"},
+  "reasoning": {"effort": "low"},
+  "max_output_tokens": 2048
+}
+```
+
+在响应 `output[]` 中找到 `type="function_call"` 项。应用解析 `arguments` 并执行自己实现的函数；不要执行未经校验的任意函数名或参数。第二轮复用原始用户输入，附上从函数调用项读取的 `call_id`、`name`、`arguments`，再附函数结果：
+
+```json
+{
+  "model": "gpt-6.1-sol",
+  "input": [
+    {"role": "user", "content": "Call echo with value OK. After its result, reply exactly OK."},
+    {"type": "function_call", "call_id": "<第一轮的 call_id>", "name": "<第一轮的 name>", "arguments": "<第一轮的 arguments 原文>"},
+    {"type": "function_call_output", "call_id": "<同一个 call_id>", "output": "OK"}
+  ],
+  "tools": [{
+    "type": "function",
+    "name": "echo",
+    "description": "Return the supplied value.",
+    "parameters": {
+      "type": "object",
+      "properties": {"value": {"type": "string"}},
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "strict": true
+  }],
+  "tool_choice": "auto",
+  "reasoning": {"effort": "low"},
+  "max_output_tokens": 2048
+}
+```
+
+从第二轮响应的 `output[]` 中按常规读取 `type="message"` 的文本内容。生产环境中 `output` 应是实际函数结果，而非固定字符串。
+
+## 预留与结算
+
+请求开始时，平台先按估算费用预留额度；收到响应后根据实际 token 用量、输入长度对应的价格档和用户分组倍率结算，预留多于实际费用时返还差额，不足时补扣差额。若请求失败而未进入用量结算，平台按失败路径退还预留额度。`incomplete` 响应或中断的流仍可能带有已计费用量，因此客户端应检查终态与 `usage`，不要仅凭连接中断推断请求免费或立即盲目重发。
+
+## 计费
+
+Standard 基础价以 USD / 百万 tokens 计，不含用户分组倍率。令 `len` 为整次请求的输入 token 数；`P`、`C`、`CR`、`CC` 分别表示实际普通输入、输出、缓存读取和缓存写入 token 数。由 `len` 选择的费率档适用于本次请求的全部计费组成项：
+
+| 输入长度 `len` | 普通输入 `P` | 输出 `C` | 缓存读取 `CR` | 缓存写入 `CC` |
+|---|---:|---:|---:|---:|
+| `len ≤ 272,000` | 2.00 | 10.00 | 0.10 | 2.50 |
+| `len > 272,000` | 4.00 | 15.00 | 0.20 | 5.00 |
+
+```text
+基础费用（USD） = (P × 输入单价 + C × 输出单价 + CR × 缓存读取单价 + CC × 缓存写入单价) ÷ 1,000,000
+账户费用（USD） = 基础费用 × 实际用户分组倍率
+```
+
+缓存 token 与普通输入分开计价，不重复计入 `P`；输出用量包含推理 token。价格不表示缓存必然命中或响应必然提供每类缓存明细。该模型使用 Standard 价格，请求中的 `service_tier` 不会切换计费模式。实时模型价格与账户倍率见[模型广场](https://llm.ziy.cc/pricing)。
+
+## 请求失败时
+
+鉴权失败时检查 KUNPO API Key；模型不可用时检查模型 ID、密钥白名单和可用分组。参数错误应先修正请求，遇到 429 按退避策略重试。连接超时不表示请求一定未执行或未计费，避免无界重复提交。

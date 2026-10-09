@@ -31,6 +31,7 @@
                   "api-reference/gpt-6",
                   "api-reference/claude-opus-55",
                   "api-reference/claude-sonnet-55",
+                  "api-reference/claude-haiku-55",
                   "api-reference/jev-router"
                 ]
               },

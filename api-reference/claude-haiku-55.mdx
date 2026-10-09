@@ -1,0 +1,70 @@
+---
+title: "Claude Haiku 5.5"
+description: "Haiku 5.5 的使用场景、Messages 与 Chat 接入、自适应思考约束和分档缓存价格。"
+---
+
+Claude Haiku 5.5 适合高频、低延迟的分类、信息提取、摘要和短任务。需要更复杂的推理或长程任务时，可比较 [Claude Sonnet 5.5](/api-reference/claude-sonnet-55)。
+
+## 模型与接口
+
+| 项目 | 值 |
+|---|---|
+| API 调用名 | `claude-haiku-5-5`，按原样填写 |
+| 推荐接口 | `POST https://llm.ziy.cc/v1/messages` |
+| Anthropic SDK Base URL | `https://llm.ziy.cc`，不加 `/v1` |
+| 兼容接口 | `POST https://llm.ziy.cc/v1/chat/completions` |
+| OpenAI SDK Base URL | `https://llm.ziy.cc/v1` |
+| 鉴权 | 现有 KUNPO API Key；`Authorization: Bearer sk-你的密钥`，Anthropic SDK 也可使用 `x-api-key` |
+| 必要请求头 | `Content-Type: application/json`、`anthropic-version: 2023-06-01` |
+| 输入 / 输出 | 文本及图片输入，文本输出 |
+| 上下文 / 最大输出 | 1,000,000 / 128,000 tokens |
+
+使用现有 KUNPO API Key。旧 `claude-haiku-4-5-20251001` 不会自动切换到新版；如果密钥开启了模型白名单，需加入 `claude-haiku-5-5`。
+
+## 最小 Messages 请求
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/v1/messages \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'anthropic-version: 2023-06-01' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "claude-haiku-5-5",
+    "max_tokens": 2048,
+    "output_config": {"effort": "medium"},
+    "messages": [{"role": "user", "content": "从这段文本中提取日期和金额：2026年10月9日支付了128元。"}]
+  }'
+```
+
+`model` 和非空 `messages` 数组必填；`max_tokens` 是正整数输出预算，上限 128,000 tokens，包含思考消耗。自适应思考默认开启，`output_config.effort` 可设为 `low`、`medium`、`high`、`xhigh` 或 `max`；默认值为 `medium`。Messages 响应中可能先返回思考块，读取所有 `content[]` 项时按 `type` 判断，不要假定第一项是正文。公共字段、流式及工具调用格式见 [Claude Messages](/api-reference/claude-messages)。
+
+## 使用现有 OpenAI 客户端
+
+Chat Completions 支持常规对话用法：将 `model` 设为 `claude-haiku-5-5`，Base URL 使用 `https://llm.ziy.cc/v1`，非流式正文读取 `choices[0].message.content`。如需指定思考强度，请使用 Messages 的 `output_config.effort`；当前 Chat Completions 的 `reasoning_effort` 不保证对应指定的 Haiku 思考档位。不要混用 Messages 的 `content[]` 路径。完整通用字段见[文本对话](/api-reference/text-chat)。
+
+## 思考与参数限制
+
+- 优先使用自适应思考。不要在请求中发送 `budget_tokens`；为兼容旧请求，网关会将 `thinking.type="enabled"` 转换为 `adaptive` 并移除 `budget_tokens`。需要指定思考强度时，通过 Messages 的 `output_config.effort` 设置。
+- 若确需关闭思考，只能在 `low`、`medium` 或 `high` effort 下发送 `thinking: {"type": "disabled"}`；`xhigh` 或 `max` effort 与关闭思考组合会返回 HTTP 400。
+- 非默认 `temperature`、`top_p` 或 `top_k` 可能返回 HTTP 400；省略这些采样参数。
+- 思考内容会消耗 `max_tokens`。同一会话需保留返回的思考块及签名；不要修改历史消息后重放旧思考块。
+- Chat Completions 可用于普通对话；需要明确控制思考强度或处理 Claude 专属内容块时，使用 Messages 接口。
+
+## 计费
+
+USD / 百万 tokens，按完整输入长度分档；价格为用户分组倍率前的 Standard 单价：
+
+| 项目 | 输入长度 ≤100K | 输入长度 >100K |
+|---|---:|---:|
+| 普通输入 | 0.10 | 0.50 |
+| 输出（含思考） | 0.50 | 2.50 |
+| 缓存读取 | 0.01 | 0.05 |
+| 5 分钟缓存写入 | 0.125 | 0.625 |
+| 1 小时缓存写入 | 0.20 | 1.00 |
+
+各类 token 按实际用量分别计价，缓存 token 不与普通输入重复收费；再乘实际分组倍率。输入长度超过 100K 时，对应请求使用右侧费率。预扣与最终结算沿用平台规则。本配置提供 Standard 价格；传入 Fast 或 Batch 字段不会自动切换价格档。实时价格见[模型广场](https://llm.ziy.cc/pricing)。
+
+## 请求失败时
+
+鉴权失败先检查 KUNPO 密钥；模型不可用时检查完整模型 ID、密钥白名单和可用分组。参数错误先修正请求，429 使用退避；连接超时不表示请求没有处理或计费，不要无界重复提交。

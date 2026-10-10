@@ -45,7 +45,7 @@
 | Sonnet 5.5 场景、双协议接入与缓存定价 | `api-reference/claude-sonnet-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Haiku 5.5 双协议接入、自适应思考限制与分档定价 | `api-reference/claude-haiku-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Jev 独立决策协议、字段和定价 | `api-reference/jev.mdx` | 总览与更新日志只链接 |
-| GPT-6 Luna、Clef Omni 与 Microsoft Decision 1 的统一 Decisions 入口、文本/JSON/图像输入、字段限制与定价 | `api-reference/gpt-6-luna-decisions.mdx` | 三模型共用契约的单一信息源；总览与更新日志只链接；正式发布前保持待发布状态 |
+| GPT-6 Luna、Clef Omni 与 Microsoft Decision 1 的统一 Decisions 入口、文本/JSON/图像输入、字段限制与定价 | `api-reference/gpt-6-luna-decisions.mdx` | 三模型当前正式契约的单一信息源；总览与更新日志只链接，完整参数和价格只在此页维护 |
 | Jev Router 同步文本、选模场景与动态计费 | `api-reference/jev-router.mdx` | 总览与更新日志只链接，不与 Jev 决策混用 |
 | 图片模型列表、选择建议、计费 | `api-reference/image-generation/overview.mdx` | sync/async 页不重复计费表和模型表 |
 | 图片模型能力、size/quality、专属参数和示例 | `api-reference/image-generation/models/*.mdx` | 概览和协议页直接链接模型章节，不复制完整规则 |

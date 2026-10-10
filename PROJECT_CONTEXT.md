@@ -2,7 +2,7 @@
 
 > 本文档供 AI 助手阅读，以便快速理解项目全貌并继续维护文档。
 > **编辑文档前务必先读 [DOCS_MAINTENANCE.md](./DOCS_MAINTENANCE.md)**（防重复、模型名、页面职责的完整规范）。
-> 最后更新：2026-10-10（v9.33 Decisions 三模型与图像输入文档草稿）
+> 最后更新：2026-10-10（v9.33 Decisions 三模型正式契约）
 
 ---
 
@@ -48,7 +48,7 @@ docs/
 │   ├── claude-sonnet-55.mdx                    # Sonnet 5.5：场景、双协议接入与缓存定价
 │   ├── claude-haiku-55.mdx                     # Haiku 5.5：双协议接入、自适应思考限制与分档价格
 │   ├── jev-router.mdx                          # Jev 自动选模：同步文本专用路径、credit 动态结算
-│   ├── gpt-6-luna-decisions.mdx                 # GPT-6 Luna、Clef Omni、Microsoft Decision 1：统一文本/JSON/图像决策契约（待发布）
+│   ├── gpt-6-luna-decisions.mdx                 # GPT-6 Luna、Clef Omni、Microsoft Decision 1：当前正式文本/JSON/图像决策契约
 │   ├── seed-audio.mdx                          # 豆包 Seed Audio 音频生成
 │   ├── seedance-25.mdx                        # Seedance 2.5 参数、轮询与 USD 秒价
 │   ├── doubao-video.mdx                       # 豆包视频生成 (Seedance 2.0)
@@ -84,7 +84,7 @@ docs/
 | 分组 | 页面 |
 |------|------|
 | 开始 | index, quick-start |
-| API 接口 | overview → 文本生成（text-chat、claude-messages、gpt-6、gpt-6-1-sol、claude-opus-55、claude-sonnet-55、claude-haiku-55）→ 结构化决策（jev、结构化决策（GPT、Clef 与 Microsoft）；后者待发布）→ 图像生成 → seed-audio → 视频生成（doubao-video、seedance-25、video-se、video-vs25、minimax-h3）→ tripo-3d |
+| API 接口 | overview → 文本生成（text-chat、claude-messages、gpt-6、gpt-6-1-sol、claude-opus-55、claude-sonnet-55、claude-haiku-55）→ 结构化决策（jev、结构化决策（GPT、Clef 与 Microsoft））→ 图像生成 → seed-audio → 视频生成（doubao-video、seedance-25、video-se、video-vs25、minimax-h3）→ tripo-3d |
 | 客户端接入 | claude-code, cc-switch, lobechat, openai-compatible |
 
 图像生成子组直接展示“概览与模型选择 → 六个模型页 → 同步调用 → 异步任务与结果查询”，不再增加模型指南层级。侧栏显示产品名，正文和代码明确 API 调用名。原有三页 URL 和内容迁移涉及的旧锚点保留为入口。
@@ -246,6 +246,7 @@ POST https://llm.ziy.cc/v1/chat/completions
 6. **图片 response_format**：六款模型传入 `b64_json` 均返回 CDN URL，`b64_json` 为空
 7. **docs.json**：无 navbar/footer GitHub 占位链接
 8. **Seed Audio 响应**：成功时读取音频二进制，不调用 `response.json()`；图片参考使用火山服务可访问的公网 URL
+9. **GPT-6 Luna Decisions、Clef Omni、Microsoft Decision 1**：三模型已在 v9.33 生产配置中启用；三者的正式路径、参数、图像范围与定价统一维护于 `api-reference/gpt-6-luna-decisions.mdx`
 
 ---
 

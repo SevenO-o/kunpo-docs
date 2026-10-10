@@ -45,6 +45,7 @@
 | Sonnet 5.5 场景、双协议接入与缓存定价 | `api-reference/claude-sonnet-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Haiku 5.5 双协议接入、自适应思考限制与分档定价 | `api-reference/claude-haiku-55.mdx` | 公共 Claude 页与更新日志只链接 |
 | Jev 独立决策协议、字段和定价 | `api-reference/jev.mdx` | 总览与更新日志只链接 |
+| GPT-6 Luna、Clef Omni 与 Microsoft Decision 1 的统一 Decisions 入口、文本/JSON/图像输入、字段限制与定价 | `api-reference/gpt-6-luna-decisions.mdx` | 三模型共用契约的单一信息源；总览与更新日志只链接；正式发布前保持待发布状态 |
 | Jev Router 同步文本、选模场景与动态计费 | `api-reference/jev-router.mdx` | 总览与更新日志只链接，不与 Jev 决策混用 |
 | 图片模型列表、选择建议、计费 | `api-reference/image-generation/overview.mdx` | sync/async 页不重复计费表和模型表 |
 | 图片模型能力、size/quality、专属参数和示例 | `api-reference/image-generation/models/*.mdx` | 概览和协议页直接链接模型章节，不复制完整规则 |
@@ -155,7 +156,7 @@
 
 - 新页面**必须**加入 `docs.json` 对应分组，否则 export 不会包含
 - **不要**添加 GitHub 等占位外链（已移除 navbar/footer socials）
-- API 接口分组顺序：`overview` → 文本生成子组 → 结构化决策子组（jev）→ 图像生成子组 → `seed-audio` → 视频生成子组 → `tripo-3d`
+- API 接口分组顺序：`overview` → 文本生成子组 → 结构化决策子组（jev、结构化决策（GPT、Clef 与 Microsoft））→ 图像生成子组 → `seed-audio` → 视频生成子组 → `tripo-3d`
 - 文本生成子组：`text-chat`、`claude-messages`；视频生成子组：`doubao-video`、`seedance-25`、`video-se`、`video-vs25`、`minimax-h3`。按用户要求与图像生成采用同级分组，保留页面 URL
 - 图像生成子组顺序：概览与模型选择 → Nano Banana Pro → Nano Banana 2 → GPT Image 2 → GPT Images 2.5 → Qwen Image 3.0 Pro → Seedream 5.0 Pro → Midjourney → 同步调用 → 异步任务与结果查询
 - 模型页直接放在图像生成子组内，不再嵌套“模型指南”分组

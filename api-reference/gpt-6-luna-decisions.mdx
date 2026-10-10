@@ -1,0 +1,125 @@
+---
+title: "结构化决策（GPT、Clef 与 Microsoft）"
+description: "使用 GPT-6 Luna Decisions、Clef Omni 或 Microsoft Decision 1，通过统一接口处理文本、JSON 与受限图像输入。"
+---
+
+结构化决策接口根据输入内容和调用方提供的问题与标准，返回分类、评分或布尔概率。本文是三个模型共用的调用契约，`questions` 使用以问题名为键的对象。
+
+## 接口与模型
+
+| 项目 | 值 |
+|---|---|
+| 接口 | `POST https://llm.ziy.cc/gpt-decisions/v1/decisions` |
+| Base URL | `https://llm.ziy.cc/gpt-decisions/v1` |
+| 鉴权 | `Authorization: Bearer $KUNPO_API_KEY` |
+| 请求类型 | `Content-Type: application/json` |
+| 返回方式 | 同步 JSON |
+| 问题数 | 每个请求 1–200 个问题 |
+
+`model` 必须是以下 ID 之一。三个模型都使用本页所述路径、问题协议和响应结构；图片数量及上下文上限因模型而异。
+
+| `model` | 上下文预算 | 输入类型 | 单次问题数 | 单次请求图片上限 |
+|---|---:|---|---:|---:|
+| `gpt-6-luna-decisions` | 1,050,000 tokens | 文本、JSON、图像 | 1–200 | 16 张 |
+| `clef-omni` | 65,536 tokens | 文本、JSON、图像 | 1–64 | 4 张 |
+| `microsoft-decision-1` | 32,768 tokens | 文本、JSON | 1–200 | 不支持图像 |
+
+上下文预算不代表网关必然接受同等大小的请求；网关请求体大小限制另行适用。Clef Omni 的图像与问题会先占用上下文预算，剩余空间用于文本，较长文本可能被截断，因此调用方应控制输入长度，不能假定长文本已完整参与判断。`/v1/decisions` 是 Jev 接口，不用于本页列出的模型。此接口使用专用 JSON 请求体，不接受 Chat Completions 的 `messages` 格式。
+
+## 最小调用
+
+以下示例展示文本输入。将 `model` 替换为表格中的任一模型 ID：
+
+```bash
+export KUNPO_API_KEY='sk-你的密钥'
+curl --fail-with-body https://llm.ziy.cc/gpt-decisions/v1/decisions \
+  -H "Authorization: Bearer $KUNPO_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "gpt-6-luna-decisions",
+    "state": {"ticket": "付款后页面显示重复扣款，客户申请退款。"},
+    "questions": {
+      "team": {
+        "type": "choice",
+        "instructions": "这张工单应分配给哪个团队？",
+        "criteria": {
+          "billing": "付款、扣款或退款问题",
+          "account": "登录、权限或账号问题"
+        }
+      }
+    }
+  }'
+```
+
+## 请求内容
+
+顶层 `state` 可提供字符串、对象或数组形式的文本与 JSON 上下文。支持的图像输入是 `state` 数组中的图像项，结构如下：
+
+```json
+{
+  "type": "image_url",
+  "image_url": {
+    "url": "<HTTPS 图像 URL 或 data:image/png;base64,...>",
+    "detail": "auto"
+  }
+}
+```
+
+`url` 可使用可公开访问的 HTTPS 图像地址，或 `data:image/png;base64,...`、`data:image/jpeg;base64,...`、`data:image/webp;base64,...` 格式的 data URL。`detail` 可省略；提供时可使用 `auto`、`low` 或 `high`。单次请求的图片数量不得超过所选模型表格中的上限。
+
+Clef Omni 的每张图像解码后不得超过 4 MiB 或 16 megapixels，单次请求的全部图像解码后合计不得超过 8 MiB。`questions` 的问题名作为对象键；对 Clef Omni，问题名长度为 1–100 个字符，只能包含字母、数字、下划线、句点和连字符。
+
+平台会先归档图像，再将其转换为内联图像输入。归档或转换失败时请求会报错；平台不会静默移除图像后把请求作为纯文本继续处理。图像项只能按上面的格式放在 `state` 数组中；嵌套图像项、其他位置的 `image_url` 以及 `input_image` 均不接受。数组中图像与文本的顺序保持不变，`detail` 值在转换时保留。此接口当前不支持视频或音频输入；相关内容块会被拒绝。`microsoft-decision-1` 仅接受文本和 JSON。
+
+`questions` 是以自定义问题名为键的对象，至少包含 1 个问题；各模型的上限见上表。每个问题使用 `type`、必填的 `instructions` 和类型对应的 `criteria`。支持 `noul`、`choice` 和 `score` 三种类型；字段规则与答案结构参阅[结构化决策协议字段说明](./jev#请求字段)。`choice.criteria` 的值可为 `null` 或指导文本。Jev 页中的 32,000-token 输入限制不适用于本页模型。
+
+`session_id` 和 `user` 均为可选字符串，长度最多 256 个字符。不要发送 `provider`、`trace` 或 `stream` 顶层字段；此路由会拒绝包含这些字段的请求，但本文不承诺特定 HTTP 错误码或错误响应体。
+
+## 响应与用量
+
+成功请求返回同步 JSON。按请求中的问题名读取 `answers.<问题名>`，例如 `choice` 类型的选择值位于 `answers.team.choice`。响应包含公开任务 ID `id`、所请求的公开 `model` ID、`answers` 和用量；不返回 `provider` 或 `cost`。`model` 会回显本次请求中的模型 ID：`gpt-6-luna-decisions`、`clef-omni` 或 `microsoft-decision-1`。
+
+```json
+{
+  "id": "<公开任务 ID>",
+  "model": "gpt-6-luna-decisions",
+  "answers": {
+    "team": {
+      "type": "choice",
+      "choice": "billing",
+      "confidence": 0.94,
+      "probabilities": {
+        "billing": 0.94,
+        "account": 0.06
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 123,
+    "output_tokens": 0
+  }
+}
+```
+
+`usage.input_tokens` 是计费使用的实际输入量；`usage.output_tokens` 表示实际输出 tokens 数，可能非零（例如 Microsoft Decision 1 可返回 `3`）。三个模型的输出均不收费。客户端提交的 usage 不会替代网关统计。
+
+如果连接超时或未收到完整响应，请勿自动盲目重发 POST：原请求可能已被处理并产生用量。若已收到 `id`，保留该 ID 以核对请求记录；如果未收到 `id`，本页没有承诺可用的幂等键或按请求 ID 查询方式。结果未确定时不要自动重试，以免重复处理。
+
+## 价格与预留
+
+价格单位为 **USD / 百万输入 tokens**，不含用户分组倍率。三个模型的输出均免费，缓存读取和写入不另收费。
+
+| `model` | 输入价格 | 输出价格 | 全上下文输入预留（倍率为 1） |
+|---|---:|---:|---:|
+| `gpt-6-luna-decisions` | ≤272,000 tokens：$0.10/M；>272,000 tokens：$0.20/M（对全部输入量计价） | 免费 | $0.21 |
+| `clef-omni` | $0.15/M | 免费 | $0.0098304 |
+| `microsoft-decision-1` | $0.042/M | 免费 | $0.001376256 |
+
+GPT-6 Luna Decisions 的实际输入不超过 272,000 tokens 时，费用为 `input_tokens ÷ 1,000,000 × $0.10 × 分组倍率`；超过 272,000 tokens 时，$0.20/M 适用于全部输入 tokens，而非仅超出部分。Clef Omni 与 Microsoft Decision 1 分别按表中单价乘实际输入 tokens 结算。最终金额按实际用量、用户分组倍率及平台额度精度计算。
+
+提交时按所选模型的完整上下文上限预留输入额度：GPT-6 Luna Decisions 预留 1,050,000 tokens，Clef Omni 预留 65,536 tokens，Microsoft Decision 1 预留 32,768 tokens。表中金额是分组倍率为 1 时的预留额；实际预留金额随用户分组倍率变化。完成后按实际输入用量结算并退回差额。上下文上限与网关请求体限制是两项独立限制，预留额度也不表示单个请求一定能达到模型上下文上限。
+
+## 相关文档
+
+- [Jev 结构化决策协议](./jev)
+- [API 总览](./overview)

@@ -9,6 +9,16 @@ description: "KUNPO API 的模型上线、接口变化与使用相关的修复�
   **行为变更**可能需要调整客户端代码，请留意相关条目。
 </Note>
 
+<Update label="2026-10-10" tags={["kunpo-v9.33", "结构化决策", "图片"]}>
+
+## 结构化决策模型与图像输入
+
+新增 `gpt-6-luna-decisions`、`clef-omni` 和 `microsoft-decision-1`，统一通过 Decisions 专用接口调用。GPT-6 Luna Decisions 单次请求最多支持 16 张图片，Clef Omni 最多支持 4 张；Microsoft Decision 1 支持文本与 JSON，不支持图片。图片可使用 HTTPS 地址或 PNG、JPEG、WebP data URL；图片处理失败时请求会返回错误，不会静默丢弃图片后继续处理。该接口当前不支持音频或视频输入。
+
+请求结构、模型限制、调用示例与价格见[结构化决策（GPT、Clef 与 Microsoft）](/api-reference/gpt-6-luna-decisions)。
+
+</Update>
+
 <Update label="2026-10-09" tags={["kunpo-v9.32", "Tripo", "3D", "修复"]}>
 
 ## Tripo 参考图片上传修复

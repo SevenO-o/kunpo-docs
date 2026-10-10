@@ -39,7 +39,8 @@
               {
                 "group": "结构化决策",
                 "pages": [
-                  "api-reference/jev"
+                  "api-reference/jev",
+                  "api-reference/gpt-6-luna-decisions"
                 ]
               },
               {
